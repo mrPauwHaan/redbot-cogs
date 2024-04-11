@@ -69,6 +69,7 @@ class ChannelChanger(commands.Cog):
     async def changingchannels(self, ctx):
         """See all channels that change based on activity"""
         print("test")
+        log.info(f"Test")
         channelConfig = await self.config.guild(ctx.guild).channels()
         await ctx.send(channelConfig)
 
