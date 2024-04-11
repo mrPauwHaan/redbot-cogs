@@ -104,15 +104,15 @@ class ChannelChanger(commands.Cog):
 
         channelConfig = channels[str(channel.id)]
         if channel:
-            newTitle = channelConfig[0]
+            newTitle = channelConfig.name
             if channel.manageble:
                 if channel.members.size > 0:
                     ignoredStatus = await self.config.guild(ctx.guild).ignoredStatus()
 
-                    gameTitle = await self.majority(channel, channelConfig[1])
+                    gameTitle = await self.majority(channel, channelConfig.majority)
 
                     if gameTitle not in ignoredStatus:
-                        newTitle = channelConfig[2].replace("X", channelConfig[0]).replace("Y", gameTitle)
+                        newTitle = channelConfig.template.replace("X", channelConfig.name).replace("Y", gameTitle)
                     
             if channel.name != newTitle:
                 await channel.edit(name=newTitle)
