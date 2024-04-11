@@ -119,7 +119,7 @@ class ChannelChanger(commands.Cog):
             if channel.name != newTitle:
                 await channel.edit(name=newTitle)
 
-    @commands.Cog.listener(name='on_voice_state_update')
+    @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         print("Voic state update")
         channels = await self.config.guild(member.guild).channels()
@@ -142,7 +142,7 @@ class ChannelChanger(commands.Cog):
                         scan_one(after.channel)
 
 
-    @commands.Cog.listener(name='on_presence_update')
+    @commands.Cog.listener()
     async def on_presence_update(self, before, after):
         print("Presence update")
         if after and after.voice and after.voice.channel:  
