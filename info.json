@@ -1,0 +1,10 @@
+{
+    "author": ["mrPauwHaan", "Inspired by PigPog"],
+    "install_msg": "Thank you for installing my Channel Changer cog",
+    "name": "ChannelChanger",
+    "short": "Change channels based on the game users are playing",
+    "description": "Change channels based on the game users are playing",
+    "tags": ["channel", "games", "voice"],
+    "min_bot_version" : "3.5.0",
+    "end_user_data_statement": "This cog does not persistently store data or metadata about users."
+  }
