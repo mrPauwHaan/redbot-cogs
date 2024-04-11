@@ -127,8 +127,8 @@ class ChannelChanger(commands.Cog):
         log.info("Voic state update")
         channels = await self.config.guild(member.guild).channels()
         log.info(channels)
-        log.info(before.channel)
-        log.info(after.channel)
+        log.info(before.channel.id)
+        log.info(after.channel.id)
         if not before.channel:
             log.info("not before.channel")
             if after.channel.id:
