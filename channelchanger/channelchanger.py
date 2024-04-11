@@ -101,7 +101,7 @@ class ChannelChanger(commands.Cog):
             return None  # Or you could return an empty string ""
 
     async def scan_one(self, ctx, channel):
-         print("Scannen gestart...")
+        print("Scannen gestart...")
         channelConfig = await self.config.guild(ctx.guild).channels[channel.id]
         if channel:
             print(channel)
