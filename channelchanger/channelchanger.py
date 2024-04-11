@@ -28,7 +28,7 @@ class ChannelChanger(commands.Cog):
     @commands.command()
     @commands.has_permissions(manage_channels=True)
     async def addvc(self, ctx: commands.Context, majority: float = 0.5):
-        """Adds a voice channel to the watchlist."""
+        """Adds a voice channel to the watchlist. Optional: add a number between 0 and 1 for amount of people needed to play the game"""
         if not ctx.author.voice or not ctx.author.voice.channel:
             await ctx.send("You must be in a voice channel to use this command.")
             return
@@ -38,15 +38,19 @@ class ChannelChanger(commands.Cog):
             return
         
         channel_id = ctx.author.voice.channel.id
-        await self.config.guild(ctx.guild).channels.set(
-        {
-            channel_id: {
-                "name": ctx.author.voice.channel.name,
-                "majority": majority, 
-                "template": "X - Y" 
-           }
+        # Get existing channel data
+        existing_channels = await self.config.guild(ctx.guild).channels()
+
+        # Add the new channel data
+        existing_channels[channel_id] = {
+            "name": ctx.author.voice.channel.name,
+            "majority": majority, 
+            "template": "X - Y"
         }
-    )
+
+        # Save updated channel data
+        await self.config.guild(ctx.guild).channels.set(existing_channels)
+        )
         await ctx.send(f"Successfully added `{ctx.author.voice.channel.name}` to my list.")
 
     @commands.command()
