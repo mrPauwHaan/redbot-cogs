@@ -91,7 +91,7 @@ class ChannelChanger(commands.Cog):
                 user_count += 1
                 if member.activities:  # Check if the member has any active games
                     # Prioritize the last activity (avoids custom statuses)
-                    game_name = str(member.activities[-1]) 
+                    game_name = member.presence.activities[member.presence.activities.length-1].toString()
                     games[game_name] = games.get(game_name, 0) + 1  # Tally the game
 
                     if games[game_name] > majority_number:
