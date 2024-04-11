@@ -77,7 +77,7 @@ class ChannelChanger(commands.Cog):
         """Set the template for changing the voice channels (default= X - Y)"""
         await ctx.send("Command not possible yet")
     
-    async def majority(self, channel, majority_percent, ignoredStatus):
+    async def majority(self, channel, majority_percent):
         games = {}
         majority_name = ""
         majority_number = 0
@@ -90,10 +90,6 @@ class ChannelChanger(commands.Cog):
                     # Prioritize the last activity (avoids custom statuses)
                     game_name = str(member.activity.name) 
                     games[game_name] = games.get(game_name, 0) + 1  # Tally the game
-
-
-                    if game_name not in ignoredStatus:
-                        games[game_name] = games.get(game_name, 0) + 1  # Tally the game
 
                     if games[game_name] > majority_number:
                         majority_name = game_name
@@ -109,11 +105,13 @@ class ChannelChanger(commands.Cog):
         channelConfig = channels[str(channel.id)]
         if channel:
             newTitle = channelConfig.get("name")
-            if channel.members:
+            if channel.members.length > 0:
                 ignoredStatus = await self.config.guild(ctx.guild).ignoredStatus()
 
-                gameTitle = await self.majority(channel, channelConfig.get("majority"), ignoredStatus)
-                newTitle = channelConfig.get("template").replace("X", channelConfig.get("name")).replace("Y", gameTitle)
+                gameTitle = await self.majority(channel, channelConfig.get("majority"))
+
+                if gameTitle not in ignoredStatus:
+                    newTitle = channelConfig.get("template").replace("X", channelConfig.get("name")).replace("Y", gameTitle)
                     
             if channel.name != newTitle:
                 await channel.edit(name=newTitle)
