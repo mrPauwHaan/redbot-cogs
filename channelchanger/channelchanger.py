@@ -145,5 +145,5 @@ class ChannelChanger(commands.Cog):
         ctx = after
         if after and after.voice and after.voice.channel:  
             channels = await self.config.guild(after.guild).channels()
-            if str(after.channel.id) in channels:
+            if str(after.voice.channel.id) in channels:
                 await self.scan_one(ctx, after.voice.channel, channels) 
