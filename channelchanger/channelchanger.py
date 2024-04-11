@@ -105,7 +105,8 @@ class ChannelChanger(commands.Cog):
         channelConfig = channels[str(channel.id)]
         if channel:
             newTitle = channelConfig.get("name")
-            if channel.members.length > 0:
+            members_amount = len(channel.members)
+            if members_amount > 0:
                 ignoredStatus = await self.config.guild(ctx.guild).ignoredStatus()
 
                 gameTitle = await self.majority(channel, channelConfig.get("majority"))
@@ -145,4 +146,4 @@ class ChannelChanger(commands.Cog):
         if after and after.voice and after.voice.channel:  
             channels = await self.config.guild(after.guild).channels()
             if str(after.channel.id) in channels:
-                await self.scan_one(ctx, after.voice.channel, channels)
+                await self.scan_one(ctx, after.voice.channel, channels) 
