@@ -38,12 +38,15 @@ class ChannelChanger(commands.Cog):
             return
         
         channel_id = ctx.author.voice.channel.id
-        self.channels[channel_id] = {
-            "name": ctx.author.voice.channel.name,
-            "majority": majority, 
-            "template": "X - Y"
+        await self.config.guild(ctx.guild).channels.set(
+        {
+            channel_id: {
+                "name": ctx.author.voice.channel.name,
+                "majority": majority, 
+                "template": "X - Y" 
+           }
         }
-        await self.config.guild(ctx.guild).channels.set(self.channels)
+    )
         await ctx.send(f"Successfully added `{ctx.author.voice.channel.name}` to my list.")
 
     @commands.command()
