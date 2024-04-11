@@ -16,7 +16,7 @@ class ChannelChanger(commands.Cog):
         )
         default_guild = {
             "channels": {},
-            "ignoredStatus": [undefined, "Spotify", "Custom Status"]
+            "ignoredStatus": ["Spotify", "Custom Status"]
         }
         self.config.register_guild(**default_guild)
 
