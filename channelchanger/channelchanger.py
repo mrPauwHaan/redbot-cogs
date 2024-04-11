@@ -103,7 +103,9 @@ class ChannelChanger(commands.Cog):
     async def scan_one(self, ctx, channel):
         channelConfig = await self.config.guild(ctx.guild).channels[channel.id]
         if channel:
+            print channel
             newTitle = channelConfig[0]
+            print newTitle
             if channel.manageble:
                 if channel.members.size > 0:
                     ignoredStatus = await self.config.guild(ctx.guild).ignoredStatus()
