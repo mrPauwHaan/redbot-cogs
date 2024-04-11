@@ -50,7 +50,6 @@ class ChannelChanger(commands.Cog):
 
         # Save updated channel data
         await self.config.guild(ctx.guild).channels.set(existing_channels)
-        )
         await ctx.send(f"Successfully added `{ctx.author.voice.channel.name}` to my list.")
 
     @commands.command()
