@@ -129,23 +129,31 @@ class ChannelChanger(commands.Cog):
         if not before.channel:
             log.info("not before.channel")
             if after.channel.id:
+                log.info("found id")
                 if channels.get(after.channel.id):
+                    log.info("found channel")
                     scan_one(after.channel)
         elif not after.channel:
             log.info("not after.channel")
             if before.channel.id:
+                log.info("found id")
                 if channels.get(before.channel.id):
+                    log.info("found channel")
                     scan_one(before.channel)
         else:
             log.info("else")
             if before.channel.id != after.channel.id:
                 log.info("not equal")
                 if before.channel.id:
+                    log.info("found id")
                     if channels.get(before.channel.id):
+                        log.info("found channel")
                         scan_one(before.channel)
 
                 if after.channel.id:
+                    log.info("found id")
                     if channels.get(after.channel.id):
+                        log.info("found channel")
                         scan_one(after.channel)
 
 
