@@ -123,20 +123,20 @@ class ChannelChanger(commands.Cog):
         if not before.channel:
             if after.channel.id:
                 if str(after.channel.id) in channels:
-                    await self.scan_one(self, ctx, after.channel)
+                    await self.scan_one(ctx, after.channel)
         elif not after.channel:
             if before.channel.id:
                 if str(before.channel.id) in channels:
-                    await self.scan_one(self, ctx, before.channel)
+                    await self.scan_one(ctx, before.channel)
         else:
             if before.channel.id != after.channel.id:
                 if before.channel.id:
                     if str(before.channel.id) in channels:
-                        await self.scan_one(self, ctx, before.channel)
+                        await self.scan_one(ctx, before.channel)
 
                 if after.channel.id:
                     if str(after.channel.id) in channels:
-                        await self.scan_one(self, ctx, after.channel)
+                        await self.scan_one(ctx, after.channel)
 
 
     @commands.Cog.listener(name='on_presence_update')
@@ -145,4 +145,4 @@ class ChannelChanger(commands.Cog):
         if after and after.voice and after.voice.channel:  
             channels = await self.config.guild(after.guild).channels()
             if str(after.channel.id) in channels:
-                await self.scan_one(self, ctx, after.voice.channel)
+                await self.scan_one(ctx, after.voice.channel)
