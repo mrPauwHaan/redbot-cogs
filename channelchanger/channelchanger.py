@@ -115,7 +115,7 @@ class ChannelChanger(commands.Cog):
                     newTitle = channelConfig.get("template").replace("X", channelConfig.get("name")).replace("Y", gameTitle)
                     
             if channel.name != newTitle:
-                await channel.edit(status=newTitle)
+                await channel.edit(name=newTitle)
 
     @commands.Cog.listener(name='on_voice_state_update')
     async def on_voice_state_update(self, member, before, after):
