@@ -1,10 +1,12 @@
 import discord
+import logging
 from discord.ext import commands
 import asyncio
 from redbot.core.bot import Red
 from redbot.core import commands
 from redbot.core import Config
 
+log = logging.getLogger("red.fox_v3.fifo")
 
 class ChannelChanger(commands.Cog):
     def __init__(self, bot: Red) -> None:
