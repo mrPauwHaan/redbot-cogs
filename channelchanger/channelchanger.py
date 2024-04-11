@@ -101,7 +101,7 @@ class ChannelChanger(commands.Cog):
             return None  # Or you could return an empty string ""
 
     async def scan_one(self, ctx, channel):
-        channelConfig = await self.config.guild(channel.guild).channels[channel.id]
+        channelConfig = await self.config.guild(self.guild).channels[channel.id]
         if channel:
             newTitle = channelConfig[0]
             if channel.manageble:
@@ -142,5 +142,5 @@ class ChannelChanger(commands.Cog):
     async def on_presence_update(self, before, after):
         if after and after.voice and after.voice.channel:  
             channels = await self.config.guild(after.guild).channels()
-            if channels[after.channel.id]:
+            if str(after.channel.id) in channels:
                 await self.scan_one(self, after.voice.channel)
