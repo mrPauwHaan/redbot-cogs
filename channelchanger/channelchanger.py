@@ -91,7 +91,7 @@ class ChannelChanger(commands.Cog):
                 user_count += 1
                 if member.activities:  # Check if the member has any active games
                     # Prioritize the last activity (avoids custom statuses)
-                    game_name = str(member.activity.name) 
+                    game_name = str(member.game) 
                     log.info(game_name)
                     games[game_name] = games.get(game_name, 0) + 1  # Tally the game
 
@@ -100,7 +100,6 @@ class ChannelChanger(commands.Cog):
                         majority_number = games[game_name]
 
         if majority_number / user_count > majority_percent:
-            log.info(majority_name)
             return majority_name
         else:
             return None  # Or you could return an empty string ""
