@@ -108,7 +108,7 @@ class ChannelChanger(commands.Cog):
                 if channel.members.size > 0:
                     ignoredStatus = await self.config.guild(ctx.guild).ignoredStatus()
 
-                    gameTitle = self.majority(channel, channelConfig[1])
+                    gameTitle = await self.majority(channel, channelConfig[1])
 
                     if gameTitle not in ignoredStatus:
                         newTitle = channelConfig[2].replace("X", channelConfig[0]).replace("Y", gameTitle)
@@ -122,20 +122,20 @@ class ChannelChanger(commands.Cog):
         if not before.channel:
             if after.channel.id:
                 if str(after.channel.id) in channels:
-                    self.scan_one(self, after.channel)
+                    await self.scan_one(self, after.channel)
         elif not after.channel:
             if before.channel.id:
                 if str(before.channel.id) in channels:
-                    self.scan_one(self, before.channel)
+                    await self.scan_one(self, before.channel)
         else:
             if before.channel.id != after.channel.id:
                 if before.channel.id:
                     if str(before.channel.id) in channels:
-                        self.scan_one(self, before.channel)
+                        await self.scan_one(self, before.channel)
 
                 if after.channel.id:
                     if str(after.channel.id) in channels:
-                        self.scan_one(self, after.channel)
+                        await self.scan_one(self, after.channel)
 
 
     @commands.Cog.listener(name='on_presence_update')
@@ -143,4 +143,4 @@ class ChannelChanger(commands.Cog):
         if after and after.voice and after.voice.channel:  
             channels = await self.config.guild(after.guild).channels()
             if channels[after.channel.id]:
-                self.scan_one(self, after.voice.channel)
+                await self.scan_one(self, after.voice.channel)
