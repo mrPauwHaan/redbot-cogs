@@ -4,8 +4,6 @@ import asyncio
 from redbot.core.bot import Red
 from redbot.core import commands
 from redbot.core import Config
-import logging
-log = logging.getLogger("debuglog")
 
 
 class ChannelChanger(commands.Cog):
@@ -90,9 +88,10 @@ class ChannelChanger(commands.Cog):
                 user_count += 1
                 if member.activities:  # Check if the member has any active games
                     # Prioritize the last activity (avoids custom statuses)
-                    for activity in member.activities:
-                        game_name = str(activity.name) 
-                        log.info(game_naam)
+                    game_name = str(member.activity.name) 
+                    games[game_name] = games.get(game_name, 0) + 1  # Tally the game
+
+
                         if game_name not in ignoredStatus:
                             games[game_name] = games.get(game_name, 0) + 1  # Tally the game
 
