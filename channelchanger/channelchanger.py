@@ -121,20 +121,20 @@ class ChannelChanger(commands.Cog):
         channels = await self.config.guild(member.guild).channels()
         if not before.channel:
             if after.channel.id:
-                if channels[after.channel.id]:
+                if channels[str(after.channel.id)]:
                     scan_one(after.channel)
         elif not after.channel:
             if before.channel.id:
-                if channels[before.channel.id]:
+                if channels[str(before.channel.id)]:
                     scan_one(before.channel)
         else:
             if before.channel.id != after.channel.id:
                 if before.channel.id:
-                    if channels[before.channel.id]:
+                    if channels[str(before.channel.id)]:
                         scan_one(before.channel)
 
                 if after.channel.id:
-                    if channels[after.channel.id]:
+                    if channels[str(after.channel.id)]:
                         scan_one(after.channel)
 
 
