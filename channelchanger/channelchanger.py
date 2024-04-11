@@ -101,7 +101,7 @@ class ChannelChanger(commands.Cog):
             return None  # Or you could return an empty string ""
 
     async def scan_one(self, ctx, channel):
-        channelConfig = await self.config.guild(ctx.guild).channels[channel.id]
+        channelConfig = channel.id
         if channel:
             newTitle = channelConfig[0]
             if channel.manageble:
