@@ -101,7 +101,7 @@ class ChannelChanger(commands.Cog):
             return None  # Or you could return an empty string ""
 
     async def scan_one(self, ctx, channel):
-        channelConfig = await self.config.guild(self.guild).channels[channel.id]
+        channelConfig = await self.config.guild(ctx.guild).channels[channel.id]
         if channel:
             newTitle = channelConfig[0]
             if channel.manageble:
@@ -117,30 +117,30 @@ class ChannelChanger(commands.Cog):
                 await channel.edit(name=newTitle)
 
     @commands.Cog.listener(name='on_voice_state_update')
-    async def on_voice_state_update(self, member, before, after):
+    async def on_voice_state_update(self, ctx, member, before, after):
         channels = await self.config.guild(member.guild).channels()
         if not before.channel:
             if after.channel.id:
                 if str(after.channel.id) in channels:
-                    await self.scan_one(self, after.channel)
+                    await self.scan_one(self, ctx, after.channel)
         elif not after.channel:
             if before.channel.id:
                 if str(before.channel.id) in channels:
-                    await self.scan_one(self, before.channel)
+                    await self.scan_one(self, ctx, before.channel)
         else:
             if before.channel.id != after.channel.id:
                 if before.channel.id:
                     if str(before.channel.id) in channels:
-                        await self.scan_one(self, before.channel)
+                        await self.scan_one(self, ctx, before.channel)
 
                 if after.channel.id:
                     if str(after.channel.id) in channels:
-                        await self.scan_one(self, after.channel)
+                        await self.scan_one(self, ctx, after.channel)
 
 
     @commands.Cog.listener(name='on_presence_update')
-    async def on_presence_update(self, before, after):
+    async def on_presence_update(self, ctx, before, after):
         if after and after.voice and after.voice.channel:  
             channels = await self.config.guild(after.guild).channels()
             if str(after.channel.id) in channels:
-                await self.scan_one(self, after.voice.channel)
+                await self.scan_one(self, ctx, after.voice.channel)
