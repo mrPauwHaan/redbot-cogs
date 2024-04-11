@@ -6,7 +6,7 @@ from redbot.core import Config
 
 
 class ChannelChanger(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self):
         self.bot = bot
         self.config: Config = Config.get_conf(
             self,
