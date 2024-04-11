@@ -6,7 +6,7 @@ from redbot.core.bot import Red
 from redbot.core import commands
 from redbot.core import Config
 
-log = logging.getLogger("red.fox_v3.fifo")
+log = logging.getLogger("debuglog")
 
 class ChannelChanger(commands.Cog):
     def __init__(self, bot: Red) -> None:
@@ -70,7 +70,6 @@ class ChannelChanger(commands.Cog):
     @commands.has_permissions(manage_channels=True)
     async def changingchannels(self, ctx):
         """See all channels that change based on activity"""
-        print("test")
         log.info(f"Test")
         channelConfig = await self.config.guild(ctx.guild).channels()
         await ctx.send(channelConfig)
@@ -105,12 +104,12 @@ class ChannelChanger(commands.Cog):
             return None  # Or you could return an empty string ""
 
     async def scan_one(self, ctx, channel):
-        print("Scannen gestart...")
+        log.info("Scannen gestart...")
         channelConfig = await self.config.guild(ctx.guild).channels[channel.id]
         if channel:
-            print(channel)
+            log.info(channel)
             newTitle = channelConfig[0]
-            print(newTitle)
+            log.info(newTitle)
             if channel.manageble:
                 if channel.members.size > 0:
                     ignoredStatus = await self.config.guild(ctx.guild).ignoredStatus()
@@ -125,7 +124,7 @@ class ChannelChanger(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        print("Voic state update")
+        log.info("Voic state update")
         channels = await self.config.guild(member.guild).channels()
         if not before.channel:
             if after.channel.id:
