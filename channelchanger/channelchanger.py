@@ -106,11 +106,11 @@ class ChannelChanger(commands.Cog):
     @commands.Cog.listener(name='on_voice_state_update')
     async def on_voice_state_update(self, member, before, after):
         channels = await self.config.guild(member.guild).channels()
-        if not before:
+        if not before.channel:
             if after.channel.id:
                 if channels.get(after.channel.id):
                     scan_one(after.channel)
-        elif not after:
+        elif not after.channel:
             if before.channel.id:
                 if channels.get(before.channel.id):
                     scan_one(before.channel)
