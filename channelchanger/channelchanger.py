@@ -102,7 +102,7 @@ class ChannelChanger(commands.Cog):
 
     async def scan_one(self, ctx, channel, channels):
 
-        channelConfig = channels[channel.id]
+        channelConfig = channels[str(channel.id)]
         if channel:
             newTitle = channelConfig[0]
             if channel.manageble:
