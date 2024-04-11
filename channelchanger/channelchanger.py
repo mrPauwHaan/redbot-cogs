@@ -1,12 +1,10 @@
 import discord
-import logging
 from discord.ext import commands
 import asyncio
 from redbot.core.bot import Red
 from redbot.core import commands
 from redbot.core import Config
 
-log = logging.getLogger("debuglog")
 
 class ChannelChanger(commands.Cog):
     def __init__(self, bot: Red) -> None:
@@ -70,7 +68,6 @@ class ChannelChanger(commands.Cog):
     @commands.has_permissions(manage_channels=True)
     async def changingchannels(self, ctx):
         """See all channels that change based on activity"""
-        log.info(f"Test")
         channelConfig = await self.config.guild(ctx.guild).channels()
         await ctx.send(channelConfig)
 
@@ -104,12 +101,9 @@ class ChannelChanger(commands.Cog):
             return None  # Or you could return an empty string ""
 
     async def scan_one(self, ctx, channel):
-        log.info("Scannen gestart...")
         channelConfig = await self.config.guild(ctx.guild).channels[channel.id]
         if channel:
-            log.info(channel)
             newTitle = channelConfig[0]
-            log.info(newTitle)
             if channel.manageble:
                 if channel.members.size > 0:
                     ignoredStatus = await self.config.guild(ctx.guild).ignoredStatus()
@@ -122,48 +116,31 @@ class ChannelChanger(commands.Cog):
             if channel.name != newTitle:
                 await channel.edit(name=newTitle)
 
-    @commands.Cog.listener()
+    @commands.Cog.listener(name='on_voice_state_update')
     async def on_voice_state_update(self, member, before, after):
-        log.info("Voic state update")
         channels = await self.config.guild(member.guild).channels()
-        log.info(channels)
-        log.info(before.channel.id)
-        log.info(after.channel.id)
         if not before.channel:
-            log.info("not before.channel")
             if after.channel.id:
-                log.info("found id")
-                if channels.get(after.channel.id):
-                    log.info("found channel")
+                if channels[after.channel.id]:
                     scan_one(after.channel)
         elif not after.channel:
-            log.info("not after.channel")
             if before.channel.id:
-                log.info("found id")
-                if channels.get(before.channel.id):
-                    log.info("found channel")
+                if channels[before.channel.id]:
                     scan_one(before.channel)
         else:
-            log.info("else")
             if before.channel.id != after.channel.id:
-                log.info("not equal")
                 if before.channel.id:
-                    log.info("found id")
-                    if channels.get(before.channel.id):
-                        log.info("found channel")
+                    if channels[before.channel.id]:
                         scan_one(before.channel)
 
                 if after.channel.id:
-                    log.info("found id")
-                    if channels.get(after.channel.id):
-                        log.info("found channel")
+                    if channels[after.channel.id]:
                         scan_one(after.channel)
 
 
-    @commands.Cog.listener()
+    @commands.Cog.listener(name='on_presence_update')
     async def on_presence_update(self, before, after):
-        print("Presence update")
         if after and after.voice and after.voice.channel:  
             channels = await self.config.guild(after.guild).channels()
-            if channels.get(after.voice.channel.id):
+            if channels[after.channel.id]:
                 scan_one(after.voice.channel)
