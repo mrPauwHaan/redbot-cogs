@@ -90,7 +90,7 @@ class ChannelChanger(commands.Cog):
                 user_count += 1
                 if member.activities:  # Check if the member has any active games
                     # Prioritize the last activity (avoids custom statuses)
-                    for activity in activities
+                    for activity in activities:
                         game_name = str(activity.name) 
                         if game_name not in ignoredStatus:
                             games[game_name] = games.get(game_name, 0) + 1  # Tally the game
