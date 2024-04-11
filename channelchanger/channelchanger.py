@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 import asyncio
-import json  # For temporary data storage, if needed 
 from redbot.core import commands
 from redbot.core import Config
 
@@ -102,8 +101,6 @@ class ChannelChanger(commands.Cog):
                     
             if channel.name != newTitle:
                 await channel.edit(name=newTitle)
-        else:
-            # Remove deleted channels from config
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, ctx, member, before, after):
