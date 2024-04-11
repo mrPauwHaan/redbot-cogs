@@ -1,11 +1,10 @@
 import discord
 from discord.ext import commands
 import asyncio
-import logging
 from redbot.core.bot import Red
 from redbot.core import commands
 from redbot.core import Config
-
+import logging
 log = logging.getLogger("debuglog")
 
 
@@ -80,7 +79,7 @@ class ChannelChanger(commands.Cog):
         """Set the template for changing the voice channels (default= X - Y)"""
         await ctx.send("Command not possible yet")
     
-    async def majority(self, channel, majority_percent):
+    async def majority(self, channel, majority_percent, ignoredStatus):
         games = {}
         majority_name = ""
         majority_number = 0
@@ -93,12 +92,12 @@ class ChannelChanger(commands.Cog):
                     # Prioritize the last activity (avoids custom statuses)
                     for activity in activities
                         game_name = str(activity.name) 
-                        log.info(game_name)
-                        games[game_name] = games.get(game_name, 0) + 1  # Tally the game
-    
-                        if games[game_name] > majority_number:
-                            majority_name = game_name
-                            majority_number = games[game_name]
+                        if game_name not in ignoredStatus:
+                            games[game_name] = games.get(game_name, 0) + 1  # Tally the game
+
+                    if games[game_name] > majority_number:
+                        majority_name = game_name
+                        majority_number = games[game_name]
 
         if majority_number / user_count > majority_percent:
             return majority_name
@@ -113,13 +112,10 @@ class ChannelChanger(commands.Cog):
             if channel.members:
                 ignoredStatus = await self.config.guild(ctx.guild).ignoredStatus()
 
-                gameTitle = await self.majority(channel, channelConfig.get("majority"))
-
-                if gameTitle not in ignoredStatus:
-                    newTitle = channelConfig.get("template").replace("X", channelConfig.get("name")).replace("Y", gameTitle)
+                gameTitle = await self.majority(channel, channelConfig.get("majority"), ignoredStatus)
+                newTitle = channelConfig.get("template").replace("X", channelConfig.get("name")).replace("Y", gameTitle)
                     
             if channel.name != newTitle:
-                log.info(newTitle)
                 await channel.edit(name=newTitle)
 
     @commands.Cog.listener(name='on_voice_state_update')
