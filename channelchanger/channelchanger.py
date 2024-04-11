@@ -1,9 +1,12 @@
 import discord
 from discord.ext import commands
 import asyncio
+import logging
 from redbot.core.bot import Red
 from redbot.core import commands
 from redbot.core import Config
+
+log = logging.getLogger("debuglog")
 
 
 class ChannelChanger(commands.Cog):
@@ -114,6 +117,7 @@ class ChannelChanger(commands.Cog):
                     newTitle = channelConfig.get("template").replace("X", channelConfig.get("name")).replace("Y", gameTitle)
                     
             if channel.name != newTitle:
+                log.info(newTitle)
                 await channel.edit(name=newTitle)
 
     @commands.Cog.listener(name='on_voice_state_update')
