@@ -92,8 +92,8 @@ class ChannelChanger(commands.Cog):
                     games[game_name] = games.get(game_name, 0) + 1  # Tally the game
 
 
-                        if game_name not in ignoredStatus:
-                            games[game_name] = games.get(game_name, 0) + 1  # Tally the game
+                    if game_name not in ignoredStatus:
+                        games[game_name] = games.get(game_name, 0) + 1  # Tally the game
 
                     if games[game_name] > majority_number:
                         majority_name = game_name
