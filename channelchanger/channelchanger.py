@@ -63,6 +63,13 @@ class ChannelChanger(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(manage_channels=True)
+    async def changingchannels(self, ctx):
+        """See all channels that change based on activity"""
+        channelConfig = await self.config.guild(ctx.guild).channels()
+        await ctx.send(channelConfig)
+
+    @commands.command()
+    @commands.has_permissions(manage_channels=True)
     async def template(self, ctx):
         """Set the template for changing the voice channels (default= X - Y)"""
         await ctx.send("Command not possible yet")
