@@ -101,6 +101,7 @@ class ChannelChanger(commands.Cog):
             return None  # Or you could return an empty string ""
 
     async def scan_one(self, ctx, channel):
+         print("Scannen gestart...")
         channelConfig = await self.config.guild(ctx.guild).channels[channel.id]
         if channel:
             print(channel)
@@ -120,6 +121,7 @@ class ChannelChanger(commands.Cog):
 
     @commands.Cog.listener(name='on_voice_state_update')
     async def on_voice_state_update(self, member, before, after):
+        print("Voic state update")
         channels = await self.config.guild(member.guild).channels()
         if not before.channel:
             if after.channel.id:
@@ -142,6 +144,7 @@ class ChannelChanger(commands.Cog):
 
     @commands.Cog.listener(name='on_presence_update')
     async def on_presence_update(self, before, after):
+        print("Presence update")
         if after and after.voice and after.voice.channel:  
             channels = await self.config.guild(after.guild).channels()
             if channels.get(after.voice.channel.id):
