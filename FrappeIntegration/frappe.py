@@ -10,6 +10,7 @@ import requests
 class Frappe(commands.Cog):
     def __init__(self, bot: Red) -> None:
         self.bot = bot
+        self.dailybirthday.start()
     
     @tasks.loop(seconds=10)
     async def dailybirthday(self):
