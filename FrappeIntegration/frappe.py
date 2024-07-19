@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import tasks
 import asyncio
 from redbot.core.bot import Red
 from redbot.core import commands
@@ -21,6 +21,27 @@ class Frappe(commands.Cog):
     
     @frappe.command(aliases=["bd"])
     @commands.has_permissions(manage_channels=True)
+    async def birthday(self, ctx: commands.Context):
+        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
+        """Get birthdays of today"""
+        if frappe_keys.get("api_key") is None:
+            return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
+        api_key =  frappe_keys.get("api_key")
+        api_secret = frappe_keys.get("api_secret")
+        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
+        api = requests.get('http://shadowzone.nl/api/method/birthday', headers=headers)
+
+        if api.status_code == 200:
+            response = api.json()
+            if response['result']:
+                for birthday in response['result']:
+                    await ctx.send(birthday['content'])
+            pass
+
+        else:
+            return await ctx.send("Status code:" +str(api.status_code))
+    
+    @tasks.loop(seconds=10)
     async def birthday(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Get birthdays of today"""
