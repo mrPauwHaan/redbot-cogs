@@ -12,7 +12,6 @@ class Frappe(commands.Cog):
         self.bot = bot
 
     @commands.guild_only()
-    @commands.command()
     @commands.hybrid_command(name="id", description="Return the user ID")
     async def id(self, ctx, *, user: discord.Member=None):
         """Send back the user ID of the sender"""
