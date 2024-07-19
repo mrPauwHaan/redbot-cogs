@@ -12,6 +12,9 @@ class Frappe(commands.Cog):
         self.bot = bot
         self.dailybirthday.start()
     
+    def cog_unload(self):
+        self.my_task.cancel()
+    
     @tasks.loop(seconds=10)
     async def dailybirthday(self):
         channel = self.bot.get_channel(621338866955321345)
