@@ -35,11 +35,11 @@ class Frappe(commands.Cog):
         qualified = float(json_object['commissions_total']['qualified'])
         total = float(json_object['commissions_total']['transferred'])
 
-        description = "P: "
+        description = "P: " +str(round(pending, 2))+ " \n A: " +str(round(accepted, 2))+ " \n S: " +str(round(ontvangen, 2))+ " \n Q: " +str(round(qualified, 2))+ " \n\n T: " +str(round(total, 2))
         
         embed = discord.Embed()
         embed.set_footer(text="© Shadowzone Gaming")
-        embed.description = description,
+        embed.description = "Test",
         embed.colour = int("ff0502", 16)
         embed.add_field(name="\u200B", value="-# P: In behandeling • A: Geaccepteerd • S: Ontvangen door Sponsorkliks • Q: Onderweg naar Shadowzone • T: Totaal overgemaakt", inline=False)
         await ctx.send(embed=embed)
