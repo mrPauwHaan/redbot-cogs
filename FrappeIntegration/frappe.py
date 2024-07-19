@@ -22,7 +22,25 @@ class Frappe(commands.Cog):
 
         await ctx.send(user.id)
         
+    @app_commands.command(name="id", description="Return the user ID")
+    @app_commands.describe(
+        user="user",
+    )
+    @app_commands.default_permissions()
+    @app_commands.guild_only()
+    async def slash_say(
+        self,
+        interaction: discord.Interaction,
+        user: Optional[str] = discord.Member=None,
+    ):
+        guild = interaction.guild
+        channel = channel or interaction.channel
 
+        author = interaction.author
+        if not user:
+            user = author
+        
+        await interaction.response.send_message(user.id, ephemeral=False)
 
     @commands.guild_only()
     @commands.is_owner()
