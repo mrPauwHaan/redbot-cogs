@@ -37,7 +37,7 @@ class Frappe(commands.Cog):
                 for birthday in response['result']:
                     await ctx.send(birthday['content'])
                     member = self.bot.get_user(birthday['discord_id'])
-                    role = discord.guild.get_role(943779141688381470)
+                    role = ctx.guild.get_role(943779141688381470)
                     member.add_roles(role, reason="Birthday starts today")
             pass
 
