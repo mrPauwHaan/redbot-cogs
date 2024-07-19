@@ -21,7 +21,7 @@ class Frappe(commands.Cog):
     
     @frappe.command(aliases=["bd"])
     @commands.has_permissions(manage_channels=True)
-    async def birthday(self, ctx: commands.Context, guild: discord.Guild):
+    async def birthday(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Get birthdays of today"""
         if frappe_keys.get("api_key") is None:
@@ -37,7 +37,7 @@ class Frappe(commands.Cog):
                 for birthday in response['result']:
                     await ctx.send(birthday['content'])
                     member = self.bot.get_user(birthday['discord_id'])
-                    role = guild.get_role(943779141688381470)
+                    role = discord.guild.get_role(943779141688381470)
                     member.add_roles(role, reason="Birthday starts today")
             pass
 
