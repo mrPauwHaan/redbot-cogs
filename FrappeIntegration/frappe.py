@@ -22,7 +22,7 @@ class Frappe(commands.Cog):
 
         await ctx.send(user.id)
         
-    @app_commands.command(name="id", description="Return the user ID")
+    @app_commands.command(name="id2", description="Return the user ID")
     @app_commands.describe(
         user="user",
     )
