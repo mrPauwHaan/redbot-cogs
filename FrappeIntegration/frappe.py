@@ -12,6 +12,13 @@ class Frappe(commands.Cog):
         self.bot = bot
 
     @commands.guild_only()
+    @commands.command()
+    async def id(self, ctx):
+        """Send back the user ID of the sender"""
+        await ctx.send(self.context.author)
+        
+
+    @commands.guild_only()
     @commands.is_owner()
     @commands.bot_has_permissions(embed_links=True)
     @commands.hybrid_group()
