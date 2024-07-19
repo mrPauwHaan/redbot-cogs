@@ -13,6 +13,8 @@ class Frappe(commands.Cog):
     
     @tasks.loop(seconds=10)
     async def dailybirthday(self):
+        channel = 621338866955321345
+        await channel.send("My task is running!")
         print("My task is running!")
 
     @commands.guild_only()
