@@ -15,33 +15,12 @@ class Frappe(commands.Cog):
     @commands.command()
     async def id(self, ctx, *, user: discord.Member=None):
         """Send back the user ID of the sender"""
-        await ctx.send(self.context.author)
-
         author = ctx.author
 
         if not user:
             user = author
 
         await ctx.send(user.id)
-
-    @commands.command()
-    async def avatar(self, ctx, *, user: discord.Member=None):
-        """Returns user avatar URL.
-
-        User argument can be user mention, nickname, username, user ID.
-        Default to yourself when no argument is supplied.
-        """
-        author = ctx.author
-
-        if not user:
-            user = author
-
-        if user.is_avatar_animated():
-            url = user.avatar_url_as(format="gif")
-        if not user.is_avatar_animated():
-            url = user.avatar_url_as(static_format="png")
-
-        await ctx.send("{}'s Avatar URL : {}".format(user.name, url))
         
 
     @commands.guild_only()
