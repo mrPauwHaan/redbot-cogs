@@ -29,6 +29,6 @@ class Frappe(commands.Cog):
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
-        response = requests.get('http://shadowzone.nl/api/method/birthday', headers=headers)
+        response = requests.post('http://shadowzone.nl/api/method/birthday', headers=headers)
 
         return await ctx.send(response)
