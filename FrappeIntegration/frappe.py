@@ -31,4 +31,4 @@ class Frappe(commands.Cog):
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
         response = requests.get('http://shadowzone.nl/api/method/birthday', headers=headers)
 
-        return await ctx.send(response.result)
+        return await ctx.send(response)
