@@ -34,10 +34,12 @@ class Frappe(commands.Cog):
         ontvangen = float(json_object['commissions_total']['sponsorkliks'])
         qualified = float(json_object['commissions_total']['qualified'])
         total = float(json_object['commissions_total']['transferred'])
+
+        description = {"P: " +str(round(pending, 2))+ "\nA: " +str(round(accepted, 2))+ "\nS: " +str(round(ontvangen, 2))+ "\nQ: "+str(round(qualified, 2))+ "\n\n T: " +str(round(total, 2))}
         
         embed = discord.Embed()
         embed.set_footer(text="© Shadowzone Gaming")
-        embed.description = {"P: " +str(round(pending, 2))+ "\nA: " +str(round(accepted, 2))+ "\nS: " +str(round(ontvangen, 2))+ "\nQ: "+str(round(qualified, 2))+ "\n\n T: " +str(round(total, 2))},
+        embed.description = description,
         embed.colour = int("ff0502", 16)
         embed.add_field(name="\u200B", value="-# P: In behandeling • A: Geaccepteerd • S: Ontvangen door Sponsorkliks • Q: Onderweg naar Shadowzone • T: Totaal overgemaakt", inline=False)
         await ctx.send(embed=embed)
