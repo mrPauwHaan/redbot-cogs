@@ -31,7 +31,7 @@ class Frappe(commands.Cog):
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
         api = requests.get('http://shadowzone.nl/api/method/birthday', headers=headers)
 
-        if api.status_code == "200":
+        if api.status_code == 200:
             response = response.json()
             return await ctx.send(response.json())
         else:
