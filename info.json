@@ -1,0 +1,10 @@
+{
+    "author": ["mrPauwHaan"],
+    "install_msg": "Thank you for installing my Frappe cog",
+    "name": "Frappe",
+    "short": "Custom Frappe integration with Redbot",
+    "description": "Custom Frappe integration with Redbot",
+    "tags": ["Frappe", "utility", "api"],
+    "min_bot_version" : "3.5.0",
+    "end_user_data_statement": "This cog does not persistently store data or metadata about users."
+  }
