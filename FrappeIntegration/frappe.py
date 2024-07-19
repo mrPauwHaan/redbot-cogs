@@ -31,7 +31,7 @@ class Frappe(commands.Cog):
     async def slash_say(
         self,
         interaction: discord.Interaction,
-        user: Optional[str] = discord.Member=None,
+        user: discord.Member=None,
     ):
         guild = interaction.guild
         channel = channel or interaction.channel
