@@ -27,8 +27,8 @@ class Frappe(commands.Cog):
     @commands.hybrid_command(name="sponsorkliks", description="Zie de Sponsorkliks status")
     async def sponsorkliks(self, ctx):
         """Zie de Sponsorkliks statu"""
-        json_object = requests.get("https://www.sponsorkliks.com/api/?club=11592&call=commissions_total", headers={'User-Agent': 'My User Agent 1.0'})
-
+        response = requests.get("https://www.sponsorkliks.com/api/?club=11592&call=commissions_total", headers={'User-Agent': 'My User Agent 1.0'})
+        json_object = json.loads(str(response))
         pending = float(json_object['commissions_total']['pending'])
         accepted = float(json_object['commissions_total']['accepted'])
         ontvangen = float(json_object['commissions_total']['sponsorkliks'])
