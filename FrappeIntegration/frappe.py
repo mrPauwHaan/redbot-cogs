@@ -5,6 +5,7 @@ from redbot.core.bot import Red
 from redbot.core import commands, app_commands
 from redbot.core import Config
 import requests
+import json
 
 
 class Frappe(commands.Cog):
@@ -21,6 +22,25 @@ class Frappe(commands.Cog):
             user = author
 
         await ctx.send(user.id)
+
+    @commands.guild_only()
+    @commands.hybrid_command(name="sponsorkliks", description="Zie de Sponsorkliks status")
+    async def sponsorkliks(self, ctx):
+        """Zie de Sponsorkliks statu"""
+        response = requests.get("https://www.sponsorkliks.com/api/?club=11592&call=commissions_total", headers={'User-Agent': 'My User Agent 1.0'})
+        json_object = json.loads(response)
+        pending = float(json_object['commissions_total']['pending'])
+        accepted = float(json_object['commissions_total']['accepted'])
+        ontvangen = float(json_object['commissions_total']['sponsorkliks'])
+        qualified = float(json_object['commissions_total']['qualified'])
+        total = float(json_object['commissions_total']['transferred'])
+        
+        embed = discord.Embed()
+        embed.set_footer(text="test")
+        embed.description = pending
+        embed.colour = '#ff0502'
+        embed.add_field(name="\u200B", value="-# P: In behandeling • A: Geaccepteerd • S: Ontvangen door Sponsorkliks • Q: Onderweg naar Shadowzone • T: Totaal overgemaakt", inline=False)
+        await ctx.send(embed=embed)
 
     @commands.guild_only()
     @commands.is_owner()
