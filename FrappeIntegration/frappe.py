@@ -34,15 +34,20 @@ class Frappe(commands.Cog):
         if api.status_code == 200:
             response = api.json()
             role = ctx.guild.get_role(943779141688381470)
-            for birthdaymember in role.members:
-                if birthdaymember not in response['result']:
-                    await birthdaymember.remove_roles(role, reason="Birthday is over")
+            
             
             if response['result']:
+                for birthdaymember in role.members:
+                    if birthdaymember not in response['result']:
+                        await birthdaymember.remove_roles(role, reason="Birthday is over")
+                
                 for birthday in response['result']:
                     await ctx.send(birthday['content'])
                     member = ctx.guild.get_member(int(birthday['discord_id']))
                     await member.add_roles(role, reason="Birthday starts today")
+            else:
+                for birthdaymember in role.members:
+                    await birthdaymember.remove_roles(role, reason="Birthday is over")
             pass
 
         else:
