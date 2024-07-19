@@ -35,6 +35,7 @@ class Frappe(commands.Cog):
             response = api.json()
             if response['result']:
                 role = ctx.guild.get_role(943779141688381470)
+                await ctx.send(response['result'])
                 for birthdaymember in role.members:
                     if birthdaymember not in response['result']:
                         await birthdaymember.remove_roles(role, reason="Birthday is over")
