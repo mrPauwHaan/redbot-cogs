@@ -11,6 +11,8 @@ class Frappe(commands.Cog):
     def __init__(self, bot: Red) -> None:
         self.bot = bot
         self.dailybirthday.start()
+        if self.dailybirthday.is_running():
+            self.dailybirthday.cancel()
     
     def cog_unload(self):
         self.dailybirthday.cancel()
