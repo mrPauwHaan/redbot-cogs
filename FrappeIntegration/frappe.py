@@ -10,9 +10,9 @@ import requests
 class Frappe(commands.Cog):
     def __init__(self, bot: Red) -> None:
         self.bot = bot
-        self.dailybirthday.start()
         if self.dailybirthday.is_running():
             self.dailybirthday.cancel()
+        self.dailybirthday.start()
     
     def cog_unload(self):
         self.dailybirthday.cancel()
