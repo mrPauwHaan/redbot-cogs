@@ -2,7 +2,7 @@ import discord
 from discord.ext import tasks
 import asyncio
 from redbot.core.bot import Red
-from redbot.core import commands
+from redbot.core import commands, app_commands
 from redbot.core import Config
 import requests
 
@@ -13,6 +13,7 @@ class Frappe(commands.Cog):
 
     @commands.guild_only()
     @commands.command()
+    @commands.hybrid_command(name="id", description="Return the user ID")
     async def id(self, ctx, *, user: discord.Member=None):
         """Send back the user ID of the sender"""
         author = ctx.author
@@ -22,6 +23,7 @@ class Frappe(commands.Cog):
 
         await ctx.send(user.id)
         
+
 
     @commands.guild_only()
     @commands.is_owner()
