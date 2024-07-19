@@ -31,7 +31,7 @@ class Frappe(commands.Cog):
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
         response = requests.get('http://shadowzone.nl/api/:Member?fields=["discord_id", "geboortedatum", "custom_status"]', headers=headers)
-        date = requests.get('http://shadowzone.nl/api/method/frappe.utils.getdate', headers=headers)
+        date = requests.get('http://shadowzone.nl/api/method/frappe.utils.data.getdate', headers=headers)
 
 
         return await ctx.send(date)
