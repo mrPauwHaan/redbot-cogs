@@ -15,8 +15,25 @@ class Frappe(commands.Cog):
     @tasks.loop(seconds=10)
     async def dailybirthday(self):
         channel = self.bot.get_channel(621338866955321345)
-        await channel.send("My task is running!")
-        print("My task is running!")
+
+        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
+        """Get birthdays of today"""
+        if frappe_keys.get("api_key") is None:
+            return await channel.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
+        api_key =  frappe_keys.get("api_key")
+        api_secret = frappe_keys.get("api_secret")
+        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
+        api = requests.get('http://shadowzone.nl/api/method/birthday', headers=headers)
+
+        if api.status_code == 200:
+            response = api.json()
+            if response['result']:
+                for birthday in response['result']:
+                    await channel.send(birthday['content'])
+            pass
+
+        else:
+            return await channel.send("Status code:" +str(api.status_code))
 
     @commands.guild_only()
     @commands.is_owner()
