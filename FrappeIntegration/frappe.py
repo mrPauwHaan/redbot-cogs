@@ -13,7 +13,7 @@ class Frappe(commands.Cog):
         self.dailybirthday.start()
     
     def cog_unload(self):
-        self.my_task.cancel()
+        self.dailybirthday.cancel()
     
     @tasks.loop(seconds=10)
     async def dailybirthday(self):
