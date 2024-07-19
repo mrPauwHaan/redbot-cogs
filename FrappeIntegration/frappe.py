@@ -33,6 +33,8 @@ class Frappe(commands.Cog):
 
         if api.status_code == 200:
             response = api.json()
-            return await ctx.send(response['result'])
+            for birthday in response['result']
+                await ctx.send(birthday)
+
         else:
             return await ctx.send("Status code:" +str(api.status_code))
