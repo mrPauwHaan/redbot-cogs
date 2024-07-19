@@ -28,7 +28,7 @@ class Frappe(commands.Cog):
     async def sponsorkliks(self, ctx):
         """Zie de Sponsorkliks statu"""
         response = requests.get("https://www.sponsorkliks.com/api/?club=11592&call=commissions_total", headers={'User-Agent': 'My User Agent 1.0'})
-        json_object = json.loads(str(response))
+        json_object = response.json()
         pending = float(json_object['commissions_total']['pending'])
         accepted = float(json_object['commissions_total']['accepted'])
         ontvangen = float(json_object['commissions_total']['sponsorkliks'])
