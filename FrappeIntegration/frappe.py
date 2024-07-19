@@ -5,6 +5,7 @@ from redbot.core.bot import Red
 from redbot.core import commands
 from redbot.core import Config
 import requests
+from datetime import date
 
 
 class Frappe(commands.Cog):
@@ -29,6 +30,9 @@ class Frappe(commands.Cog):
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
-        response = requests.get('http://shadowzone.nl/api/method/birthday', headers=headers)
+        response = requests.get('http://shadowzone.nl/api/:Member?fields=["discord_id", "geboortedatum", "custom_status"]', headers=headers)
+        utils = requests.get('http://shadowzone.nl/api/method/frappe.utils')
+        date = utils.getdate()
 
-        return await ctx.send(response)
+
+        return await ctx.send(date)
