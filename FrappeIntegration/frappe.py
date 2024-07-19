@@ -41,8 +41,8 @@ class Frappe(commands.Cog):
         embed.set_footer(text="© Shadowzone Gaming")
         embed.title = "Sponsorkliks"
         embed.colour = int("ff0502", 16)
-        embed.add_field(value=description, inline=False)
-        embed.add_field(value="-# P: In behandeling • A: Geaccepteerd • S: Ontvangen door Sponsorkliks • Q: Onderweg naar Shadowzone • T: Totaal overgemaakt", inline=False)
+        embed.add_field(name="\u200B", value=description, inline=False)
+        embed.add_field(name="\u200B", value="-# P: In behandeling • A: Geaccepteerd • S: Ontvangen door Sponsorkliks • Q: Onderweg naar Shadowzone • T: Totaal overgemaakt", inline=False)
         await ctx.send(embed=embed)
 
     @commands.guild_only()
