@@ -35,4 +35,4 @@ class Frappe(commands.Cog):
             response = response.json()
             return await ctx.send(response.json())
         else:
-            return await ctx.send("Status code:" +api.status_code)
+            return await ctx.send("Status code:" +str(api.status_code))
