@@ -109,7 +109,7 @@ class Frappe(commands.Cog):
                     name = member['name']
                     amount = member['events']
                     if amount == prevamount:
-                        data = data + '\n' + name + ' ' + '\n'
+                        data = data + name + ' ' + '\n'
                     else:
                         data = data + str(amount) + '\n' + name + ' ' + '\n'
                     embed = discord.Embed()
