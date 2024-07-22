@@ -136,3 +136,4 @@ class Frappe(commands.Cog):
 
         else:
             return await ctx.send("Status code:" +str(api.status_code))
+        return await ctx.send("Status code:" +str(api.exc))
