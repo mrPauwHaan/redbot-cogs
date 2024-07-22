@@ -103,14 +103,19 @@ class Frappe(commands.Cog):
             response = api.json()
             role = ctx.guild.get_role(943779141688381470)
             data = ""
+            prevamount = max(response['result'], key=lambda x:x['events'])
             if response['result']:
                 for member in response['result']:
                     name = member['name']
                     amount = member['events']
-                    data = data + str(amount) + '\n' + name + ' ' + '\n'
+                    if amount == prevamount:
+                        data = data + '\n' + name + ' ' + '\n'
+                    else:
+                        data = data + str(amount) + '\n' + name + ' ' + '\n'
                     embed = discord.Embed()
                     embed.title = "Aantal bezochte events:"
                     embed.description = data
+                    prevamount = amount
 
                 await ctx.send(embed=embed)
             pass
