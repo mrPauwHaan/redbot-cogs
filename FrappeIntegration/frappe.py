@@ -107,7 +107,7 @@ class Frappe(commands.Cog):
                 for member in response['result']:
                     name = member['name']
                     amount = member['events']
-                    data = data + name + str(amount)
+                    data = data + name + ' ' + str(amount) + '/n'
                     embed = discord.Embed()
                     embed.description = data
 
