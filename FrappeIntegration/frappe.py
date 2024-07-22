@@ -112,7 +112,7 @@ class Frappe(commands.Cog):
                     if amount == prevamount:
                         data = data + name + ' ' + '\n'
                     else:
-                        if amount == 1
+                        if amount == 1:
                             data = data + '\n' + str(amount) + ' event\n' + name + ' ' + '\n'
                         else:
                             data = data + '\n' + str(amount) + ' events\n' + name + ' ' + '\n'
