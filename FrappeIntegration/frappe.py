@@ -109,7 +109,7 @@ class Frappe(commands.Cog):
                     amount = member['events']
                     data = data + name + ' ' + str(amount) + '\n'
                     embed = discord.Embed()
-                    embed.title = "Events:"
+                    embed.title = "Aantal bezochte events:"
                     embed.description = data
 
                 await ctx.send(embed=embed)
