@@ -87,7 +87,7 @@ class Frappe(commands.Cog):
         else:
             return await ctx.send("Status code:" +str(api.status_code))
         
-    @frappe.command(aliases=["bd"])
+    @frappe.command()
     @commands.has_permissions(manage_channels=True)
     async def events(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
