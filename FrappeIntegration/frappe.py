@@ -86,10 +86,18 @@ class Frappe(commands.Cog):
 
         else:
             return await ctx.send("Status code:" +str(api.status_code))
-        
-    @frappe.command()
+    
+    @commands.guild_only()
+    @commands.is_owner()
+    @commands.bot_has_permissions(embed_links=True)
+    @commands.hybrid_group()
+    async def events(self, ctx: commands.Context) -> None:
+        """Commands voor Shadowzone events"""
+        pass
+
+    @events.command()
     @commands.has_permissions(manage_channels=True)
-    async def events(self, ctx: commands.Context):
+    async def list(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Get events"""
         if frappe_keys.get("api_key") is None:
