@@ -102,15 +102,17 @@ class Frappe(commands.Cog):
         if api.status_code == 200:
             response = api.json()
             role = ctx.guild.get_role(943779141688381470)
-            
             data = ""
             if response['result']:
                 for member in response['result']:
                     name = member['name']
                     amount = member['events']
                     data = data + name + str(amount)
+                    
+                    embed = discord.Embed()
+                    embed.description = data
 
-                await ctx.send(data)
+                await ctx.send(embed=embed)
             pass
 
         else:
