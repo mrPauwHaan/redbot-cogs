@@ -108,11 +108,11 @@ class Frappe(commands.Cog):
                     name = member['name']
                     amount = member['events']
                     data = data + name + str(amount)
-                    
                     embed = discord.Embed()
                     embed.description = data
+                    await ctx.send(embed=embed)
 
-                await ctx.send(embed=embed)
+                
             pass
 
         else:
