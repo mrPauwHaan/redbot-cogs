@@ -105,7 +105,8 @@ class Frappe(commands.Cog):
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
-        api = requests.get('http://shadowzone.nl/api/method/event_ranking', headers=headers)
+        payload = {'method2': 'list'}
+        api = requests.post('http://shadowzone.nl/api/method/event_ranking', headers=headers, data=json.dumps(payload))
 
         if api.status_code == 200:
             response = api.json()
