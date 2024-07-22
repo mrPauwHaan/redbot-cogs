@@ -103,12 +103,14 @@ class Frappe(commands.Cog):
             response = api.json()
             role = ctx.guild.get_role(943779141688381470)
             
-            
+            data = ""
             if response['result']:
                 for member in response['result']:
                     name = member['name']
                     amount = member['events']
-                await ctx.send(name + str(amount))
+                    data = data + name + str(amount)
+
+                await ctx.send(data)
             pass
 
         else:
