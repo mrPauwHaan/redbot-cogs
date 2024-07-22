@@ -111,7 +111,7 @@ class Frappe(commands.Cog):
                     if amount == prevamount:
                         data = data + name + ' ' + '\n'
                     else:
-                        data = data + str(amount) + '\n' + name + ' ' + '\n'
+                        data = data + '\n' + str(amount) + ' events\n' + name + ' ' + '\n'
                     embed = discord.Embed()
                     embed.title = "Aantal bezochte events:"
                     embed.description = data
