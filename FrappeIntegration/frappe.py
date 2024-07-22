@@ -104,6 +104,7 @@ class Frappe(commands.Cog):
             role = ctx.guild.get_role(943779141688381470)
             data = ""
             prevamount = max(response['result'], key=lambda x:x['events'])
+            embed = discord.Embed()
             if response['result']:
                 for member in response['result']:
                     name = member['name']
@@ -112,11 +113,12 @@ class Frappe(commands.Cog):
                         data = data + name + ' ' + '\n'
                     else:
                         data = data + '\n' + str(amount) + ' events\n' + name + ' ' + '\n'
-                    embed = discord.Embed()
-                    embed.title = "Aantal bezochte events:"
+                    
                     embed.description = data
                     prevamount = amount
-
+                embed.title = "Aantal bezochte events:"
+                embed.colour = int("ff0502", 16)
+                embed.set_footer(text="© Shadowzone Gaming")
                 await ctx.send(embed=embed)
             pass
 
