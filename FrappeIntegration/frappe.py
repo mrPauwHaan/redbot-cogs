@@ -86,3 +86,27 @@ class Frappe(commands.Cog):
 
         else:
             return await ctx.send("Status code:" +str(api.status_code))
+        
+    @frappe.command(aliases=["bd"])
+    @commands.has_permissions(manage_channels=True)
+    async def events(self, ctx: commands.Context):
+        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
+        """Get events"""
+        if frappe_keys.get("api_key") is None:
+            return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
+        api_key =  frappe_keys.get("api_key")
+        api_secret = frappe_keys.get("api_secret")
+        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
+        api = requests.get('http://shadowzone.nl/api/method/event_ranking', headers=headers)
+
+        if api.status_code == 200:
+            response = api.json()
+            role = ctx.guild.get_role(943779141688381470)
+            
+            
+            if response['result']:
+                await ctx.send(response['result'])
+            pass
+
+        else:
+            return await ctx.send("Status code:" +str(api.status_code))
