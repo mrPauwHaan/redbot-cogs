@@ -105,7 +105,10 @@ class Frappe(commands.Cog):
             
             
             if response['result']:
-                await ctx.send(response['result'])
+                for member in response['result']
+                    name = member.name
+                    amount = member.events
+                await ctx.send(name + amount)
             pass
 
         else:
