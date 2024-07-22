@@ -110,9 +110,8 @@ class Frappe(commands.Cog):
                     data = data + name + str(amount)
                     embed = discord.Embed()
                     embed.description = data
-                    await ctx.send(embed=embed)
 
-                
+                await ctx.send(response['result'])
             pass
 
         else:
