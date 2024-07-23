@@ -141,7 +141,7 @@ class Frappe(commands.Cog):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Update the events roles"""
         event1 = discord.utils.get(ctx.guild.roles, name="1 event")
-        await ctx.send(event1)
+        await ctx.send(event1.id)
 
         if frappe_keys.get("api_key") is None:
             return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
