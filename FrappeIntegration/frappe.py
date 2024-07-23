@@ -158,42 +158,43 @@ class Frappe(commands.Cog):
 
                     member = ctx.guild.get_member(int(discord_id))
                     memberroles = member.roles
-                    try:
-                        for role in memberroles:
-                            if 'events' in role.name:
-                                currentrole = role.name
-                                currentrolemessage = "heeft <@&" +str(role.id)+ ">"
-                            elif '1 event' in role.name:
-                                currentrole = role.name
-                                currentrolemessage = "heeft <@&" +str(role.id)+ ">"
+                    if member:
+                        try:
+                            for role in memberroles:
+                                if 'events' in role.name:
+                                    currentrole = role.name
+                                    currentrolemessage = "heeft <@&" +str(role.id)+ ">"
+                                elif '1 event' in role.name:
+                                    currentrole = role.name
+                                    currentrolemessage = "heeft <@&" +str(role.id)+ ">"
 
-                        if not any('events' in role.name for role in memberroles):
-                            if not any('1 event' in role.name for role in memberroles):
-                                currentrolemessage = "heeft geen event rollen"
+                            if not any('events' in role.name for role in memberroles):
+                                if not any('1 event' in role.name for role in memberroles):
+                                    currentrolemessage = "heeft geen event rollen"
 
-                        if amount == 1:
-                            role = discord.utils.get(ctx.guild.roles, name="1 event")
-                        else:
-                            role = discord.utils.get(ctx.guild.roles, name= str(amount) + " events")
-                        
-                        if role:
-                            if currentrole == role.name:
-                                newrole = "Rol ongewijzigd"
+                            if amount == 1:
+                                role = discord.utils.get(ctx.guild.roles, name="1 event")
                             else:
-                                newrole = "krijgt <@&" +str(role.id)+ ">"
-                        else:
-                            newrole = "Rol `" +str(amount)+ " events` bestaat niet"
-                        
-                        embed.description = "Gebruiker: <@" + discord_id + "> \n\n" +currentrolemessage + "\n " +newrole
-                        embed.title = "Eventrol wijziging"
-                        embed.colour = int("ff0502", 16)
-                        embed.set_footer(text="© Shadowzone Gaming")
-                        await ctx.send(embed=embed)
+                                role = discord.utils.get(ctx.guild.roles, name= str(amount) + " events")
+                            
+                            if role:
+                                if currentrole == role.name:
+                                    newrole = "Rol ongewijzigd"
+                                else:
+                                    newrole = "krijgt <@&" +str(role.id)+ ">"
+                            else:
+                                newrole = "Rol `" +str(amount)+ " events` bestaat niet"
+                            
+                            embed.description = "Gebruiker: <@" + discord_id + "> \n\n" +currentrolemessage + "\n " +newrole
+                            embed.title = "Eventrol wijziging"
+                            embed.colour = int("ff0502", 16)
+                            embed.set_footer(text="© Shadowzone Gaming")
+                            await ctx.send(embed=embed)
 
-                        
-                    except Exception as error:
-                        return await ctx.send("Error: `" +str(error)+ "`")
-            pass
-
+                            
+                        except Exception as error:
+                            return await ctx.send("Error: `" +str(error)+ "`")
+                    else:
+                        await ctx.send("<@" +discord_id+ "> is niet gevonden in deze server")
         else:
             return await ctx.send("Status code:" +str(api.status_code))
