@@ -164,9 +164,7 @@ class Frappe(commands.Cog):
                                 if 'events' in role.name:
                                     currentrole = role.name
                                     currentrolemessage = "heeft <@&" +str(role.id)+ ">"
-                                elif '1 event' in role.name:
-                                    currentrole = role.name
-                                    currentrolemessage = "heeft <@&" +str(role.id)+ ">"
+                  
 
                             if not any('events' in role.name for role in memberroles):
                                 if not any('1 event' in role.name for role in memberroles):
