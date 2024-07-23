@@ -161,6 +161,9 @@ class Frappe(commands.Cog):
                     if member:
                         memberroles = member.roles
                         amount_changes = 0
+                        embed.title = "Eventrol wijziging"
+                        embed.set_footer(text="© Shadowzone Gaming")
+                        embed.colour = int("ff0502", 16)
                         try:
                             for role in memberroles:
                                 if 'events' in role.name:
@@ -180,16 +183,15 @@ class Frappe(commands.Cog):
                             if role:
                                 if currentrole:
                                     if not currentrole.name == role.name:
-                                        message = "<:wrong:847044649679716383> <@&" +str(currentrole.id)+ "> \n <:check:847044460666814484> <@&" +str(role.id)+ ">"
+                                        embed.description = "Gebruiker: <@" + discord_id + "> \n\n <:wrong:847044649679716383> <@&" +str(currentrole.id)+ "> \n <:check:847044460666814484> <@&" +str(role.id)+ ">"
+                                        await ctx.send(embed=embed)
+                                        amount_changes = amount_changes + 1
                                 else:
-                                    message = "<:check:847044460666814484> <@&" +str(role.id)+ ">"
+                                    embed.description = "Gebruiker: <@" + discord_id + "> \n\n <:check:847044460666814484> <@&" +str(role.id)+ ">"
+                                    await ctx.send(embed=embed)
+                                    amount_changes = amount_changes + 1
                             else:
-                                message = "Rol `" +str(amount)+ " events` bestaat niet"
-                            if message:
-                                embed.description = "Gebruiker: <@" + discord_id + "> \n\n" +message
-                                embed.title = "Eventrol wijziging"
-                                embed.colour = int("ff0502", 16)
-                                embed.set_footer(text="© Shadowzone Gaming")
+                                embed.description = "Gebruiker: <@" + discord_id + "> \n\n Rol `" +str(amount)+ " events` bestaat niet"
                                 await ctx.send(embed=embed)
                                 amount_changes = amount_changes + 1
                             
