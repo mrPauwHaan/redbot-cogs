@@ -164,16 +164,16 @@ class Frappe(commands.Cog):
                             currentrole = "<@" +discord_id+ "> heeft " +role.name
 
                     if not any('events' in role.name for role in memberroles):
-                        currentrole = "<@ " +discord_id+ "> heeft geen event rollen"
+                        currentrole = "<@" +discord_id+ "> heeft geen event rollen"
 
                     if amount == 1:
                         role = discord.utils.get(ctx.guild.roles, name="1 event")
-                        newrole = "<@ " +discord_id+ "> krijgt " +role.name
+                        newrole = "<@" +discord_id+ "> krijgt " +role.name
                     else:
                         try:
                             role = discord.utils.get(ctx.guild.roles, name= str(amount) + " events")
                             if role:
-                                newrole = "<@ " +discord_id+ "> krijgt " +role.name
+                                newrole = "<@" +discord_id+ "> krijgt " +role.name
                             else:
                                 newrole = "Rol `" +str(amount)+ " events` bestaat niet"
 
