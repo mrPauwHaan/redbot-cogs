@@ -180,18 +180,16 @@ class Frappe(commands.Cog):
                                 if currentrole:
                                     if not currentrole.name == role.name:
                                         message = "<:wrong:847044649679716383> <@&" +str(currentrole.id)+ "> \n <:check:847044460666814484> <@&" +str(role.id)+ ">"
-                                    else:
-                                        pass
                                 else:
                                     message = "<:check:847044460666814484> <@&" +str(role.id)+ ">"
                             else:
                                 message = "Rol `" +str(amount)+ " events` bestaat niet"
-                            
-                            embed.description = "Gebruiker: <@" + discord_id + "> \n\n" +message
-                            embed.title = "Eventrol wijziging"
-                            embed.colour = int("ff0502", 16)
-                            embed.set_footer(text="© Shadowzone Gaming")
-                            await ctx.send(embed=embed)
+                            if message:
+                                embed.description = "Gebruiker: <@" + discord_id + "> \n\n" +message
+                                embed.title = "Eventrol wijziging"
+                                embed.colour = int("ff0502", 16)
+                                embed.set_footer(text="© Shadowzone Gaming")
+                                await ctx.send(embed=embed)
 
                             
                         except Exception as error:
