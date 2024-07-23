@@ -157,8 +157,8 @@ class Frappe(commands.Cog):
                     amount = member['events']
 
                     member = ctx.guild.get_member(int(discord_id))
-                    memberroles = member.roles
                     if member:
+                        memberroles = member.roles
                         try:
                             for role in memberroles:
                                 if 'events' in role.name:
