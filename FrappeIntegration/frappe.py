@@ -176,7 +176,7 @@ class Frappe(commands.Cog):
                             if currentrole == role.name:
                                 newrole = "Rol ongewijzigd"
                             else:
-                                newrole = "krijgt`" +role.name+ "`"
+                                newrole = "krijgt `" +role.name+ "`"
                         else:
                             newrole = "Rol `" +str(amount)+ " events` bestaat niet"
                         
