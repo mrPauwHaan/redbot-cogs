@@ -162,7 +162,7 @@ class Frappe(commands.Cog):
                         for role in memberroles:
                             if 'events' in role.name:
                                 currentrole = role.name
-                                currentrolemessage = "heeft <@&" +role.id+ ">"
+                                currentrolemessage = "heeft <@&" +str(role.id)+ ">"
 
                         if not any('events' in role.name for role in memberroles):
                             currentrolemessage = "heeft geen event rollen"
@@ -176,7 +176,7 @@ class Frappe(commands.Cog):
                             if currentrole == role.name:
                                 newrole = "Rol ongewijzigd"
                             else:
-                                newrole = "krijgt <@&" +role.id+ ">"
+                                newrole = "krijgt <@&" +str(role.id)+ ">"
                         else:
                             newrole = "Rol `" +str(amount)+ " events` bestaat niet"
                         
