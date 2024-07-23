@@ -162,12 +162,12 @@ class Frappe(commands.Cog):
                         memberroles = member.roles
                         try:
                             for role in memberroles:
+
                                 if 'events' in role.name:
                                     currentrole = role
                                 elif '1 event' in role.name:
                                     currentrole = role
-                            if not any('events' in role.name for role in memberroles):
-                                if not any('1 event' in role.name for role in memberroles):
+                                else:
                                     currentrole = None
 
                             if amount == 1:
