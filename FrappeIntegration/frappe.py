@@ -158,7 +158,7 @@ class Frappe(commands.Cog):
                     member = ctx.guild.get_member(int(discord_id))
 
                     memberroles = member.roles
-                    if any(role['name'] == '*events' for role in memberroles):
+                    if any(role.name == '*events' for role in memberroles):
                         await ctx.send(member + memberroles)
                     else:
                         await ctx.send("No role" +str(memberroles))
