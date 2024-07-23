@@ -163,16 +163,12 @@ class Frappe(commands.Cog):
                         try:
                             for role in memberroles:
                                 if 'events' in role.name:
-                                    currentrole = role.name
-                                    currentrolemessage = "heeft <@&" +str(role.id)+ ">"
+                                    currentrole = role
                                 elif '1 event' in role.name:
-                                    currentrole = role.name
-                                    currentrolemessage = "heeft <@&" +str(role.id)+ ">"
-
+                                    currentrole = role
                             if not any('events' in role.name for role in memberroles):
                                 if not any('1 event' in role.name for role in memberroles):
                                     currentrole = None
-                                    currentrolemessage = "heeft geen event rollen"
 
                             if amount == 1:
                                 role = discord.utils.get(ctx.guild.roles, name="1 event")
@@ -180,14 +176,17 @@ class Frappe(commands.Cog):
                                 role = discord.utils.get(ctx.guild.roles, name= str(amount) + " events")
                             
                             if role:
-                                if currentrole == role.name:
-                                    newrole = "Rol ongewijzigd"
+                                if currentrole:
+                                    if currentrole == role.name:
+                                        message = "<@&" +str(currentrole.id)+ ">"
+                                    else:
+                                        message = "<:wrong:847044649679716383> <@&" +str(currentrole.id)+ "> \n <:check:847044460666814484> <@&" +str(role.id)+ ">"
                                 else:
-                                    newrole = "krijgt <@&" +str(role.id)+ ">"
+                                    message = "heeft geen event rollen \n <:check:847044460666814484> <@&" +str(role.id)+ ">"
                             else:
-                                newrole = "Rol `" +str(amount)+ " events` bestaat niet"
+                                message = "Rol `" +str(amount)+ " events` bestaat niet"
                             
-                            embed.description = "Gebruiker: <@" + discord_id + "> \n\n" +currentrolemessage + "\n " +newrole
+                            embed.description = "Gebruiker: <@" + discord_id + "> \n\n" +message
                             embed.title = "Eventrol wijziging"
                             embed.colour = int("ff0502", 16)
                             embed.set_footer(text="© Shadowzone Gaming")
