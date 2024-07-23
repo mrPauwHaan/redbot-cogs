@@ -193,14 +193,12 @@ class Frappe(commands.Cog):
                             else:
                                 embed.description = "Gebruiker: <@" + discord_id + "> \n\n Rol `" +str(amount)+ " events` bestaat niet"
                                 await ctx.send(embed=embed)
-                                amount_changes = amount_changes + 1
-                            
-                            if amount_changes == 0:
-                                await ctx.send("<:check:847044460666814484> eventrollen zijn up-to-date voor leden en SZG+")
-                            
+                                amount_changes = amount_changes + 1 
                         except Exception as error:
                             return await ctx.send("Error: `" +str(error)+ "`")
                     else:
                         await ctx.send("<@" +discord_id+ "> is niet gevonden in deze server")
+                if amount_changes == 0:
+                    await ctx.send("<:check:847044460666814484> eventrollen zijn up-to-date voor leden en SZG+")
         else:
             return await ctx.send("Status code:" +str(api.status_code))
