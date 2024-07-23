@@ -140,9 +140,6 @@ class Frappe(commands.Cog):
     async def roleupdate(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Update the events roles"""
-        event1 = discord.utils.get(ctx.guild.roles, name="1 event")
-        await ctx.send(event1.id)
-
         if frappe_keys.get("api_key") is None:
             return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
         api_key =  frappe_keys.get("api_key")
@@ -160,9 +157,9 @@ class Frappe(commands.Cog):
 
                     member = ctx.guild.get_member(int(discord_id))
 
-                    currentrole = discord.utils.get(ctx.guild.roles, name= "* events")
+                    currentrole = discord.utils.get(ctx.guild.roles, name= "*events")
                     if currentrole:
-                        await ctx.send(currentrole)
+                        await ctx.send(member + currentrole)
                     else:
                         await ctx.send("No role")
 
