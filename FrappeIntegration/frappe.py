@@ -146,6 +146,7 @@ class Frappe(commands.Cog):
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
         api = requests.get('http://shadowzone.nl/api/method/event_ranking', headers=headers)
+        embed = discord.Embed()
 
         if api.status_code == 200:
             response = api.json()
@@ -160,22 +161,27 @@ class Frappe(commands.Cog):
                     memberroles = member.roles
                     for role in memberroles:
                         if 'events' in role.name:
-                            await ctx.send("<@ " +discord_id+ "> heeft " +role.name)
+                            currentrole = "<@" +discord_id+ "> heeft " +role.name
 
                     if not any('events' in role.name for role in memberroles):
-                        await ctx.send("<@ " +discord_id+ "> heeft geen event rollen")
+                        currentrole = "<@ " +discord_id+ "> heeft geen event rollen"
 
                     if amount == 1:
                         role = discord.utils.get(ctx.guild.roles, name="1 event")
-                        ctx.send("<@ " +discord_id+ "> krijgt " +role.name)
+                        newrole = "<@ " +discord_id+ "> krijgt " +role.name
                     else:
                         try:
                             role = discord.utils.get(ctx.guild.roles, name= str(amount) + " events")
                             if role:
-                                await ctx.send(str(amount) + " events")
-                                await ctx.send("<@ " +discord_id+ "> krijgt " +role.name)
+                                newrole = "<@ " +discord_id+ "> krijgt " +role.name
                             else:
-                                await ctx.send("Rol `" +str(amount)+ " events` bestaat niet")
+                                newrole = "Rol `" +str(amount)+ " events` bestaat niet"
+
+                            embed.description = currentrole + "\n " +newrole
+                            embed.title = "Eventrol wijziging"
+                            embed.colour = int("ff0502", 16)
+                            embed.set_footer(text="© Shadowzone Gaming")
+                            await ctx.send(embed=embed)
                         except Exception as error:
                             return await ctx.send("Error: `" +str(error)+ "`")
             pass
