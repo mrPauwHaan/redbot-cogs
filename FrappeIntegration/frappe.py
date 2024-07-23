@@ -117,12 +117,12 @@ class Frappe(commands.Cog):
                     name = member['name']
                     amount = member['events']
                     if amount == prevamount:
-                        data = data + name + ' ' + '\n'
+                        data = data + '<@' + name + '> ' + '\n'
                     else:
                         if amount == 1:
-                            data = data + '\n' + str(amount) + ' event\n' + name + ' ' + '\n'
+                            data = data + '\n' + str(amount) + ' event\n <@' + name + '> ' + '\n'
                         else:
-                            data = data + '\n' + str(amount) + ' events\n' + name + ' ' + '\n'
+                            data = data + '\n' + str(amount) + ' events\n <@' + name + '> ' + '\n'
                     
                     embed.description = data
                     prevamount = amount
@@ -151,6 +151,27 @@ class Frappe(commands.Cog):
         api = requests.get('http://shadowzone.nl/api/method/event_ranking', headers=headers)
 
         if api.status_code == 200:
+            response = api.json()
+            data = ""
+            embed = discord.Embed()
+            if response['result']:
+                for member in response['result']:
+                    name = member['name']
+                    amount = member['events']
+                    if amount == prevamount:
+                        data = data + name + ' ' + '\n'
+                    else:
+                        if amount == 1:
+                            data = data + '\n' + str(amount) + ' event\n' + name + ' ' + '\n'
+                        else:
+                            data = data + '\n' + str(amount) + ' events\n' + name + ' ' + '\n'
+                    
+                    embed.description = data
+                    prevamount = amount
+                embed.title = "Aantal bezochte events:"
+                embed.colour = int("ff0502", 16)
+                embed.set_footer(text="© Shadowzone Gaming")
+                await ctx.send(embed=embed)
             pass
 
         else:
