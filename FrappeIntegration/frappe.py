@@ -177,7 +177,7 @@ class Frappe(commands.Cog):
                             
                             if role:
                                 if currentrole:
-                                    if currentrole == role.name:
+                                    if currentrole.name == role.name:
                                         message = "<@&" +str(currentrole.id)+ ">"
                                     else:
                                         message = "<:wrong:847044649679716383> <@&" +str(currentrole.id)+ "> \n <:check:847044460666814484> <@&" +str(role.id)+ ">"
