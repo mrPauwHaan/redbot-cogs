@@ -183,7 +183,7 @@ class Frappe(commands.Cog):
                                     else:
                                         message = "<:wrong:847044649679716383> <@&" +str(currentrole.id)+ "> \n <:check:847044460666814484> <@&" +str(role.id)+ ">"
                                 else:
-                                    message = "heeft geen event rollen \n <:check:847044460666814484> <@&" +str(role.id)+ ">"
+                                    message = "<:check:847044460666814484> <@&" +str(role.id)+ ">"
                             else:
                                 message = "Rol `" +str(amount)+ " events` bestaat niet"
                             
