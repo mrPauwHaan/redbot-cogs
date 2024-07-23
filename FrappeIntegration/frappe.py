@@ -109,7 +109,6 @@ class Frappe(commands.Cog):
 
         if api.status_code == 200:
             response = api.json()
-            role = ctx.guild.get_role(943779141688381470)
             data = ""
             prevamount = max(response['result'], key=lambda x:x['events'])
             embed = discord.Embed()
@@ -131,6 +130,27 @@ class Frappe(commands.Cog):
                 embed.colour = int("ff0502", 16)
                 embed.set_footer(text="© Shadowzone Gaming")
                 await ctx.send(embed=embed)
+            pass
+
+        else:
+            return await ctx.send("Status code:" +str(api.status_code))
+    
+    @events.command()
+    @commands.has_permissions(manage_channels=True)
+    async def roleupdate(self, ctx: commands.Context):
+        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
+        """Update the events roles"""
+        event1 = ctx.guild.get_role(name="lid")
+        await ctx.send(event1)
+
+        if frappe_keys.get("api_key") is None:
+            return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
+        api_key =  frappe_keys.get("api_key")
+        api_secret = frappe_keys.get("api_secret")
+        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
+        api = requests.get('http://shadowzone.nl/api/method/event_ranking', headers=headers)
+
+        if api.status_code == 200:
             pass
 
         else:
