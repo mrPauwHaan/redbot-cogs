@@ -160,6 +160,12 @@ class Frappe(commands.Cog):
 
                     member = ctx.guild.get_member(int(discord_id))
 
+                    currentrole = discord.utils.get(ctx.guild.roles, name= "* events")
+                    if currentrole:
+                        await ctx.send(currentrole)
+                    else:
+                        await ctx.send("No role")
+
                     if amount == 1:
                         role = discord.utils.get(ctx.guild.roles, name="1 event")
                     else:
