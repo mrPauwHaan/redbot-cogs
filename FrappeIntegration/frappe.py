@@ -173,7 +173,7 @@ class Frappe(commands.Cog):
                             role = discord.utils.get(ctx.guild.roles, name= str(amount) + " events")
                             ctx.send("<@ " +discord_id+ "> krijgt " +role.name)
                         except Exception as error:
-                            return await ctx.send("Error: " +error)
+                            return await ctx.send("Error: `" +str(error)+ "`")
             pass
 
         else:
