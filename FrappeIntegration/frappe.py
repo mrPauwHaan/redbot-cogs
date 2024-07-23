@@ -180,8 +180,8 @@ class Frappe(commands.Cog):
                         else:
                             newrole = "Rol `" +str(amount)+ " events` bestaat niet"
                         
-                        embed.description = currentrolemessage + "\n " +newrole
-                        embed.title = "Eventrol wijziging voor <@" + discord_id + ">"
+                        embed.description = "Gebruiker: <@" + discord_id + "> \n" +currentrolemessage + "\n " +newrole
+                        embed.title = "Eventrol wijziging"
                         embed.colour = int("ff0502", 16)
                         embed.set_footer(text="© Shadowzone Gaming")
                         await ctx.send(embed=embed)
