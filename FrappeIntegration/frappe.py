@@ -162,7 +162,7 @@ class Frappe(commands.Cog):
                         for role in memberroles:
                             if 'events' in role.name:
                                 currentrole = role.name
-                                currentrolemessage = "heeft de rol `" +role.name+ "`"
+                                currentrolemessage = "heeft `" +role.name+ "`"
 
                         if not any('events' in role.name for role in memberroles):
                             currentrolemessage = "heeft geen event rollen"
@@ -176,12 +176,12 @@ class Frappe(commands.Cog):
                             if currentrole == role.name:
                                 newrole = "Rol ongewijzigd"
                             else:
-                                newrole = "krijgt " +role.name
+                                newrole = "krijgt`" +role.name+ "`"
                         else:
                             newrole = "Rol `" +str(amount)+ " events` bestaat niet"
                         
                         embed.description = currentrolemessage + "\n " +newrole
-                        embed.title = "Eventrol wijziging voor <@" + discord_id
+                        embed.title = "Eventrol wijziging voor <@" + discord_id + ">"
                         embed.colour = int("ff0502", 16)
                         embed.set_footer(text="© Shadowzone Gaming")
                         await ctx.send(embed=embed)
