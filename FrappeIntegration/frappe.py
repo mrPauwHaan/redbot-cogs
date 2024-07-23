@@ -114,18 +114,19 @@ class Frappe(commands.Cog):
             embed = discord.Embed()
             if response['result']:
                 for member in response['result']:
-                    name = member['name']
+                    name = member['discord_id']
                     amount = member['events']
-                    if amount == prevamount:
-                        data = data + '<@' + name + '> ' + '\n'
-                    else:
-                        if amount == 1:
-                            data = data + '\n' + str(amount) + ' event\n <@' + name + '> ' + '\n'
+                    if member['status'] == 'Actief':
+                        if amount == prevamount:
+                            data = data + '<@' + name + '> ' + '\n'
                         else:
-                            data = data + '\n' + str(amount) + ' events\n <@' + name + '> ' + '\n'
-                    
-                    embed.description = data
-                    prevamount = amount
+                            if amount == 1:
+                                data = data + '\n' + str(amount) + ' event\n <@' + name + '> ' + '\n'
+                            else:
+                                data = data + '\n' + str(amount) + ' events\n <@' + name + '> ' + '\n'
+                        
+                        embed.description = data
+                        prevamount = amount
                 embed.title = "Aantal bezochte events:"
                 embed.colour = int("ff0502", 16)
                 embed.set_footer(text="© Shadowzone Gaming")
@@ -153,7 +154,7 @@ class Frappe(commands.Cog):
             embed = discord.Embed()
             if response['result']:
                 for member in response['result']:
-                    discord_id = member['name']
+                    discord_id = member['discord_id']
                     amount = member['events']
 
                     member = ctx.guild.get_member(int(discord_id))
