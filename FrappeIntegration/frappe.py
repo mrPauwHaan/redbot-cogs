@@ -157,33 +157,38 @@ class Frappe(commands.Cog):
                     amount = member['events']
 
                     member = ctx.guild.get_member(int(discord_id))
-
                     memberroles = member.roles
-                    for role in memberroles:
-                        if 'events' in role.name:
-                            currentrole = "<@" +discord_id+ "> heeft " +role.name
+                    try:
+                        for role in memberroles:
+                            if 'events' in role.name:
+                                currentrole = role.name
+                                currentrolemessage = "heeft de rol `" +role.name+ "`"
 
-                    if not any('events' in role.name for role in memberroles):
-                        currentrole = "<@" +discord_id+ "> heeft geen event rollen"
+                        if not any('events' in role.name for role in memberroles):
+                            currentrolemessage = "heeft geen event rollen"
 
-                    if amount == 1:
-                        role = discord.utils.get(ctx.guild.roles, name="1 event")
-                        newrole = "<@" +discord_id+ "> krijgt " +role.name
-                    else:
-                        try:
+                        if amount == 1:
+                            role = discord.utils.get(ctx.guild.roles, name="1 event")
+                        else:
                             role = discord.utils.get(ctx.guild.roles, name= str(amount) + " events")
-                            if role:
-                                newrole = "<@" +discord_id+ "> krijgt " +role.name
+                        
+                        if role:
+                            if currentrole == role.name:
+                                newrole = "Rol ongewijzigd"
                             else:
-                                newrole = "Rol `" +str(amount)+ " events` bestaat niet"
+                                newrole = "krijgt " +role.name
+                        else:
+                            newrole = "Rol `" +str(amount)+ " events` bestaat niet"
+                        
+                        embed.description = currentrolemessage + "\n " +newrole
+                        embed.title = "Eventrol wijziging voor <@" + discord_id
+                        embed.colour = int("ff0502", 16)
+                        embed.set_footer(text="© Shadowzone Gaming")
+                        await ctx.send(embed=embed)
 
-                            embed.description = currentrole + "\n " +newrole
-                            embed.title = "Eventrol wijziging"
-                            embed.colour = int("ff0502", 16)
-                            embed.set_footer(text="© Shadowzone Gaming")
-                            await ctx.send(embed=embed)
-                        except Exception as error:
-                            return await ctx.send("Error: `" +str(error)+ "`")
+                        
+                    except Exception as error:
+                        return await ctx.send("Error: `" +str(error)+ "`")
             pass
 
         else:
