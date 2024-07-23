@@ -158,10 +158,12 @@ class Frappe(commands.Cog):
                     member = ctx.guild.get_member(int(discord_id))
 
                     memberroles = member.roles
-                    if any('events' in role.name for role in memberroles):
-                        await ctx.send(member + memberroles)
-                    else:
-                        await ctx.send("No role" +str(memberroles))
+                    for role in memberroles:
+
+                        if'events' in role.name:
+                            await ctx.send(role.name)
+                        else:
+                            await ctx.send("No role" +str(memberroles))
 
                     if amount == 1:
                         role = discord.utils.get(ctx.guild.roles, name="1 event")
