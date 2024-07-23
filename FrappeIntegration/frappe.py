@@ -160,21 +160,20 @@ class Frappe(commands.Cog):
                     memberroles = member.roles
                     for role in memberroles:
                         if 'events' in role.name:
-                            await ctx.send("<@!" +discord_id+ "> heeft " +role.name)
+                            await ctx.send("<@ " +discord_id+ "> heeft " +role.name)
 
                     if not any('events' in role.name for role in memberroles):
-                        await ctx.send("<@!" +discord_id+ "> heeft geen event rollen")
+                        await ctx.send("<@ " +discord_id+ "> heeft geen event rollen")
 
                     if amount == 1:
                         role = discord.utils.get(ctx.guild.roles, name="1 event")
-                        ctx.send("<@!" +discord_id+ "> krijgt " +role.name)
+                        ctx.send("<@ " +discord_id+ "> krijgt " +role.name)
                     else:
                         try:
-                            role = discord.utils.get(ctx.guild.roles, name= amount + " events")
-                            ctx.send("<@!" +discord_id+ "> krijgt " +role.name)
+                            role = discord.utils.get(ctx.guild.roles, name= str(amount) + " events")
+                            ctx.send("<@ " +discord_id+ "> krijgt " +role.name)
                         except Exception as error:
-                            await ctx.send(error)
-                            return await ctx.send("Er is geen rol voor " +str(amount)+ " events")
+                            return await ctx.send("Error: " +error)
             pass
 
         else:
