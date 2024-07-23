@@ -140,7 +140,7 @@ class Frappe(commands.Cog):
     async def roleupdate(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Update the events roles"""
-        event1 = ctx.guild.get_role(name="lid")
+        event1 = discord.utils.get(ctx.guild.roles, name="1 event")
         await ctx.send(event1)
 
         if frappe_keys.get("api_key") is None:
