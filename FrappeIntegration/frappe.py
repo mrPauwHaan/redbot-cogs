@@ -168,7 +168,8 @@ class Frappe(commands.Cog):
                                 currentrolemessage = "heeft <@&" +str(role.id)+ ">"
 
                         if not any('events' in role.name for role in memberroles):
-                            currentrolemessage = "heeft geen event rollen"
+                            if not any('1 event' in role.name for role in memberroles):
+                                currentrolemessage = "heeft geen event rollen"
 
                         if amount == 1:
                             role = discord.utils.get(ctx.guild.roles, name="1 event")
