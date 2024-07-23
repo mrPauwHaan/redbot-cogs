@@ -160,6 +160,7 @@ class Frappe(commands.Cog):
                     member = ctx.guild.get_member(int(discord_id))
                     if member:
                         memberroles = member.roles
+                        amount_changes = 0
                         try:
                             for role in memberroles:
                                 if 'events' in role.name:
@@ -190,7 +191,10 @@ class Frappe(commands.Cog):
                                 embed.colour = int("ff0502", 16)
                                 embed.set_footer(text="© Shadowzone Gaming")
                                 await ctx.send(embed=embed)
-
+                                amount_changes = amount_changes + 1
+                            
+                            if amount_changes == 0:
+                                await ctx.send("<:check:847044460666814484> eventrollen zijn up-to-date voor leden en SZG+")
                             
                         except Exception as error:
                             return await ctx.send("Error: `" +str(error)+ "`")
