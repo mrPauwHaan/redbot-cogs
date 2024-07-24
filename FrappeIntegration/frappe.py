@@ -127,18 +127,18 @@ class Frappe(commands.Cog):
                                     icon = " "
 
                             if eventnumber == prevamount:
-                                data = data + icon + '<@' + str(member.id) + '> ' + '\n'
+                                data = icon + '<@' + str(member.id) + '> ' + '\n'
                             else:
                                 if eventnumber == 1:
-                                    data = data + icon +  '\n' + str(eventnumber) + ' event\n <@' + str(member.id) + '> ' + '\n'
+                                    data = icon +  '\n' + str(eventnumber) + ' event\n <@' + str(member.id) + '> ' + '\n'
                                 else:
-                                    data = data + icon +  '\n' + str(eventnumber) + ' events\n <@' + str(member.id) + '> ' + '\n'
+                                    data = icon +  '\n' + str(eventnumber) + ' events\n <@' + str(member.id) + '> ' + '\n'
                             prevamount = eventnumber
                 
                 embed.title = "Event ranking"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
-                embed.description = input(data)[:4096]
+                embed.description = data
                 await ctx.send(embed=embed)
         else:
             return await ctx.send("Status code:" +str(api.status_code))
