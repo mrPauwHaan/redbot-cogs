@@ -245,9 +245,8 @@ class Frappe(commands.Cog):
                                     if user['discord_id'] == member.id:
                                         if user['events'] == eventnumber:
                                             found = found + "\n <:check:847044460666814484> <@" + str(member.id) + ">"
-
-                                
-                                found = found + "<@" + str(member.id) + "> "
+                                        else:
+                                            found = found + "\n <:wrong:847044649679716383> <@" + str(member.id) + ">"
                             else:
                                 notfound = notfound + "<@" + str(member.id) + "> "
                     else:
