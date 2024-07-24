@@ -157,19 +157,18 @@ class Frappe(commands.Cog):
 
                     member = ctx.guild.get_member(int(discord_id))
                     if member:
-                        memberroles = member.roles
                         embed.title = "Eventrol wijziging"
                         embed.set_footer(text="© Shadowzone Gaming")
                         embed.colour = int("ff0502", 16)
                         try:
-                            for role in memberroles:
+                            for role in member.roles:
                                 if 'events' in role.name:
                                     currentrole = role
                                 elif '1 event' in role.name:
                                     currentrole = role
 
-                            if not any('events' in role.name for role in memberroles):
-                                if not any('1 event' in role.name for role in memberroles):
+                            if not any('events' in role.name for role in member.roles):
+                                if not any('1 event' in role.name for role in member.roles):
                                     currentrole = None
 
                             if amount == 1:
@@ -232,4 +231,19 @@ class Frappe(commands.Cog):
             amount_changes = 0
             if response['result']:
                 maxevents = max(response['result'], key=lambda x:x['events'])
+                
+                for eventnumber in range(maxevents):
+                    if eventnumber == 1:
+                        role = discord.utils.get(ctx.guild.roles, name="1 event")
+                    else:
+                        role = discord.utils.get(ctx.guild.roles, name= str(eventnumber) + " events")
+                    
+                    for member in role.members:
+                        if not member == 
+                        
+                        if not any(member.id in user.discord_id for user in response['result']):
+                    
+
+                
                 return await ctx.send(maxevents['events'])
+                    
