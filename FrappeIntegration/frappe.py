@@ -245,17 +245,17 @@ class Frappe(commands.Cog):
                                 for user in response['result']:
                                     if user['discord_id'] == str(member.id):
                                         if user['events'] == eventnumber:
-                                            icon = "\n <:check:847044460666814484>"
+                                            icon = "<:check:847044460666814484>"
                                         else:
-                                            icon = "\n <:wrong:847044649679716383>"
+                                            icon = "<:wrong:847044649679716383>"
                                         
                                         if eventnumber == prevamount:
                                             data = data + icon + '<@' + str(member.id) + '> ' + '\n'
                                         else:
                                             if eventnumber == 1:
-                                                data = data + '\n' + str(eventnumber) + icon + ' event\n <@' + str(member.id) + '> ' + '\n'
+                                                data = data + '\n' + str(eventnumber) + ' event\n' + icon + '<@' + str(member.id) + '> ' + '\n'
                                             else:
-                                                data = data + '\n' + str(eventnumber) + icon + ' events\n <@' + str(member.id) + '> ' + '\n'
+                                                data = data + '\n' + str(eventnumber) + ' events\n' + icon + '<@' + str(member.id) + '> ' + '\n'
                                         prevamount = eventnumber
                             else:
                                 notfound = notfound + "<@" + str(member.id) + "> "
