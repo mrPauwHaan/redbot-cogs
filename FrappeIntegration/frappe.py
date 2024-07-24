@@ -108,7 +108,7 @@ class Frappe(commands.Cog):
         if api.status_code == 200:
             response = api.json()
             data = ""
-            prevamount = max(response['result'], key=lambda x:x['events'])
+            prevamount = ""
             embed = discord.Embed()
             if response['result']:
                 for member in response['result']:
