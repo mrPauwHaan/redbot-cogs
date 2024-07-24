@@ -227,13 +227,13 @@ class Frappe(commands.Cog):
         if api.status_code == 200:
             response = api.json()
             embed = discord.Embed()
-            rightevent = "Juiste rol: "
-            wrongevent = "\n\n Verkeerde rol: "
+            wrongevent = "Verkeerde rol: "
+            rightevent = "\n\n Juiste rol: "
             notfound = "\n\n Niet gevonden in database: \n"
 
             if response['result']:
                 maxevents = max(response['result'], key=lambda x:x['events'])
-                for eventnumber in range(maxevents['events']):
+                for eventnumber in range(1, maxevents['events']):
                     if eventnumber == 1:
                         role = discord.utils.get(ctx.guild.roles, name="1 event")
                     else:
@@ -247,7 +247,7 @@ class Frappe(commands.Cog):
                                         if user['events'] == eventnumber:
                                             rightevent = rightevent + "\n <:check:847044460666814484> <@" + str(member.id) + ">"
                                         else:
-                                            wrongevent = wrongevent + "\n <:wrong:847044649679716383> <@" + str(member.id) + ">"
+                                            wrongevent = wrongevent + "\n <:wrong:847044649679716383> <@" + str(member.id) + "> (" + eventnumber + ")"
                             else:
                                 notfound = notfound + "<@" + str(member.id) + "> "
                     else:
@@ -256,5 +256,5 @@ class Frappe(commands.Cog):
                 embed.title = "Check systeem op eventrollen"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
-                embed.description = rightevent + wrongevent + notfound
+                embed.description = wrongevent + rightevent + notfound
                 await ctx.send(embed=embed)
