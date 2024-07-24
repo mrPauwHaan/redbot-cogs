@@ -232,4 +232,4 @@ class Frappe(commands.Cog):
             amount_changes = 0
             if response['result']:
                 max = max(response['result'], key=lambda x:x['events'])
-                return await ctx.send("Status code:" +str(api.status_code))
+                return await ctx.send(max)
