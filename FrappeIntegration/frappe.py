@@ -242,6 +242,7 @@ class Frappe(commands.Cog):
                         for member in role.members:
                             if any(str(member.id) in user['discord_id'] for user in response['result']):
                                 for user in response['result']:
+                                    await ctx.send(user)
                                     if user['discord_id'] == member.id:
                                         if user['events'] == eventnumber:
                                             found = found + "\n <:check:847044460666814484> <@" + str(member.id) + ">"
