@@ -232,7 +232,7 @@ class Frappe(commands.Cog):
             if response['result']:
                 maxevents = max(response['result'], key=lambda x:x['events'])
                 
-                for eventnumber in range(maxevents['events']):
+                for eventnumber in range(1, maxevents['events']):
                     if eventnumber == 1:
                         role = discord.utils.get(ctx.guild.roles, name="1 event")
                     else:
