@@ -176,7 +176,7 @@ class Frappe(commands.Cog):
                                     currentrole = None
 
                             if amount == 0:
-                                role = None
+                                role = "Geen events"
                             elif amount == 1:
                                 role = discord.utils.get(ctx.guild.roles, name="1 event")
                             else:
