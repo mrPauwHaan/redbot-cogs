@@ -116,13 +116,13 @@ class Frappe(commands.Cog):
                 for member in response['result']:
                     name = member['discord_id']
                     amount = member['events']
-                    if member['status'] == 'Actief':
+                    if member['status'] == 'Actief' and amount > 0:
                         if amount == prevamount:
                             data = data + '<@' + name + '> ' + '\n'
                         else:
                             if amount == 1:
                                 data = data + '\n' + str(amount) + ' event\n <@' + name + '> ' + '\n'
-                            elif amount > 1:
+                            else:
                                 data = data + '\n' + str(amount) + ' events\n <@' + name + '> ' + '\n'
                         
                         embed.description = data
