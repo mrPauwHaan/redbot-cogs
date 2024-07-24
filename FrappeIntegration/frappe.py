@@ -243,4 +243,4 @@ class Frappe(commands.Cog):
                             if not any(str(member.id) in user['discord_id'] for user in response['result']):
                                 await ctx.send(eventnumber)
                     else:
-                        await ctx.send("Geen rol voor " + eventnumber + " events")
+                        await ctx.send("Geen rol voor " + str(eventnumber) + " events")
