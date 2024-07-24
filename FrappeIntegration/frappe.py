@@ -156,6 +156,7 @@ class Frappe(commands.Cog):
                 for member in response['result']:
                     discord_id = member['discord_id']
                     amount = member['events']
+                    notfound = None
 
                     member = ctx.guild.get_member(int(discord_id))
                     if member:
