@@ -253,9 +253,10 @@ class Frappe(commands.Cog):
                                             data = data + icon + '<@' + str(member.id) + '> ' + '\n'
                                         else:
                                             if eventnumber == 1:
-                                                data = data + icon + '\n' + str(eventnumber) + ' event\n <@' + str(member.id) + '> ' + '\n'
+                                                data = data + '\n' + str(eventnumber) + icon + ' event\n <@' + str(member.id) + '> ' + '\n'
                                             else:
-                                                data = data + icon + '\n' + str(eventnumber) + ' events\n <@' + str(member.id) + '> ' + '\n'
+                                                data = data + '\n' + str(eventnumber) + icon + ' events\n <@' + str(member.id) + '> ' + '\n'
+                                        prevamount = eventnumber
                             else:
                                 notfound = notfound + "<@" + str(member.id) + "> "
                     else:
