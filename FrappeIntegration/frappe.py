@@ -120,13 +120,19 @@ class Frappe(commands.Cog):
                     
                     if role:
                         for member in role.members:
+                            for role in member.roles:
+                                if 'SZGlid' in role.name or 'SZG+' in role.name:
+                                    icon = role.icon
+                                else:
+                                    icon = None
+
                             if eventnumber == prevamount:
-                                data = data + '<@' + str(member.id) + '> ' + '\n'
+                                data = data + icon + '<@' + str(member.id) + '> ' + '\n'
                             else:
                                 if eventnumber == 1:
-                                    data = data + '\n' + str(eventnumber) + ' event\n <@' + str(member.id) + '> ' + '\n'
+                                    data = data + icon +  '\n' + str(eventnumber) + ' event\n <@' + str(member.id) + '> ' + '\n'
                                 else:
-                                    data = data + '\n' + str(eventnumber) + ' events\n <@' + str(member.id) + '> ' + '\n'
+                                    data = data + icon +  '\n' + str(eventnumber) + ' events\n <@' + str(member.id) + '> ' + '\n'
                             prevamount = eventnumber
                 
                 embed.title = "Event ranking"
@@ -134,6 +140,8 @@ class Frappe(commands.Cog):
                 embed.colour = int("ff0502", 16)
                 embed.description = data
                 await ctx.send(embed=embed)
+        else:
+            return await ctx.send("Status code:" +str(api.status_code))
 
     @events.command()
     async def listdatabase(self, ctx: commands.Context):
@@ -258,7 +266,7 @@ class Frappe(commands.Cog):
     @commands.is_owner()
     async def checksystem(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
-        """Check if event roles of each user are in system"""
+        """Vergelijk de eventrollen met de lijst uit de database"""
         if frappe_keys.get("api_key") is None:
             return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
         api_key =  frappe_keys.get("api_key")
@@ -268,7 +276,7 @@ class Frappe(commands.Cog):
         if api.status_code == 200:
             response = api.json()
             embed = discord.Embed()
-            notfound = "\n\n Niet gevonden in database: \n"
+            notfound = "\n\n Wel rol, niet in database: \n"
             data = ""
             prevamount = ""
 
@@ -301,10 +309,12 @@ class Frappe(commands.Cog):
                             else:
                                 notfound = notfound + "<@" + str(member.id) + "> "
                     else:
-                        await ctx.send("Geen rol voor " + str(eventnumber) + " events")
+                        await ctx.send("Rol voor `" + str(eventnumber) + " events` niet gevonden")
                 
                 embed.title = "Check systeem op eventrollen"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
                 embed.description = data + notfound
                 await ctx.send(embed=embed)
+        else:
+            return await ctx.send("Status code:" +str(api.status_code))
