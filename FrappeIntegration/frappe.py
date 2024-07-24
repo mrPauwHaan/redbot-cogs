@@ -121,18 +121,20 @@ class Frappe(commands.Cog):
                     if role:
                         for member in role.members:
                             for role in member.roles:
-                                if 'SZGlid' in role.name or 'SZG+' in role.name:
-                                    icon = str(role.icon)
+                                if 'SZGlid' in role.name:
+                                    icon = "<:szglogo:945293100824277002>"
+                                elif 'SZG+' in role.name:
+                                    icon = "<:SZGplus:1188373927119040562>"
                                 else:
                                     icon = " "
 
                             if eventnumber == prevamount:
-                                data = icon + '<@' + str(member.id) + '> ' + '\n'
+                                data = data + icon + '<@' + str(member.id) + '> ' + '\n'
                             else:
                                 if eventnumber == 1:
-                                    data = icon +  '\n' + str(eventnumber) + ' event\n <@' + str(member.id) + '> ' + '\n'
+                                    data = data + icon +  '\n' + str(eventnumber) + ' event\n <@' + str(member.id) + '> ' + '\n'
                                 else:
-                                    data = icon +  '\n' + str(eventnumber) + ' events\n <@' + str(member.id) + '> ' + '\n'
+                                    data = data + icon +  '\n' + str(eventnumber) + ' events\n <@' + str(member.id) + '> ' + '\n'
                             prevamount = eventnumber
                 
                 embed.title = "Event ranking"
