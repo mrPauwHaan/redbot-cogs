@@ -151,6 +151,7 @@ class Frappe(commands.Cog):
             response = api.json()
             embed = discord.Embed()
             notfound = None
+            amount_changes = 0
             if response['result']:
                 for member in response['result']:
                     discord_id = member['discord_id']
@@ -159,7 +160,6 @@ class Frappe(commands.Cog):
                     member = ctx.guild.get_member(int(discord_id))
                     if member:
                         memberroles = member.roles
-                        amount_changes = 0
                         embed.title = "Eventrol wijziging"
                         embed.set_footer(text="© Shadowzone Gaming")
                         embed.colour = int("ff0502", 16)
