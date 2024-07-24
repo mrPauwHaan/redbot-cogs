@@ -247,7 +247,7 @@ class Frappe(commands.Cog):
                                         if user['events'] == eventnumber:
                                             rightevent = rightevent + "\n <:check:847044460666814484> <@" + str(member.id) + ">"
                                         else:
-                                            wrongevent = wrongevent + "\n <:wrong:847044649679716383> <@" + str(member.id) + "> (" + eventnumber + ")"
+                                            wrongevent = wrongevent + "\n <:wrong:847044649679716383> <@" + str(member.id) + "> (" + str(eventnumber) + " events)"
                             else:
                                 notfound = notfound + "<@" + str(member.id) + "> "
                     else:
