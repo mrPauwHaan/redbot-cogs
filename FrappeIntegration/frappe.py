@@ -232,7 +232,7 @@ class Frappe(commands.Cog):
             if response['result']:
                 maxevents = max(response['result'], key=lambda x:x['events'])
                 
-                for eventnumber in range(maxevents['events']):
+                for eventnumber in range(1, maxevents['events']):
                     if eventnumber == 1:
                         role = discord.utils.get(ctx.guild.roles, name="1 event")
                     else:
@@ -240,7 +240,7 @@ class Frappe(commands.Cog):
                     
                     if role:
                         for member in role.members:
-                            if not any(member.id in user['discord_id'] for user in response['result']):
+                            if not any(str(member.id) in user['discord_id'] for user in response['result']):
                                 return await ctx.send(maxevents['events'])
                     else:
                         return await ctx.send("Geen rol voor " + eventnumber + " events")
