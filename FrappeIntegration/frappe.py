@@ -138,7 +138,7 @@ class Frappe(commands.Cog):
                 embed.title = "Event ranking"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
-                embed.description = data
+                embed.description = input(data)[:4096]
                 await ctx.send(embed=embed)
         else:
             return await ctx.send("Status code:" +str(api.status_code))
