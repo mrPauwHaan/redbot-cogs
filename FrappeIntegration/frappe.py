@@ -125,7 +125,7 @@ class Frappe(commands.Cog):
                             elif any('SZG+' in role.name for role in member.roles):
                                 icon = "<:SZGplus:1188373927119040562>"
                             else:
-                                icon = "                   "
+                                icon = "<:szglogozwart:945293372099272724>"
 
                             if eventnumber == prevamount:
                                 data = data + icon + '<@' + str(member.id) + '> ' + '\n'
