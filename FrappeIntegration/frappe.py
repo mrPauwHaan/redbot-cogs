@@ -147,16 +147,14 @@ class Frappe(commands.Cog):
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
         api = requests.get('http://shadowzone.nl/api/method/event_ranking', headers=headers)
-        embed = discord.Embed()
-
         if api.status_code == 200:
             response = api.json()
             embed = discord.Embed()
+            notfound = None
             if response['result']:
                 for member in response['result']:
                     discord_id = member['discord_id']
                     amount = member['events']
-                    notfound = None
 
                     member = ctx.guild.get_member(int(discord_id))
                     if member:
@@ -207,7 +205,6 @@ class Frappe(commands.Cog):
                             notfound = notfound + "<@" + discord_id + "> "
                         else:
                             notfound = "<@" + discord_id + "> "
-                        await ctx.send("<@" +discord_id+ "> is niet gevonden in deze server")
                 if amount_changes == 0:
                     if notfound:
                         await ctx.send("<:check:847044460666814484> eventrollen zijn up-to-date voor leden en SZG+ \n -# Gebruikers" + notfound + "niet gevonden in deze server")
