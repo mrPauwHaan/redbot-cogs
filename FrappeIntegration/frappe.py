@@ -227,8 +227,8 @@ class Frappe(commands.Cog):
         if api.status_code == 200:
             response = api.json()
             embed = discord.Embed()
-            norecord = None
-
+            found = None
+            notfound = None
 
             if response['result']:
                 maxevents = max(response['result'], key=lambda x:x['events'])
@@ -242,8 +242,10 @@ class Frappe(commands.Cog):
                     if role:
                         for member in role.members:
                             if any(str(member.id) in user['discord_id'] for user in response['result']):
-
-                                await ctx.send("Gebruiker <@" + member.id + " in database gevonden")
+                                if found:
+                                    found = found + "<@" + str(member.id) + "> "
+                                else:
+                                    found = "<@" + str(member.id) + "> "
                             else:
                                 if notfound:
                                     notfound = notfound + "<@" + str(member.id) + "> "
@@ -255,5 +257,5 @@ class Frappe(commands.Cog):
                 embed.title = "Eventrol wijziging"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
-                embed.description = "Niet gevonden in database: " + notfound
+                embed.description = "Gevonden in database: " + found + "\n Niet gevonden in database: " + notfound
                 await ctx.send(embed=embed)
