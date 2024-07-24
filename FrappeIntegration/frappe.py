@@ -295,17 +295,14 @@ class Frappe(commands.Cog):
                     
                     if role:
                         for member in role.members:
-                            for user in response['result']:
-                                if user['discord_id'] == str(member.id):
-                                    
-                                    if eventnumber == prevamount:
-                                        data = data + '<@' + str(member.id) + '> ' + '\n'
-                                    else:
-                                        if eventnumber == 1:
-                                            data = data + '\n' + str(eventnumber) + ' event\n <@' + str(member.id) + '> ' + '\n'
-                                        else:
-                                            data = data + '\n' + str(eventnumber) + ' events\n <@' + str(member.id) + '> ' + '\n'
-                                    prevamount = eventnumber
+                            if eventnumber == prevamount:
+                                data = data + '<@' + str(member.id) + '> ' + '\n'
+                            else:
+                                if eventnumber == 1:
+                                    data = data + '\n' + str(eventnumber) + ' event\n <@' + str(member.id) + '> ' + '\n'
+                                else:
+                                    data = data + '\n' + str(eventnumber) + ' events\n <@' + str(member.id) + '> ' + '\n'
+                            prevamount = eventnumber
                 
                 embed.title = "Check systeem op eventrollen"
                 embed.set_footer(text="© Shadowzone Gaming")
