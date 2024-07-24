@@ -227,9 +227,9 @@ class Frappe(commands.Cog):
         if api.status_code == 200:
             response = api.json()
             embed = discord.Embed()
-            wrongevent = "Verkeerde rol: "
-            rightevent = "\n\n Juiste rol: "
             notfound = "\n\n Niet gevonden in database: \n"
+            data = ""
+            prevamount = ""
 
             if response['result']:
                 maxevents = max(response['result'], key=lambda x:x['events'])
@@ -245,9 +245,17 @@ class Frappe(commands.Cog):
                                 for user in response['result']:
                                     if user['discord_id'] == str(member.id):
                                         if user['events'] == eventnumber:
-                                            rightevent = rightevent + "\n <:check:847044460666814484> <@" + str(member.id) + ">"
+                                            icon = "\n <:check:847044460666814484>"
                                         else:
-                                            wrongevent = wrongevent + "\n <:wrong:847044649679716383> <@" + str(member.id) + "> (" + str(eventnumber) + " events)"
+                                            icon = "\n <:wrong:847044649679716383>"
+                                        
+                                        if eventnumber == prevamount:
+                                            data = data + icon + '<@' + str(member.id) + '> ' + '\n'
+                                        else:
+                                            if eventnumber == 1:
+                                                data = data + icon + '\n' + str(eventnumber) + ' event\n <@' + str(member.id) + '> ' + '\n'
+                                            else:
+                                                data = data + icon + '\n' + str(eventnumber) + ' events\n <@' + str(member.id) + '> ' + '\n'
                             else:
                                 notfound = notfound + "<@" + str(member.id) + "> "
                     else:
@@ -256,5 +264,5 @@ class Frappe(commands.Cog):
                 embed.title = "Check systeem op eventrollen"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
-                embed.description = wrongevent + rightevent + notfound
+                embed.description = data + notfound
                 await ctx.send(embed=embed)
