@@ -88,7 +88,6 @@ class Frappe(commands.Cog):
             return await ctx.send("Status code:" +str(api.status_code))
     
     @commands.guild_only()
-    @commands.is_owner()
     @commands.bot_has_permissions(embed_links=True)
     @commands.hybrid_group()
     async def events(self, ctx: commands.Context) -> None:
@@ -96,7 +95,6 @@ class Frappe(commands.Cog):
         pass
 
     @events.command()
-    @commands.has_permissions(manage_channels=True)
     async def list(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Get events"""
@@ -137,7 +135,7 @@ class Frappe(commands.Cog):
             return await ctx.send("Status code:" +str(api.status_code))
     
     @events.command()
-    @commands.has_permissions(manage_channels=True)
+    @commands.is_owner()
     async def roleupdate(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Update the events roles"""
