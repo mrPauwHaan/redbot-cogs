@@ -233,7 +233,6 @@ class Frappe(commands.Cog):
             if response['result']:
                 maxevents = max(response['result'], key=lambda x:x['events'])
                 for eventnumber in range(maxevents['events']):
-                    await ctx.send("Check event " + str(eventnumber) + "/" + str(maxevents['events']))
                     if eventnumber == 1:
                         role = discord.utils.get(ctx.guild.roles, name="1 event")
                     else:
@@ -243,7 +242,7 @@ class Frappe(commands.Cog):
                         for member in role.members:
                             if any(str(member.id) in user['discord_id'] for user in response['result']):
                                 for user in response['result']:
-                                    if user == member.id:
+                                    if user['discord_id'] == member.id:
                                         if user['events'] == eventnumber:
                                             found = found + "\n <:check:847044460666814484> <@" + str(member.id) + ">"
 
