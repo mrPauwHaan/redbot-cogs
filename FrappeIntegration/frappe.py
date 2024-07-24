@@ -175,9 +175,7 @@ class Frappe(commands.Cog):
                                 if not any('1 event' in role.name for role in memberroles):
                                     currentrole = None
 
-                            if amount == 0:
-                                role = "Geen events"
-                            elif amount == 1:
+                            if amount == 1:
                                 role = discord.utils.get(ctx.guild.roles, name="1 event")
                             else:
                                 role = discord.utils.get(ctx.guild.roles, name= str(amount) + " events")
@@ -190,6 +188,11 @@ class Frappe(commands.Cog):
                                         amount_changes = amount_changes + 1
                                 else:
                                     embed.description = "Gebruiker: <@" + discord_id + "> \n\n <:check:847044460666814484> <@&" +str(role.id)+ ">"
+                                    await ctx.send(embed=embed)
+                                    amount_changes = amount_changes + 1
+                            elif amount == 0:
+                                if currentrole:
+                                    embed.description = "Gebruiker: <@" + discord_id + "> \n\n <:wrong:847044649679716383> <@&" +str(currentrole.id)+ ">"
                                     await ctx.send(embed=embed)
                                     amount_changes = amount_changes + 1
                             else:
