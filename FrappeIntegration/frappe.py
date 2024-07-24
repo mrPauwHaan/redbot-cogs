@@ -202,7 +202,10 @@ class Frappe(commands.Cog):
                         except Exception as error:
                             return await ctx.send("Error: `" +str(error)+ "`")
                     else:
-                        notfound = notfound + "<@" + discord_id + "> "
+                        if notfound:
+                            notfound = notfound + "<@" + discord_id + "> "
+                        else:
+                            notfound = "<@" + discord_id + "> "
                         await ctx.send("<@" +discord_id+ "> is niet gevonden in deze server")
                 if amount_changes == 0:
                     if notfound:
