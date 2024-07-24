@@ -231,5 +231,5 @@ class Frappe(commands.Cog):
             notfound = None
             amount_changes = 0
             if response['result']:
-                maxevents = max(response['result'], key=lambda x:x['events'])
+                maxevents = max(response['result']['events'])
                 return await ctx.send(maxevents)
