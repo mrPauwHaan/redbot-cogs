@@ -97,6 +97,47 @@ class Frappe(commands.Cog):
     @events.command()
     async def list(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
+        """Krijg een lijst op basis van de events"""
+        if frappe_keys.get("api_key") is None:
+            return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
+        api_key =  frappe_keys.get("api_key")
+        api_secret = frappe_keys.get("api_secret")
+        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
+        api = requests.get('http://shadowzone.nl/api/method/event_ranking', headers=headers)
+        if api.status_code == 200:
+            response = api.json()
+            embed = discord.Embed()
+            data = ""
+            prevamount = ""
+
+            if response['result']:
+                maxevents = max(response['result'], key=lambda x:x['events'])
+                for eventnumber in reversed(range(1, maxevents['events'] + 1)):
+                    if eventnumber == 1:
+                        role = discord.utils.get(ctx.guild.roles, name="1 event")
+                    else:
+                        role = discord.utils.get(ctx.guild.roles, name= str(eventnumber) + " events")
+                    
+                    if role:
+                        for member in role.members:
+                            if eventnumber == prevamount:
+                                data = data + '<@' + str(member.id) + '> ' + '\n'
+                            else:
+                                if eventnumber == 1:
+                                    data = data + '\n' + str(eventnumber) + ' event\n <@' + str(member.id) + '> ' + '\n'
+                                else:
+                                    data = data + '\n' + str(eventnumber) + ' events\n <@' + str(member.id) + '> ' + '\n'
+                            prevamount = eventnumber
+                
+                embed.title = "Event ranking"
+                embed.set_footer(text="© Shadowzone Gaming")
+                embed.colour = int("ff0502", 16)
+                embed.description = data
+                await ctx.send(embed=embed)
+
+    @events.command()
+    async def listdatabase(self, ctx: commands.Context):
+        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Get events"""
         if frappe_keys.get("api_key") is None:
             return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
@@ -266,46 +307,4 @@ class Frappe(commands.Cog):
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
                 embed.description = data + notfound
-                await ctx.send(embed=embed)
-
-    @events.command()
-    @commands.is_owner()
-    async def list2(self, ctx: commands.Context):
-        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
-        """Krijg een lijst op basis van de events"""
-        if frappe_keys.get("api_key") is None:
-            return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
-        api_key =  frappe_keys.get("api_key")
-        api_secret = frappe_keys.get("api_secret")
-        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
-        api = requests.get('http://shadowzone.nl/api/method/event_ranking', headers=headers)
-        if api.status_code == 200:
-            response = api.json()
-            embed = discord.Embed()
-            data = ""
-            prevamount = ""
-
-            if response['result']:
-                maxevents = max(response['result'], key=lambda x:x['events'])
-                for eventnumber in reversed(range(1, maxevents['events'] + 1)):
-                    if eventnumber == 1:
-                        role = discord.utils.get(ctx.guild.roles, name="1 event")
-                    else:
-                        role = discord.utils.get(ctx.guild.roles, name= str(eventnumber) + " events")
-                    
-                    if role:
-                        for member in role.members:
-                            if eventnumber == prevamount:
-                                data = data + '<@' + str(member.id) + '> ' + '\n'
-                            else:
-                                if eventnumber == 1:
-                                    data = data + '\n' + str(eventnumber) + ' event\n <@' + str(member.id) + '> ' + '\n'
-                                else:
-                                    data = data + '\n' + str(eventnumber) + ' events\n <@' + str(member.id) + '> ' + '\n'
-                            prevamount = eventnumber
-                
-                embed.title = "Check systeem op eventrollen"
-                embed.set_footer(text="© Shadowzone Gaming")
-                embed.colour = int("ff0502", 16)
-                embed.description = data
                 await ctx.send(embed=embed)
