@@ -122,7 +122,7 @@ class Frappe(commands.Cog):
                         for member in role.members:
                             for role in member.roles:
                                 if 'SZGlid' in role.name or 'SZG+' in role.name:
-                                    icon = role.icon
+                                    icon = str(role.icon)
                                 else:
                                     icon = " "
 
