@@ -202,8 +202,12 @@ class Frappe(commands.Cog):
                         except Exception as error:
                             return await ctx.send("Error: `" +str(error)+ "`")
                     else:
+                        notfound = notfound + "<@" + discord_id + "> "
                         await ctx.send("<@" +discord_id+ "> is niet gevonden in deze server")
                 if amount_changes == 0:
-                    await ctx.send("<:check:847044460666814484> eventrollen zijn up-to-date voor leden en SZG+")
+                    if notfound:
+                        await ctx.send("<:check:847044460666814484> eventrollen zijn up-to-date voor leden en SZG+ \n -# Gebruikers" + notfound + "niet gevonden in deze server")
+                    else:
+                        await ctx.send("<:check:847044460666814484> eventrollen zijn up-to-date voor leden en SZG+")
         else:
             return await ctx.send("Status code:" +str(api.status_code))
