@@ -239,6 +239,5 @@ class Frappe(commands.Cog):
                         role = discord.utils.get(ctx.guild.roles, name= str(eventnumber) + " events")
                     
                     for member in role.members:
-                        if not any(member.id in user.discord_id for user in response['result']):
+                        if not any(member.id in user['discord_id'] for user in response['result']):
                             return await ctx.send(maxevents['events'])
-                    
