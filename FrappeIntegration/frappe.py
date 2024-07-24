@@ -151,30 +151,6 @@ class Frappe(commands.Cog):
             notfound = None
             amount_changes = 0
             if response['result']:
-                max = max(response['result'], key=lambda x:x['events'])
-                return await ctx.send(max)
-        
-
-    @events.command()
-    @commands.is_owner()
-    async def checksystem(self, ctx: commands.Context):
-        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
-        """Check if event roles of each user are in system"""
-        if frappe_keys.get("api_key") is None:
-            return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
-        api_key =  frappe_keys.get("api_key")
-        api_secret = frappe_keys.get("api_secret")
-        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
-        api = requests.get('http://shadowzone.nl/api/method/event_ranking', headers=headers)
-        if api.status_code == 200:
-            response = api.json()
-            embed = discord.Embed()
-            notfound = None
-            amount_changes = 0
-            if response['result']:
-                max()
-
-
                 for member in response['result']:
                     discord_id = member['discord_id']
                     amount = member['events']
@@ -236,3 +212,24 @@ class Frappe(commands.Cog):
                     await ctx.send(str(amount_changes) + " wijzigingen voor leden en SZG+ \n" + "-# Gebruikers" + notfound + "niet gevonden in deze server")
         else:
             return await ctx.send("Status code:" +str(api.status_code))
+        
+
+    @events.command()
+    @commands.is_owner()
+    async def checksystem(self, ctx: commands.Context):
+        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
+        """Check if event roles of each user are in system"""
+        if frappe_keys.get("api_key") is None:
+            return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
+        api_key =  frappe_keys.get("api_key")
+        api_secret = frappe_keys.get("api_secret")
+        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
+        api = requests.get('http://shadowzone.nl/api/method/event_ranking', headers=headers)
+        if api.status_code == 200:
+            response = api.json()
+            embed = discord.Embed()
+            notfound = None
+            amount_changes = 0
+            if response['result']:
+                max = max(response['result'], key=lambda x:x['events'])
+                return await ctx.send("Status code:" +str(api.status_code))
