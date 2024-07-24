@@ -210,5 +210,7 @@ class Frappe(commands.Cog):
                         await ctx.send("<:check:847044460666814484> eventrollen zijn up-to-date voor leden en SZG+ \n" + "-# Gebruikers" + notfound + "niet gevonden in deze server")
                     else:
                         await ctx.send("<:check:847044460666814484> eventrollen zijn up-to-date voor leden en SZG+")
+                else:
+                    await ctx.send(amount_changes + " wijzigingen voor leden en SZG+ \n" + "-# Gebruikers" + notfound + "niet gevonden in deze server")
         else:
             return await ctx.send("Status code:" +str(api.status_code))
