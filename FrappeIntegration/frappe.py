@@ -231,7 +231,7 @@ class Frappe(commands.Cog):
             amount_changes = 0
             if response['result']:
                 maxevents = max(response['result'], key=lambda x:x['events'])
-                
+                await ctx.send(maxevents)
                 for eventnumber in range(maxevents['events']):
                     if eventnumber == 1:
                         role = discord.utils.get(ctx.guild.roles, name="1 event")
