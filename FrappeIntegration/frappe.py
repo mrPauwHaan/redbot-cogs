@@ -122,7 +122,7 @@ class Frappe(commands.Cog):
                         else:
                             if amount == 1:
                                 data = data + '\n' + str(amount) + ' event\n <@' + name + '> ' + '\n'
-                            else:
+                            elif amount > 1:
                                 data = data + '\n' + str(amount) + ' events\n <@' + name + '> ' + '\n'
                         
                         embed.description = data
