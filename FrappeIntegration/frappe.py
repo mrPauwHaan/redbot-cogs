@@ -124,7 +124,7 @@ class Frappe(commands.Cog):
                                 if 'SZGlid' in role.name or 'SZG+' in role.name:
                                     icon = role.icon
                                 else:
-                                    icon = None
+                                    icon = " "
 
                             if eventnumber == prevamount:
                                 data = data + icon + '<@' + str(member.id) + '> ' + '\n'
