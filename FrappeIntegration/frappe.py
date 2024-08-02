@@ -147,7 +147,7 @@ class Frappe(commands.Cog):
     @events.command()
     async def listdatabase(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
-        """Get events"""
+        """Krijg een lijst op basis van de events in de database"""
         if frappe_keys.get("api_key") is None:
             return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
         api_key =  frappe_keys.get("api_key")
@@ -279,6 +279,7 @@ class Frappe(commands.Cog):
             embed = discord.Embed()
             notfound = "\n\n Wel rol, niet in database: \n"
             data = ""
+            data2 = []
             prevamount = ""
 
             if response['result']:
@@ -295,10 +296,17 @@ class Frappe(commands.Cog):
                                 for user in response['result']:
                                     if user['discord_id'] == str(member.id):
                                         if user['events'] == eventnumber:
-                                            icon = "<:check:847044460666814484>"
+                                            icon = ":heavy_minus_sign:"
                                         else:
-                                            icon = "<:wrong:847044649679716383>"
+                                            icon = "<:min:1137646894827454565>"
                                         
+                                        userdata = {
+                                            "events": eventnumber,
+                                            "member": member.id,
+                                            "icon": icon
+                                        }
+                                        data2.append(userdata)
+
                                         if eventnumber == prevamount:
                                             data = data + icon + '<@' + str(member.id) + '> ' + '\n'
                                         else:
@@ -312,6 +320,8 @@ class Frappe(commands.Cog):
                     else:
                         await ctx.send("Rol voor `" + str(eventnumber) + " events` niet gevonden")
                 
+                
+                await ctx.send(data2)
                 embed.title = "Check systeem op eventrollen"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
