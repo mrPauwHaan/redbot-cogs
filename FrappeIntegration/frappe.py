@@ -267,7 +267,7 @@ class Frappe(commands.Cog):
     @commands.is_owner()
     async def checksystem(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
-        """Check op basis van de eventrollen of die ook zo geregistreerd staan in de database"""
+        """Check of de eventrollen overeenkomen met de database en geeft de verschillen weer"""
         if frappe_keys.get("api_key") is None:
             return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
         api_key =  frappe_keys.get("api_key")
@@ -282,7 +282,7 @@ class Frappe(commands.Cog):
             notfoundServer = []
             data = []
             prevamount = ""
-            info = ""
+            description = ""
 
             if response['result']:
                 maxevents = max(response['result'], key=lambda x:x['events'])
@@ -305,7 +305,12 @@ class Frappe(commands.Cog):
                                                 "member": str(member.id),
                                                 "icon": "<:plus:1137646873042243625>",
                                             }
-                                            data.append(userdata)
+                                            for x in data:
+                                                if user['discord_id'] == x['member']:
+                                                    if not user['events'] == x['events']:
+                                                        data.append(userdata)
+                                                else:
+                                                    data.append(userdata)
                                             icon = "<:min:1137646894827454565>"
                                             
                                         userdata = {
@@ -337,18 +342,18 @@ class Frappe(commands.Cog):
                 data.sort(key= lambda x:x['events'], reverse=True)
                 for data in data:
                     if data["events"] == prevamount:
-                        info = info + data["icon"] + '<@' + data["member"] + '> ' + '\n'
+                        description = description + data["icon"] + '<@' + data["member"] + '> ' + '\n'
                     else:
                         if data["events"] == 1:
-                            info = info + '\n' + str(data["events"]) + ' event\n' + data["icon"] + '<@' + data["member"] + '> ' + '\n'
+                            description = description + '\n' + str(data["events"]) + ' event\n' + data["icon"] + '<@' + data["member"] + '> ' + '\n'
                         else:
-                            info = info + '\n' + str(data["events"]) + ' events\n' + data["icon"] + '<@' + data["member"] + '> ' + '\n'
+                            description = description + '\n' + str(data["events"]) + ' events\n' + data["icon"] + '<@' + data["member"] + '> ' + '\n'
                     prevamount = data["events"]
 
                 embed.title = "Check systeem op eventrollen"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
-                embed.description = info + notfoundDatabase + notfoundServertext
+                embed.description = description + notfoundDatabase + notfoundServertext
                 await ctx.send(embed=embed)
         else:
             return await ctx.send("Status code:" +str(api.status_code))
