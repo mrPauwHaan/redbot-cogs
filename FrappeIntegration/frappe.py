@@ -315,9 +315,9 @@ class Frappe(commands.Cog):
                                         }
                                         data.append(userdata)
                                     elif not str(user['discord_id']) in notfoundServer:
-                                        user = ctx.guild.get_member(int(user['discord_id']))
-                                        if not user:
-                                            notfoundServer.append(str(user.id))
+                                        serveruser = ctx.guild.get_member(int(user['discord_id']))
+                                        if not serveruser:
+                                            notfoundServer.append(str(user['discord_id']))
                             else:
                                 notfoundDatabase.append(member.id)
                                 notfound = notfound + "<@" + str(member.id) + "> "
