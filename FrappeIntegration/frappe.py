@@ -278,7 +278,7 @@ class Frappe(commands.Cog):
             response = api.json()
             embed = discord.Embed()
             notfoundDatabase = "\n\n Wel rol, niet in database: \n"
-            notfoundServertext = "\n Wel in database, niet in server: \n"
+            notfoundServertext = "\n\n Wel in database, niet in server: \n"
             notfoundServer = []
             data = []
             prevamount = ""
@@ -324,7 +324,7 @@ class Frappe(commands.Cog):
                     else:
                         await ctx.send("Rol voor `" + str(eventnumber) + " events` niet gevonden")
 
-                sorted(data, key=lambda d: d['events'])
+                data.sort(key= lambda x:x['events'])
                 for data in data:
                     if data["events"] == prevamount:
                         info = info + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
