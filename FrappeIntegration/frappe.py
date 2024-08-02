@@ -317,7 +317,7 @@ class Frappe(commands.Cog):
                                     elif not any(str(user['discord_id']) in notfoundServer):
                                         user = ctx.guild.get_member(int(user['discord_id']))
                                         if not user:
-                                            notfoundServer.append(user)
+                                            notfoundServer.append(str(user.id))
                             else:
                                 notfoundDatabase.append(member.id)
                                 notfound = notfound + "<@" + str(member.id) + "> "
