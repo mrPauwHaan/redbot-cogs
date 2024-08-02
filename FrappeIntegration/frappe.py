@@ -302,7 +302,7 @@ class Frappe(commands.Cog):
                                         else:
                                             userdata = {
                                                 "events": user['events'],
-                                                "member": member.id,
+                                                "member": str(member.id),
                                                 "icon": "<:plus:1137646873042243625>",
                                             }
                                             data.append(userdata)
@@ -310,7 +310,7 @@ class Frappe(commands.Cog):
                                             
                                         userdata = {
                                             "events": eventnumber,
-                                            "member": member.id,
+                                            "member": str(member.id),
                                             "icon": icon,
                                         }
                                         data.append(userdata)
@@ -319,7 +319,7 @@ class Frappe(commands.Cog):
                                         if not serveruser:
                                             notfoundServertext = notfoundServertext + "<@" + str(user['discord_id']) + "> "
                                             notfoundServer.append(str(user['discord_id']))
-                                        elif not any(user['discord_id'] in data['member'] for data in data):
+                                        elif not any(str(user['discord_id']) in data['member'] for data in data):
                                             userdata = {
                                                 "events": user['events'],
                                                 "member": user['discord_id'],
@@ -334,12 +334,12 @@ class Frappe(commands.Cog):
                 data.sort(key= lambda x:x['events'], reverse=True)
                 for data in data:
                     if data["events"] == prevamount:
-                        info = info + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
+                        info = info + data["icon"] + '<@' + data["member"] + '> ' + '\n'
                     else:
                         if data["events"] == 1:
-                            info = info + '\n' + str(data["events"]) + ' event\n' + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
+                            info = info + '\n' + str(data["events"]) + ' event\n' + data["icon"] + '<@' + data["member"] + '> ' + '\n'
                         else:
-                            info = info + '\n' + str(data["events"]) + ' events\n' + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
+                            info = info + '\n' + str(data["events"]) + ' events\n' + data["icon"] + '<@' + data["member"] + '> ' + '\n'
                     prevamount = data["events"]
 
                 embed.title = "Check systeem op eventrollen"
