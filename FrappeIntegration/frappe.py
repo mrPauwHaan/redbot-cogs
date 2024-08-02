@@ -307,10 +307,11 @@ class Frappe(commands.Cog):
                                             }
                                             if not any(user['discord_id'] in x['member'] for x in data):
                                                 data.append(userdata)
-                                            for x in data:
-                                                if user['discord_id'] == x['member']:
-                                                    if not user['events'] == x['events']:
-                                                        data.append(userdata)
+                                            else:
+                                                for x in data:
+                                                    if user['discord_id'] == x['member']:
+                                                        if not any(user['events'] in x['events']):
+                                                            data.append(userdata)
                                             icon = "<:min:1137646894827454565>"
                                             
                                         userdata = {
