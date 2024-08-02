@@ -326,6 +326,7 @@ class Frappe(commands.Cog):
                                                     "member": user['discord_id'],
                                                     "icon": "<:plus:1137646873042243625>",
                                                 }
+                                                await ctx.send("userdata")
                                                 data.append(userdata)
                             else:
                                 notfoundDatabase = notfoundDatabase + "<@" + str(member.id) + "> "
