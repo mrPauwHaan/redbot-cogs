@@ -319,6 +319,13 @@ class Frappe(commands.Cog):
                                         if not serveruser:
                                             notfoundServertext = notfoundServertext + "<@" + str(user['discord_id']) + "> "
                                             notfoundServer.append(str(user['discord_id']))
+                                        else:
+                                            userdata = {
+                                                "events": user['events'],
+                                                "member": user['discord_id'],
+                                                "icon": "<:plus:1137646873042243625>",
+                                            }
+                                            data.append(userdata)
                             else:
                                 notfoundDatabase = notfoundDatabase + "<@" + str(member.id) + "> "
                     else:
