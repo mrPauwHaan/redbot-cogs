@@ -310,7 +310,7 @@ class Frappe(commands.Cog):
                                             else:
                                                 for x in data:
                                                     if user['discord_id'] == x['member']:
-                                                        if not any(str(user['events']) in x['events']):
+                                                        if not any(str(user['events']) in str(x['events'])):
                                                             data.append(userdata)
                                             icon = "<:min:1137646894827454565>"
                                             
