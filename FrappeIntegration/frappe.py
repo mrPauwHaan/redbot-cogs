@@ -314,25 +314,25 @@ class Frappe(commands.Cog):
                                             "icon": icon,
                                         }
                                         data.append(userdata)
-                                    elif not str(user['discord_id']) in notfoundServer:
-                                        serveruser = ctx.guild.get_member(int(user['discord_id']))
-                                        if not serveruser:
-                                            notfoundServertext = notfoundServertext + "<@" + str(user['discord_id']) + "> "
-                                            notfoundServer.append(str(user['discord_id']))
                             else:
                                 notfoundDatabase = notfoundDatabase + "<@" + str(member.id) + "> "
                     else:
                         await ctx.send("Rol voor `" + str(eventnumber) + " events` niet gevonden")
                     
                 for user in response['result']:
-                    if not any(user['discord_id'] in x['member'] for x in data):
-                        if user['events'] > 0:
-                            userdata = {
-                                "events": user['events'],
-                                "member": user['discord_id'],
-                                "icon": "<:plus:1137646873042243625>",
-                            }
-                            data.append(userdata)
+                    if not str(user['discord_id']) in notfoundServer:
+                        serveruser = ctx.guild.get_member(int(user['discord_id']))
+                        if not serveruser:
+                            notfoundServertext = notfoundServertext + "<@" + str(user['discord_id']) + "> "
+                            notfoundServer.append(str(user['discord_id']))
+                        elif not any(user['discord_id'] in x['member'] for x in data):
+                            if user['events'] > 0:
+                                userdata = {
+                                    "events": user['events'],
+                                    "member": user['discord_id'],
+                                    "icon": "<:plus:1137646873042243625>",
+                                }
+                                data.append(userdata)
 
                 data.sort(key= lambda x:x['events'], reverse=True)
                 for data in data:
