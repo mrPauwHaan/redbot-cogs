@@ -277,8 +277,8 @@ class Frappe(commands.Cog):
         if api.status_code == 200:
             response = api.json()
             embed = discord.Embed()
-            notfound = "\n\n Wel rol, niet in database: \n"
-            notfoundDatabase = []
+            notfoundDatabase = "\n\n Wel rol, niet in database: \n"
+            notfoundServertext = "\n Wel in database, niet in server: \n"
             notfoundServer = []
             data = []
             prevamount = ""
@@ -317,10 +317,10 @@ class Frappe(commands.Cog):
                                     elif not str(user['discord_id']) in notfoundServer:
                                         serveruser = ctx.guild.get_member(int(user['discord_id']))
                                         if not serveruser:
+                                            notfoundServertext = notfoundServertext + "<@" + str(user['discord_id']) + "> "
                                             notfoundServer.append(str(user['discord_id']))
                             else:
-                                notfoundDatabase.append(member.id)
-                                notfound = notfound + "<@" + str(member.id) + "> "
+                                notfoundDatabase = notfoundDatabase + "<@" + str(member.id) + "> "
                     else:
                         await ctx.send("Rol voor `" + str(eventnumber) + " events` niet gevonden")
 
@@ -338,7 +338,7 @@ class Frappe(commands.Cog):
                 embed.title = "Check systeem op eventrollen"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
-                embed.description = info + notfound + str(notfoundServer)
+                embed.description = info + notfoundDatabase + notfoundServertext
                 await ctx.send(embed=embed)
         else:
             return await ctx.send("Status code:" +str(api.status_code))
