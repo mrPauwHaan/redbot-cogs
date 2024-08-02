@@ -281,6 +281,8 @@ class Frappe(commands.Cog):
             data = ""
             data2 = []
             prevamount = ""
+            prevamount2 = ""
+            info = ""
 
             if response['result']:
                 maxevents = max(response['result'], key=lambda x:x['events'])
@@ -320,12 +322,21 @@ class Frappe(commands.Cog):
                     else:
                         await ctx.send("Rol voor `" + str(eventnumber) + " events` niet gevonden")
                 
-                
-                await ctx.send(data2)
+                for data in data2:
+                    if data["events"] == prevamount2:
+                        info = info + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
+                    else:
+                        if data["events"] == 1:
+                            info = info + '\n' + str(data["events"]) + ' event\n' + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
+                        else:
+                            info = info + '\n' + str(data["events"]) + ' events\n' + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
+                    prevamount2 = data["events"]
+                    
+
                 embed.title = "Check systeem op eventrollen"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
-                embed.description = data + notfound
+                embed.description = info + notfound
                 await ctx.send(embed=embed)
         else:
             return await ctx.send("Status code:" +str(api.status_code))
