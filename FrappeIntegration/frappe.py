@@ -319,7 +319,7 @@ class Frappe(commands.Cog):
                                         if not serveruser:
                                             notfoundServertext = notfoundServertext + "<@" + str(user['discord_id']) + "> "
                                             notfoundServer.append(str(user['discord_id']))
-                                        elif not any(user['discord_id'] in x['member'] for x in data):
+                                        elif any(user['discord_id'] in x['member'] for x in data):
                                             userdata = {
                                                 "events": user['events'],
                                                 "member": user['discord_id'],
