@@ -278,6 +278,8 @@ class Frappe(commands.Cog):
             response = api.json()
             embed = discord.Embed()
             notfound = "\n\n Wel rol, niet in database: \n"
+            notfoundDatabase = []
+            notfoundServer = []
             data = []
             prevamount = ""
             info = ""
@@ -298,19 +300,31 @@ class Frappe(commands.Cog):
                                         if user['events'] == eventnumber:
                                             icon = ":heavy_minus_sign:"
                                         else:
+                                            userdata = {
+                                                "events": user['events'],
+                                                "member": member.id,
+                                                "icon": "<:plus:1137646873042243625>",
+                                            }
+                                            data.append(userdata)
                                             icon = "<:min:1137646894827454565>"
-                                        
+                                            
                                         userdata = {
                                             "events": eventnumber,
                                             "member": member.id,
-                                            "icon": icon
+                                            "icon": icon,
                                         }
                                         data.append(userdata)
+                                    elif not any(user['discord_id'] in notfoundServer):
+                                        user = ctx.guild.get_member(int(user['discord_id']))
+                                        if not user:
+                                            notfoundServer.append(user)
                             else:
+                                notfoundDatabase.append(member.id)
                                 notfound = notfound + "<@" + str(member.id) + "> "
                     else:
                         await ctx.send("Rol voor `" + str(eventnumber) + " events` niet gevonden")
-                
+
+                sorted(data, key=lambda d: d['events'])
                 for data in data:
                     if data["events"] == prevamount:
                         info = info + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
@@ -320,12 +334,11 @@ class Frappe(commands.Cog):
                         else:
                             info = info + '\n' + str(data["events"]) + ' events\n' + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
                     prevamount = data["events"]
-                    
 
                 embed.title = "Check systeem op eventrollen"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
-                embed.description = info + notfound
+                embed.description = info + notfound + str(notfoundServer)
                 await ctx.send(embed=embed)
         else:
             return await ctx.send("Status code:" +str(api.status_code))
