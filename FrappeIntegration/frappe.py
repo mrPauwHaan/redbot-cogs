@@ -97,7 +97,7 @@ class Frappe(commands.Cog):
     @events.command()
     async def list(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
-        """Krijg een lijst op basis van de events"""
+        """Krijg een lijst op basis van de eventrollen"""
         if frappe_keys.get("api_key") is None:
             return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
         api_key =  frappe_keys.get("api_key")
@@ -188,7 +188,7 @@ class Frappe(commands.Cog):
     @commands.is_owner()
     async def roleupdate(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
-        """Update the events roles"""
+        """Checkt op basis van de events in de database of gebruikers de juiste rollen hebben"""
         if frappe_keys.get("api_key") is None:
             return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
         api_key =  frappe_keys.get("api_key")
@@ -267,7 +267,7 @@ class Frappe(commands.Cog):
     @commands.is_owner()
     async def checksystem(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
-        """Vergelijk de eventrollen met de lijst uit de database"""
+        """Check op basis van de eventrollen of die ook zo geregistreerd staan in de database"""
         if frappe_keys.get("api_key") is None:
             return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
         api_key =  frappe_keys.get("api_key")
