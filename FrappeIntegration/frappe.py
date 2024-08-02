@@ -324,7 +324,7 @@ class Frappe(commands.Cog):
                     else:
                         await ctx.send("Rol voor `" + str(eventnumber) + " events` niet gevonden")
 
-                data.sort(key= lambda x:x['events'])
+                data.sort(key= lambda x:x['events'], reverse=True)
                 for data in data:
                     if data["events"] == prevamount:
                         info = info + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
