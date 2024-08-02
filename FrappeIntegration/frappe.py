@@ -336,6 +336,8 @@ class Frappe(commands.Cog):
                 embed.title = "Check systeem op eventrollen"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
+                embed.description = data + notfound
+                await ctx.send(embed=embed)
                 embed.description = info + notfound
                 await ctx.send(embed=embed)
         else:
