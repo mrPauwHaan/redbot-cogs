@@ -278,10 +278,8 @@ class Frappe(commands.Cog):
             response = api.json()
             embed = discord.Embed()
             notfound = "\n\n Wel rol, niet in database: \n"
-            data = ""
-            data2 = []
+            data = []
             prevamount = ""
-            prevamount2 = ""
             info = ""
 
             if response['result']:
@@ -307,37 +305,26 @@ class Frappe(commands.Cog):
                                             "member": member.id,
                                             "icon": icon
                                         }
-                                        data2.append(userdata)
-
-                                        if eventnumber == prevamount:
-                                            data = data + icon + '<@' + str(member.id) + '> ' + '\n'
-                                        else:
-                                            if eventnumber == 1:
-                                                data = data + '\n' + str(eventnumber) + ' event\n' + icon + '<@' + str(member.id) + '> ' + '\n'
-                                            else:
-                                                data = data + '\n' + str(eventnumber) + ' events\n' + icon + '<@' + str(member.id) + '> ' + '\n'
-                                        prevamount = eventnumber
+                                        data.append(userdata)
                             else:
                                 notfound = notfound + "<@" + str(member.id) + "> "
                     else:
                         await ctx.send("Rol voor `" + str(eventnumber) + " events` niet gevonden")
                 
-                for data in data2:
-                    if data["events"] == prevamount2:
+                for data in data:
+                    if data["events"] == prevamount:
                         info = info + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
                     else:
                         if data["events"] == 1:
                             info = info + '\n' + str(data["events"]) + ' event\n' + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
                         else:
                             info = info + '\n' + str(data["events"]) + ' events\n' + data["icon"] + '<@' + str(data["member"]) + '> ' + '\n'
-                    prevamount2 = data["events"]
+                    prevamount = data["events"]
                     
 
                 embed.title = "Check systeem op eventrollen"
                 embed.set_footer(text="© Shadowzone Gaming")
                 embed.colour = int("ff0502", 16)
-                embed.description = data + notfound
-                await ctx.send(embed=embed)
                 embed.description = info + notfound
                 await ctx.send(embed=embed)
         else:
