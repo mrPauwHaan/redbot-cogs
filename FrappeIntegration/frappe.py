@@ -107,8 +107,8 @@ class Frappe(commands.Cog):
 
         if api.status_code == 200:
             response = api.json()
-            if response:
-               await ctx.send(response)
+            if response['data']:
+               await ctx.send(response['data'])
 
 
         else:
