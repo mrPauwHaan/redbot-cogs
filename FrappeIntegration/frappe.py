@@ -100,7 +100,7 @@ class Frappe(commands.Cog):
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
         today = date.today()
         params = {
-            "fields": json.dumps(["banner"]),
+            "fields": json.dumps(["banner", "name"]),
             "filters": json.dumps([["datum", "=", str(today)]])
         }
         api = requests.get('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params)
@@ -111,8 +111,8 @@ class Frappe(commands.Cog):
                guild = discord.Guild
                await ctx.send(response['data'])
                await guild.edit(
-                        banner="http://shadowzone.nl/" + response['data'],
-                        reason=f"Serverbanner automatisch aangepast",
+                        banner="http://shadowzone.nl/" + response['data']['banner'],
+                        reason=f"ServerManage changing banner to {response['data']['name']}",
                     )
             else:
                 await ctx.send('No data found')
