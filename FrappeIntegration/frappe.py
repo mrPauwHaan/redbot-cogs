@@ -117,7 +117,7 @@ class Frappe(commands.Cog):
                         reason=f"ServerManage changing banner to {response['data'][0]['name']}",
                     )
                 except Exception as error:
-                    return await ctx.send("Error: `" +str(error)+ "` \n Api data: " + response['data'])
+                    return await ctx.send("Error: `" +str(error)+ "` \n Api data: " + str(response['data']))
             else:
                 await ctx.send('No data found')
 
