@@ -90,7 +90,7 @@ class Frappe(commands.Cog):
         
     @frappe.command(aliases=["banner"])
     @commands.is_owner()
-    async def serverbanner(self, ctx: commands.Context):
+    async def serverbanner(self, ctx: commands.Context, guild: discord.Guild):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Update server banner based on database"""
         if frappe_keys.get("api_key") is None:
@@ -108,6 +108,10 @@ class Frappe(commands.Cog):
         if api.status_code == 200:
             response = api.json()
             if response['data']:
+               await guild.edit(
+                        banner="http://shadowzone.nl/" + response['data'],
+                        reason=f"Serverbanner automatisch aangepast",
+                    )
                await ctx.send(response['data'])
             else:
                 await ctx.send('No data found')
