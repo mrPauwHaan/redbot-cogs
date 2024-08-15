@@ -6,6 +6,7 @@ from redbot.core import commands, app_commands
 from redbot.core import Config
 import requests
 import json
+from datetime import date
 
 
 class Frappe(commands.Cog):
@@ -83,6 +84,28 @@ class Frappe(commands.Cog):
                 for birthdaymember in role.members:
                     await birthdaymember.remove_roles(role, reason="Birthday is over")
             pass
+
+        else:
+            return await ctx.send("Status code:" +str(api.status_code))
+        
+    @frappe.command(aliases=["banner"])
+    @commands.is_owner()
+    async def serverbanner(self, ctx: commands.Context):
+        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
+        """Update server banner based on database"""
+        if frappe_keys.get("api_key") is None:
+            return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
+        api_key =  frappe_keys.get("api_key")
+        api_secret = frappe_keys.get("api_secret")
+        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
+        today = date.today()
+        api = requests.get('http://shadowzone.nl/resource/:discord-server-banners?', headers=headers, data={"datum": today})
+
+        if api.status_code == 200:
+            response = api.json()
+            if response['result']:
+               await ctx.send(response['result'])
+
 
         else:
             return await ctx.send("Status code:" +str(api.status_code))
