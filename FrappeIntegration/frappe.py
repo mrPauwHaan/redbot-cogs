@@ -109,11 +109,11 @@ class Frappe(commands.Cog):
             response = api.json()
             if response['data']:
                guild = discord.Guild
+               await ctx.send(response['data'])
                await guild.edit(
                         banner="http://shadowzone.nl/" + response['data'],
                         reason=f"Serverbanner automatisch aangepast",
                     )
-               await ctx.send(response['data'])
             else:
                 await ctx.send('No data found')
 
