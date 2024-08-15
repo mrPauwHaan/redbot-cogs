@@ -99,7 +99,7 @@ class Frappe(commands.Cog):
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
         today = date.today()
-        api = requests.get('http://shadowzone.nl/api/resource/Discord server banners', headers=headers)
+        api = requests.get('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, data={"datum": today})
 
         if api.status_code == 200:
             response = api.json()
