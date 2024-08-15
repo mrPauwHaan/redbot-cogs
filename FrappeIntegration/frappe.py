@@ -109,6 +109,8 @@ class Frappe(commands.Cog):
             response = api.json()
             if response['data']:
                await ctx.send(response['data'])
+            else:
+                await ctx.send('No data found')
 
 
         else:
