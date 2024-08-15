@@ -101,7 +101,7 @@ class Frappe(commands.Cog):
         today = date.today()
         params = {
             "fields": json.dumps(["banner"]),
-            "filters": json.dumps([["datum", "=", today]])
+            "filters": json.dumps([["datum", "=", str(today)]])
         }
         api = requests.get('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params)
 
