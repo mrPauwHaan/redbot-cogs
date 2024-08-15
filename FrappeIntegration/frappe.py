@@ -115,10 +115,10 @@ class Frappe(commands.Cog):
                     buffer = BytesIO(banner.encode("utf8"))
                     await guild.edit(
                         banner=buffer,
-                        reason=f"ServerManage changing banner to {response['data']['name']}",
+                        reason=f"ServerManage changing banner to {response['data'][0]['name']}",
                     )
                 except Exception as error:
-                    return await ctx.send("Error: `" +str(error)+ "` \n Api data: " + response['data']['banner'])
+                    return await ctx.send("Error: `" +str(error)+ "` \n Api data: " + response['data'][0]['banner'])
             else:
                 await ctx.send('No data found')
 
