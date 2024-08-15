@@ -98,12 +98,11 @@ class Frappe(commands.Cog):
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
+        today = date.today()
         params = {
             "fields": json.dumps(["banner"]),
             "filters": json.dumps([["datum", "=", today]])
         }
-
-        today = date.today()
         api = requests.get('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params)
 
         if api.status_code == 200:
