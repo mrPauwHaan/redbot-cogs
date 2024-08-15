@@ -7,6 +7,7 @@ from redbot.core import Config
 import requests
 import json
 from datetime import date
+from io import BytesIO
 
 
 class Frappe(commands.Cog):
@@ -108,12 +109,16 @@ class Frappe(commands.Cog):
         if api.status_code == 200:
             response = api.json()
             if response['data']:
-               guild = discord.Guild
-               await ctx.send(response['data'])
-               await guild.edit(
-                        banner="http://shadowzone.nl/" + response['data']['banner'],
+                try:
+                    guild = discord.Guild
+                    banner = "http://shadowzone.nl/" + response['data']['banner']
+                    buffer = BytesIO(banner.encode("utf8"))
+                    await guild.edit(
+                        banner=buffer,
                         reason=f"ServerManage changing banner to {response['data']['name']}",
                     )
+                except Exception as error:
+                    return await ctx.send("Error: `" +str(error)+ "` \n Api data: " + response['data']['banner'])
             else:
                 await ctx.send('No data found')
 
