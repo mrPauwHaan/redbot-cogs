@@ -91,7 +91,7 @@ class Frappe(commands.Cog):
         
     @frappe.command(aliases=["banner"])
     @commands.is_owner()
-    async def serverbanner(self, ctx: commands.Context):
+    async def serverbanner(self, ctx: commands.Context, event):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Update server banner based on database"""
         if frappe_keys.get("api_key") is None:
@@ -99,12 +99,13 @@ class Frappe(commands.Cog):
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
-        today = date.today()
+
+
         params = {
-            "fields": json.dumps(["banner", "name"]),
-            "filters": json.dumps([["datum", "=", str(today)]])
+            "fields": json.dumps(["event", "naam_deelnemer", "pakket1", "aankomst", "vertrek", "payment_status"]),
+            "filters": json.dumps([["event", "=", str(today)]])
         }
-        api = requests.get('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params)
+        api = requests.get('http://shadowzone.nl/api/resource/Event deelnemers?', headers=headers, params=params)
 
         if api.status_code == 200:
             response = api.json()
@@ -394,5 +395,45 @@ class Frappe(commands.Cog):
                 embed.colour = int("ff0502", 16)
                 embed.description = description + notfoundDatabase + notfoundServertext
                 await ctx.send(embed=embed)
+        else:
+            return await ctx.send("Status code:" +str(api.status_code))
+
+    @events.command()
+    async def aanmeldingen(self, ctx: commands.Context):
+        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
+        """Krijg een lijst van de aanmeldingen voor een specifiek event"""
+        if frappe_keys.get("api_key") is None:
+            return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
+        api_key =  frappe_keys.get("api_key")
+        api_secret = frappe_keys.get("api_secret")
+        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
+        api = requests.get('http://shadowzone.nl/api/method/event_ranking', headers=headers)
+
+        if api.status_code == 200:
+            response = api.json()
+            data = ""
+            prevamount = ""
+            embed = discord.Embed()
+            if response['result']:
+                for member in response['result']:
+                    name = member['discord_id']
+                    amount = member['events']
+                    if member['status'] == 'Actief' and amount > 0:
+                        if amount == prevamount:
+                            data = data + '<@' + name + '> ' + '\n'
+                        else:
+                            if amount == 1:
+                                data = data + '\n' + str(amount) + ' event\n <@' + name + '> ' + '\n'
+                            else:
+                                data = data + '\n' + str(amount) + ' events\n <@' + name + '> ' + '\n'
+                        
+                        embed.description = data
+                        prevamount = amount
+                embed.title = "Aantal bezochte events:"
+                embed.colour = int("ff0502", 16)
+                embed.set_footer(text="© Shadowzone Gaming")
+                await ctx.send(embed=embed)
+            pass
+
         else:
             return await ctx.send("Status code:" +str(api.status_code))
