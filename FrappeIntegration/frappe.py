@@ -398,7 +398,7 @@ class Frappe(commands.Cog):
             return await ctx.send("Status code:" +str(api.status_code))
 
     @events.command()
-    async def aanmeldingen(self, ctx: commands.Context, event:int):
+    async def aanmeldingen(self, ctx: commands.Context, event):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Krijg een lijst van de aanmeldingen voor een specifiek event"""
         if frappe_keys.get("api_key") is None:
@@ -406,6 +406,14 @@ class Frappe(commands.Cog):
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
+
+        params = {
+            "fields": json.dumps(["event_name"]),
+            "filters": json.dumps([["event", "=", str(today)]])
+        }
+        api = requests.get('http://shadowzone.nl/api/resource/Beheer events?', headers=headers, params=params)
+
+
         params = {
             "fields": json.dumps(["event", "naam_deelnemer", "pakket1", "aankomst", "vertrek", "payment_status"]),
             "filters": json.dumps([["event", "=", str(today)]])
