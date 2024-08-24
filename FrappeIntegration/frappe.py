@@ -91,7 +91,7 @@ class Frappe(commands.Cog):
         
     @frappe.command(aliases=["banner"])
     @commands.is_owner()
-    async def serverbanner(self, ctx: commands.Context, event):
+    async def serverbanner(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Update server banner based on database"""
         if frappe_keys.get("api_key") is None:
@@ -99,13 +99,12 @@ class Frappe(commands.Cog):
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
-
-
+        today = date.today()
         params = {
-            "fields": json.dumps(["event", "naam_deelnemer", "pakket1", "aankomst", "vertrek", "payment_status"]),
-            "filters": json.dumps([["event", "=", str(today)]])
+            "fields": json.dumps(["banner", "name"]),
+            "filters": json.dumps([["datum", "=", str(today)]])
         }
-        api = requests.get('http://shadowzone.nl/api/resource/Event deelnemers?', headers=headers, params=params)
+        api = requests.get('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params)
 
         if api.status_code == 200:
             response = api.json()
@@ -407,7 +406,11 @@ class Frappe(commands.Cog):
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
-        api = requests.get('http://shadowzone.nl/api/method/event_ranking', headers=headers)
+        params = {
+            "fields": json.dumps(["event", "naam_deelnemer", "pakket1", "aankomst", "vertrek", "payment_status"]),
+            "filters": json.dumps([["event", "=", str(today)]])
+        }
+        api = requests.get('http://shadowzone.nl/api/resource/Event deelnemers?', headers=headers, params=params)
 
         if api.status_code == 200:
             response = api.json()
