@@ -110,9 +110,9 @@ class Frappe(commands.Cog):
             response = api.json()
             if response['data']:
                 banner = "http://shadowzone.nl/" + response['data'][0]['banner']
-                buffer = BytesIO(banner.encode("utf8"))
+                buffer = BytesIO(banner.encode("utf8")).read()
                 await ctx.guild.edit(
-                    banner=buffer.name,
+                    banner=buffer,
                     reason=f"ServerManage changing banner to {response['data'][0]['name']}",
                 )
             else:
