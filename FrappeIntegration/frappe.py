@@ -110,11 +110,14 @@ class Frappe(commands.Cog):
             response = api.json()
             if response['data']:
                 banner = "http://shadowzone.nl/" + response['data'][0]['banner']
-                buffer = BytesIO(banner)
-                await ctx.guild.edit(
-                    banner=buffer,
-                    reason=f"ServerManage changing banner to {response['data'][0]['name']}",
-                )
+                response = requests.get(banner, stream=True)
+                if response.status_code == 200:
+                    image_data = response.content
+                    buffer = BytesIO(image_data)
+                    await ctx.guild.edit(
+                        banner=buffer,
+                        reason=f"ServerManage changing banner to {response['data'][0]['name']}",
+                    )
             else:
                 await ctx.send('No data found')
 
