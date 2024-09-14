@@ -120,7 +120,7 @@ class Frappe(commands.Cog):
                                 reason=f"ServerManage changing banner to {response['data'][0]['name']}",
                             )
                         else:
-                            await ctx.send("Failed to download the banner image.")
+                            await ctx.send("Failed to download the banner image")
             else:
                 await ctx.send('No data found')
 
