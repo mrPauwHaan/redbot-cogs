@@ -110,9 +110,9 @@ class Frappe(commands.Cog):
             response = api.json()
             if response['data']:
                 banner = "http://shadowzone.nl/" + response['data'][0]['banner']
-                response = requests.get(banner, stream=True)
-                if response.status_code == 200:
-                    image_data = response.content
+                response2 = requests.get(banner, stream=True)
+                if response2.status_code == 200:
+                    image_data = response2.content
                     buffer = BytesIO(image_data)
                     await ctx.guild.edit(
                         banner=buffer,
