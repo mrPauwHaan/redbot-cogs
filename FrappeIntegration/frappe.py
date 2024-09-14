@@ -118,10 +118,8 @@ class Frappe(commands.Cog):
                                 banner=image_data,
                                 reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
                             )
-                            params2 = {
-                                "fields": json.dumps([["name", "=", "test"]])
-                            }
-                            response2 = requests.put('http://shadowzone.nl/api/resource/Discord server banners/' + response['data'][0]['name'] + '?', headers=headers, params=params2)
+                            params2 = {"name": "New description"}
+                            response2 = requests.put('http://shadowzone.nl/api/resource/Discord server banners/' + response['data'][0]['name'] + '?', headers=headers, data=params2)
                             await ctx.send(response2)
                                 
                         else:
