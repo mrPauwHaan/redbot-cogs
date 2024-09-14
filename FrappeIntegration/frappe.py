@@ -7,7 +7,8 @@ from redbot.core import Config
 import requests
 import json
 from datetime import date
-from io import BytesIO
+import io
+import aiohttp
 
 
 class Frappe(commands.Cog):
@@ -112,8 +113,10 @@ class Frappe(commands.Cog):
                 try:
                     banner = "http://shadowzone.nl/" + response['data'][0]['banner']
                     buffer = BytesIO(banner.encode("utf8"))
+                    buffer = io.BytesIO(await resp.read())
+                    file = discord.File(buffer)
                     await ctx.guild.edit(
-                        banner=buffer,
+                        banner=file,
                         reason=f"ServerManage changing banner to {response['data'][0]['name']}",
                     )
                 except Exception as error:
