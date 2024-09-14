@@ -115,9 +115,8 @@ class Frappe(commands.Cog):
                     async with session.get(banner_url) as resp:
                         if resp.status == 200:
                             image_data = await resp.read()
-                            buffer = BytesIO(image_data)
                             await ctx.guild.edit(
-                                banner=buffer,
+                                banner=image_data,
                                 reason=f"ServerManage changing banner to {response['data'][0]['name']}",
                             )
                         else:
