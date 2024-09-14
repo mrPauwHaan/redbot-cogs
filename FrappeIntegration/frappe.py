@@ -120,7 +120,7 @@ class Frappe(commands.Cog):
                             )
                             data = {"name": "New description"}
                             response2 = requests.put('http://shadowzone.nl/api/resource/Discord server banners/' + response['data'][0]['name'] + '?', headers=headers)
-                            await ctx.send(response2)
+                            await ctx.send(response2.error)
                                 
                         else:
                             await ctx.send("Failed to download the banner image")
