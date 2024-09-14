@@ -119,7 +119,7 @@ class Frappe(commands.Cog):
                                 reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
                             )
                             params2 = {
-                                "fields": json.dumps([["datum", "=", "01-01-2024"]])
+                                "fields": json.dumps([["datum", "=", "2024-01-01"]])
                             }
                             requests.put('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params2)
                         else:
