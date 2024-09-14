@@ -112,7 +112,6 @@ class Frappe(commands.Cog):
             if response['data']:
                 try:
                     banner = "http://shadowzone.nl/" + response['data'][0]['banner']
-                    buffer = BytesIO(banner.encode("utf8"))
                     buffer = io.BytesIO(await resp.read())
                     file = discord.File(buffer)
                     await ctx.guild.edit(
