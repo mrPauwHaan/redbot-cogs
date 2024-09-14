@@ -109,15 +109,12 @@ class Frappe(commands.Cog):
         if api.status_code == 200:
             response = api.json()
             if response['data']:
-                try:
-                    banner = "http://shadowzone.nl/" + response['data'][0]['banner']
-                    buffer = BytesIO(banner.encode("utf8"))
-                    await ctx.guild.edit(
-                        banner=buffer,
-                        reason=f"ServerManage changing banner to {response['data'][0]['name']}",
-                    )
-                except Exception as error:
-                    return await ctx.send("Error: `" +str(error)+ "` \n Api data: " + str(response['data']))
+                banner = "http://shadowzone.nl/" + response['data'][0]['banner']
+                buffer = BytesIO(banner.encode("utf8"))
+                await ctx.guild.edit(
+                    banner=buffer,
+                    reason=f"ServerManage changing banner to {response['data'][0]['name']}",
+                )
             else:
                 await ctx.send('No data found')
 
