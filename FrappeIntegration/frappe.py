@@ -112,7 +112,7 @@ class Frappe(commands.Cog):
                 banner = "http://shadowzone.nl/" + response['data'][0]['banner']
                 buffer = BytesIO(banner.encode("utf8"))
                 await ctx.guild.edit(
-                    banner=buffer,
+                    banner=buffer.name,
                     reason=f"ServerManage changing banner to {response['data'][0]['name']}",
                 )
             else:
