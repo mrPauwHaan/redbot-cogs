@@ -120,7 +120,7 @@ class Frappe(commands.Cog):
                             data = io.BytesIO(await resp.read())
                             await ctx.send(file=discord.File(data, 'banner.png'))
                             await ctx.guild.edit(
-                                banner=data,
+                                banner=discord.File(data, 'banner.png'),
                                 reason=f"ServerManage changing banner to {response['data'][0]['name']}",
                             )
                 except Exception as error:
