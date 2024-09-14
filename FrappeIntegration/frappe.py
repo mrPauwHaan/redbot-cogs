@@ -116,9 +116,7 @@ class Frappe(commands.Cog):
                         async with session.get(banner) as resp:
                             if resp.status != 200:
                                 return await ctx.send('Could not download file...')
-                            
                             data = io.BytesIO(await resp.read())
-                            await ctx.send(file=discord.File(data, 'banner.png'))
                             await ctx.guild.edit(
                                 banner=discord.File(data, 'banner.png'),
                                 reason=f"ServerManage changing banner to {response['data'][0]['name']}",
