@@ -8,8 +8,6 @@ import requests
 import json
 from datetime import date
 from io import BytesIO
-import urllib2
-import base64
 
 
 class Frappe(commands.Cog):
@@ -112,10 +110,10 @@ class Frappe(commands.Cog):
             response = api.json()
             if response['data']:
                 banner = "http://shadowzone.nl/" + response['data'][0]['banner']
-                contents = urllib2.urlopen(banner).read()
-                data = base64.b64encode(contents)
+                buffer = BytesIO(banner.encode("utf8"))
+                banner = buffer.read()
                 await ctx.guild.edit(
-                    banner=data,
+                    banner=banner,
                     reason=f"ServerManage changing banner to {response['data'][0]['name']}",
                 )
             else:
