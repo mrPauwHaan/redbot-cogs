@@ -7,8 +7,7 @@ from redbot.core import Config
 import requests
 import json
 from datetime import date
-import io
-import aiohttp
+from io import BytesIO
 
 
 class Frappe(commands.Cog):
@@ -112,17 +111,11 @@ class Frappe(commands.Cog):
             if response['data']:
                 try:
                     banner = "http://shadowzone.nl/" + response['data'][0]['banner']
-                    async with aiohttp.ClientSession() as session:
-                        async with session.get(banner) as resp:
-                            if resp.status != 200:
-                                return await ctx.send('Could not download file...')
-                            
-                            data = io.BytesIO(await resp.read())
-                            await ctx.send(file=discord.File(data, 'banner.png'))
-                            await ctx.guild.edit(
-                                banner=data,
-                                reason=f"ServerManage changing banner to {response['data'][0]['name']}",
-                            )
+                    buffer = BytesIO(banner.encode("utf8"))
+                    await ctx.guild.edit(
+                        banner=buffer,
+                        reason=f"ServerManage changing banner to {response['data'][0]['name']}",
+                    )
                 except Exception as error:
                     return await ctx.send("Error: `" +str(error)+ "` \n Api data: " + str(response['data']))
             else:
