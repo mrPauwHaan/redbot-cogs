@@ -121,8 +121,8 @@ class Frappe(commands.Cog):
                             params2 = {
                                 "fields": json.dumps([["datum", "=", "2024-01-01"]])
                             }
-                            requests.put('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params2)
-                            await ctx.send(response['data'])
+                            response2 = requests.put('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params2)
+                            await ctx.send(response2['data'])
                                 
                         else:
                             await ctx.send("Failed to download the banner image")
