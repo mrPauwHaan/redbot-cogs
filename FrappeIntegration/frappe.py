@@ -116,7 +116,7 @@ class Frappe(commands.Cog):
                             image_data = await resp.read()
                             await ctx.guild.edit(
                                 banner=image_data,
-                                reason=f"ServerManage changing banner to {response['data'][0]['name']}",
+                                reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
                             )
                         else:
                             await ctx.send("Failed to download the banner image")
