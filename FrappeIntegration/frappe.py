@@ -119,12 +119,11 @@ class Frappe(commands.Cog):
                                 reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
                             )
                             params2 = {
-                                "fields": json.dumps([["name", "=", "test"]])
+                                "fields": json.dumps([["datum", "=", "2024-01-01"]])
                             }
-                            try:
-                                requests.put('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params2)
-                            except Exception as error:
-                                return await ctx.send("Error: `" +str(error)+ "`")
+                            requests.put('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params2)
+                            await ctx.send(response['data'])
+                                
                         else:
                             await ctx.send("Failed to download the banner image")
             else:
