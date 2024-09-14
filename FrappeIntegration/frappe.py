@@ -8,6 +8,7 @@ import requests
 import json
 from datetime import date
 from io import BytesIO
+import aiohttp
 
 
 class Frappe(commands.Cog):
