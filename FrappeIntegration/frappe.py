@@ -7,7 +7,6 @@ from redbot.core import Config
 import requests
 import json
 from datetime import date
-from io import BytesIO
 import aiohttp
 
 
