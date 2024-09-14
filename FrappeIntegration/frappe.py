@@ -111,16 +111,16 @@ class Frappe(commands.Cog):
             if response['data']:
                 banner_url = "http://shadowzone.nl/" + response['data'][0]['banner']
                 async with aiohttp.ClientSession() as session:
-                async with session.get(banner_url) as resp:
-                    if resp.status == 200:
-                        image_data = await resp.read()
-                        buffer = BytesIO(image_data)
-                        await ctx.guild.edit(
-                            banner=buffer,
-                            reason=f"ServerManage changing banner to {response['data'][0]['name']}",
-                        )
-                    else:
-                        await ctx.send("Failed to download the banner image.")
+                    async with session.get(banner_url) as resp:
+                        if resp.status == 200:
+                            image_data = await resp.read()
+                            buffer = BytesIO(image_data)
+                            await ctx.guild.edit(
+                                banner=buffer,
+                                reason=f"ServerManage changing banner to {response['data'][0]['name']}",
+                            )
+                        else:
+                            await ctx.send("Failed to download the banner image.")
             else:
                 await ctx.send('No data found')
 
