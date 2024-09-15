@@ -137,10 +137,6 @@ class Frappe(commands.Cog):
                         self.Frappeclient.update(doc)
                     else:
                         await ctx.send("Failed to download the banner image")
-
-
-        else:
-            return await ctx.send("Status code:" +str(api.status_code))
     
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
