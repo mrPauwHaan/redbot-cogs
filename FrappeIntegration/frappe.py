@@ -30,7 +30,7 @@ class Frappe(commands.Cog):
     @commands.guild_only()
     @commands.hybrid_command(name="id", description="Return the user ID")
     async def id(self, ctx, *, user: discord.Member=None):
-        """Send back the user ID of the sender"""
+        """Krijg Discord ID van gebruiker"""
         author = ctx.author
 
         if not user:
@@ -65,7 +65,7 @@ class Frappe(commands.Cog):
     @commands.bot_has_permissions(embed_links=True)
     @commands.hybrid_group()
     async def frappe(self, ctx: commands.Context) -> None:
-        """Group of commands to use Frappe."""
+        """Commando's voor interactie met website"""
         pass
     
     @frappe.command(aliases=["bd"])
