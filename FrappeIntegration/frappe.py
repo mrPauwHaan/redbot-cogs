@@ -137,7 +137,7 @@ class Frappe(commands.Cog):
                                 Frappe = FrappeClient("http://shadowzone.nl")
                                 Frappe.authenticate(api_key, api_secret)
                                 doc = Frappe.get_doc('Discord server banners', '1i9ntsd8u3')
-                                doc['datum'] = '2018-01-01'
+                                doc['test'] = '2018-01-01'
                                 Frappe.update(doc)
                                 await ctx.send(doc)
                             else:
