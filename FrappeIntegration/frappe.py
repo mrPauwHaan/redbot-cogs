@@ -134,7 +134,7 @@ class Frappe(commands.Cog):
                             api_key =  frappe_keys.get("username")
                             api_secret = frappe_keys.get("password")
 
-                            conn = FrappeClient("shadowzone.nl")
+                            conn = FrappeClient("https://shadowzone.nl")
                             conn.login(api_key, api_secret)
                             doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
                             doc['datum'] = '2018-01-01'
