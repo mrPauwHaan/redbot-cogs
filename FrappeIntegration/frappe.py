@@ -402,13 +402,16 @@ class Frappe(commands.Cog):
         """Krijg een lijst van de aanmeldingen voor een specifiek event"""
         eventcheck = self.Frappeclient.get_value("Beheer events", "event_name", {"event_name": event})
         data = ""
+        amount = 0
         if eventcheck:
             
             deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "naam_deelnemer", "pakket1", "aankomst", "vertrek", "payment_status"], filters = {'event':event})
             embed = discord.Embed()
             if deelnemers:
                 for deelnemer in deelnemers:
+                    amount = amount + 1
                     data = data + "\n" + deelnemer['naam_deelnemer']
+                data = amount + " deelnemers \n" + data
             else:
                 data = "Geen deelnemers gevonden"
             embed.description = data
@@ -420,4 +423,4 @@ class Frappe(commands.Cog):
             events = self.Frappeclient.get_list('Beheer events', fields = ['event_name'], order_by = 'creation desc')
             for event in events:
                     data = data + "\n" + event['event_name']
-            return await ctx.send("Event niet gevonden. Zorg dat je de volledige titel invult tussen aanhalingstekens \n\n Alle event:: \n " +str(data))
+            return await ctx.send("Event niet gevonden. Zorg dat je de volledige titel invult tussen aanhalingstekens \n\n Alle events: \n " +str(data))
