@@ -21,7 +21,7 @@ class Frappe(commands.Cog):
         api_key =  frappe_keys.get("username")
         api_secret = frappe_keys.get("password")
         if api_key and api_secret:
-            self.Frappeclient = FrappeClient("shadowzone.nl")
+            self.Frappeclient = FrappeClient("http://shadowzone.nl")
             self.Frappeclient.login(api_key, api_secret)
         else:
             print("API keys for Frappe are missing.")
