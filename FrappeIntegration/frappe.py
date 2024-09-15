@@ -400,21 +400,24 @@ class Frappe(commands.Cog):
     @events.command()
     async def aanmeldingen(self, ctx: commands.Context, event: str = None):
         """Krijg een lijst van de aanmeldingen voor een specifiek event"""
-
-        events = self.Frappeclient.get_list('Beheer events', fields = ['event_name'])
-
-        response = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "naam_deelnemer", "pakket1", "aankomst", "vertrek", "payment_status"], filters = {'event':event})
-
-        if response:
+        eventcheck = self.Frappeclient.get_value("Beheer events", "event_name", {"event_name": event})
+        data = ""
+        if eventcheck:
+            
+            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "naam_deelnemer", "pakket1", "aankomst", "vertrek", "payment_status"], filters = {'event':event})
             embed = discord.Embed()
-            data = ""
-            for deelnemer in response:
-                data = data + "\n" + deelnemer['naam_deelnemer']
-
+            if deelnemers:
+                for deelnemer in deelnemers:
+                    data = data + "\n" + deelnemer['naam_deelnemer']
+            else:
+                data = "Geen deelnemers gevonden"
             embed.description = data
             embed.title = event + " deelnemers:"
             embed.colour = int("ff0502", 16)
             embed.set_footer(text="© Shadowzone Gaming")
             await ctx.send(embed=embed)
         else:
-            return await ctx.send("Event niet gevonden: \n " +str(events))
+            events = self.Frappeclient.get_list('Beheer events', fields = ['event_name'], order_by = 'event_name desc')
+            for event in events:
+                    data = data + "\n" + event['event_name']
+            return await ctx.send("Event niet gevonden: \n " +str(data))
