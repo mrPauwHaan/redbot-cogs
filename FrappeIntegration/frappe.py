@@ -137,8 +137,8 @@ class Frappe(commands.Cog):
                             doc['datum'] = '2018-01-01'
                             try:
                                 self.Frappeclient.delete('Discord server banners', response['data'][0]['name'])
-                            except:
-                                await ctx.send(response.json())
+                            except Exception as error:
+                                await ctx.send(error)
                             response2 = self.Frappeclient.insert(doc)
                             await ctx.send(doc)
                             await ctx.send(response2)
