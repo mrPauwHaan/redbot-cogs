@@ -401,7 +401,7 @@ class Frappe(commands.Cog):
     async def aanmeldingen(self, ctx: commands.Context, event):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         response = self.Frappeclient.get_list('Beheer events', fields = ['event_name'])
-        """Krijg een lijst van de aanmeldingen voor een specifiek event""" + response
+        """Krijg een lijst van de aanmeldingen voor een specifiek event""" + str(response)
         if frappe_keys.get("api_key") is None:
             return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
         api_key =  frappe_keys.get("api_key")
