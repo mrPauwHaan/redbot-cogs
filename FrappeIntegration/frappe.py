@@ -411,7 +411,7 @@ class Frappe(commands.Cog):
                 for deelnemer in deelnemers:
                     amount = amount + 1
                     data = data + "\n" + deelnemer['naam_deelnemer']
-                data = amount + " aanmeldingen \n" + data
+                data = str(amount) + " aanmeldingen \n" + data
             else:
                 data = "Geen deelnemers gevonden"
             embed.description = data
