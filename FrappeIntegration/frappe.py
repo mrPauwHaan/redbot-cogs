@@ -41,7 +41,7 @@ class Frappe(commands.Cog):
     @commands.guild_only()
     @commands.hybrid_command(name="sponsorkliks", description="Zie de Sponsorkliks status")
     async def sponsorkliks(self, ctx):
-        """Zie de Sponsorkliks statu"""
+        """Zie de Sponsorkliks status"""
         response = requests.get("https://www.sponsorkliks.com/api/?club=11592&call=commissions_total", headers={'User-Agent': 'My User Agent 1.0'})
         json_object = response.json()
         pending = float(json_object['commissions_total']['pending'])
@@ -118,9 +118,10 @@ class Frappe(commands.Cog):
             "filters": json.dumps([["datum", "=", str(today)]])
         }
         api = requests.get('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params)
+        
+        response = self.Frappeclient.get_list('Discord server banners', fields = ['name', 'banner'], filters = {'datum':str(today)})
 
         if api.status_code == 200:
-            response = api.json()
             if response['data']:
                 banner_url = "http://shadowzone.nl/" + response['data'][0]['banner']
                 async with aiohttp.ClientSession() as session:
