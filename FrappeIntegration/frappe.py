@@ -407,7 +407,7 @@ class Frappe(commands.Cog):
         data = ""
         amount = 0
         if eventcheck:
-            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "payment_status", "discord_id"], filters = {'event':event}, order_by = 'creation desc')
+            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "payment_status", "discord_id", "pakket1", "vertrek", "aankomst"], filters = {'event':event}, order_by = 'creation desc')
             embed = discord.Embed()
             if deelnemers:
                 for deelnemer in deelnemers:
@@ -415,8 +415,12 @@ class Frappe(commands.Cog):
                     if deelnemer['payment_status'] == "Completed":
                         data = data + "\n <@" + deelnemer['discord_id'] + ">"
                     else: 
-                        data = data + "\n <@" + deelnemer['discord_id'] + "> <:min:1137646894827454565>"
-                data = str(amount) + " aanmeldingen \n" + data + "\n" + "-# <:min:1137646894827454565> betekent niet betaald"
+                        data = data + "\n <:min:1137646894827454565> <@" + deelnemer['discord_id'] + "> "
+                    if deelnemer['pakket1']:
+                        data = data + "(BBQ only)"
+                    else:
+                        data = data + "(" + deelnemer['vertrek'] + " - " + deelnemer['aankomst'] + ")"
+                data = str(amount) + " aanmeldingen \n" + data + "\n\n" + "-# <:min:1137646894827454565> betekent niet betaald"
             else:
                 data = "Geen deelnemers gevonden"
             embed.description = data
