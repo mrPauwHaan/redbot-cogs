@@ -136,6 +136,7 @@ class Frappe(commands.Cog):
                             doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
                             doc['datum'] = '2018-01-01'
                             self.Frappeclient.delete('Discord server banners', response['data'][0]['name'])
+                            await ctx.send(response.json())
                             response2 = self.Frappeclient.insert(doc)
                             await ctx.send(doc)
                             await ctx.send(response2)
