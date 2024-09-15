@@ -19,8 +19,11 @@ class Frappe(commands.Cog):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
-        client = FrappeClient("http://shadowzone.nl")
-        client.authenticate(api_key, api_secret)
+        if api_key and api_secret:
+            client = FrappeClient("http://shadowzone.nl")
+            client.authenticate(api_key, api_secret)
+        else:
+            print("API keys for Frappe are missing.")
 
     @commands.guild_only()
     @commands.hybrid_command(name="id", description="Return the user ID")
@@ -126,7 +129,7 @@ class Frappe(commands.Cog):
                                 banner=image_data,
                                 reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
                             )
-                            doc = self.client.get_doc('Discord server banners', response['data'][0]['name'])
+                            doc = await self.client.get_doc('Discord server banners', response['data'][0]['name'])
                             doc['name'] = 'Test'
                             self.client.update(doc)
                                 
