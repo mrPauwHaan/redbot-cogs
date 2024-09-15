@@ -17,12 +17,12 @@ class Frappe(commands.Cog):
         self.Frappeclient = None
 
     async def cog_load(self):
-        frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
-        api_key =  frappe_keys.get("username")
-        api_secret = frappe_keys.get("password")
+        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
+        api_key =  frappe_keys.get("api_key")
+        api_secret = frappe_keys.get("api_secret")
         if api_key and api_secret:
             self.Frappeclient = FrappeClient("http://shadowzone.nl")
-            self.Frappeclient.login(api_key, api_secret)
+            self.Frappeclient.authenticate(api_key, api_secret)
         else:
             print("API keys for Frappe are missing.")
 
@@ -130,9 +130,12 @@ class Frappe(commands.Cog):
                     #            banner=image_data,
                     #            reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
                     #        )
-                            frappe_keys = await self.bot.get_shared_api_tokens("frappe")
-                            api_key =  frappe_keys.get("api_key")
-                            api_secret = frappe_keys.get("api_secret")
+                            frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
+                            api_key =  frappe_keys.get("username")
+                            api_secret = frappe_keys.get("password")
+
+                            conn = FrappeClient("shadowzone.nl")
+                            conn.login(api_key, api_secret)
                             doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
                             doc['datum'] = '2018-01-01'
                             response2 = self.Frappeclient.update(doc)
