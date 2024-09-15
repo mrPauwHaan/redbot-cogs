@@ -126,17 +126,19 @@ class Frappe(commands.Cog):
                     async with session.get(banner_url) as resp:
                         if resp.status == 200:
                             image_data = await resp.read()
-                            await ctx.guild.edit(
-                                banner=image_data,
-                                reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
-                            )
+                    #        await ctx.guild.edit(
+                    #            banner=image_data,
+                    #            reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
+                    #        )
                             frappe_keys = await self.bot.get_shared_api_tokens("frappe")
                             api_key =  frappe_keys.get("api_key")
                             api_secret = frappe_keys.get("api_secret")
                             doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
                             doc['datum'] = '2018-01-01'
                             response = self.Frappeclient.update(doc)
-                            await ctx.send(response.status_code)
+                            await ctx.send(response)
+                            newdoc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
+                            await ctx.send(newdoc)
                                 
                         else:
                             await ctx.send("Failed to download the banner image")
