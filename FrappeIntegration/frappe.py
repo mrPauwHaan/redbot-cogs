@@ -17,12 +17,12 @@ class Frappe(commands.Cog):
         self.Frappeclient = None
 
     async def cog_load(self):
-        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
-        api_key =  frappe_keys.get("api_key")
-        api_secret = frappe_keys.get("api_secret")
+        frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
+        api_key =  frappe_keys.get("username")
+        api_secret = frappe_keys.get("password")
         if api_key and api_secret:
-            self.Frappeclient = FrappeClient("http://shadowzone.nl")
-            self.Frappeclient.authenticate(api_key, api_secret)
+            self.Frappeclient = FrappeClient("shadowzone.nl")
+            self.Frappeclient.login(api_key, api_secret)
         else:
             print("API keys for Frappe are missing.")
 
