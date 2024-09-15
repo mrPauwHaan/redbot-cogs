@@ -14,14 +14,15 @@ from frappeclient import FrappeClient
 class Frappe(commands.Cog):
     def __init__(self, bot: Red) -> None:
         self.bot = bot
+        self.Frappeclient = None
 
     async def cog_load(self):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
         if api_key and api_secret:
-            client = FrappeClient("http://shadowzone.nl")
-            client.authenticate(api_key, api_secret)
+            self.Frappeclient = FrappeClient("http://shadowzone.nl")
+            self.Frappeclient.authenticate(api_key, api_secret)
         else:
             print("API keys for Frappe are missing.")
 
@@ -129,9 +130,9 @@ class Frappe(commands.Cog):
                                 banner=image_data,
                                 reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
                             )
-                            doc = await self.client.get_doc('Discord server banners', response['data'][0]['name'])
+                            doc = await self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
                             doc['name'] = 'Test'
-                            self.client.update(doc)
+                            self.Frappeclient.update(doc)
                                 
                         else:
                             await ctx.send("Failed to download the banner image")
