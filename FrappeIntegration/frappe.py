@@ -8,11 +8,17 @@ import requests
 import json
 from datetime import date
 import aiohttp
+from frappeclient import FrappeClient
 
 
 class Frappe(commands.Cog):
     def __init__(self, bot: Red) -> None:
         self.bot = bot
+        frappe_keys = self.bot.get_shared_api_tokens("frappe")
+        api_key =  frappe_keys.get("api_key")
+        api_secret = frappe_keys.get("api_secret")
+        client = FrappeClient("http://shadowzone.nl")
+        client.authenticate(api_key, api_secret)
 
     @commands.guild_only()
     @commands.hybrid_command(name="id", description="Return the user ID")
@@ -118,10 +124,9 @@ class Frappe(commands.Cog):
                                 banner=image_data,
                                 reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
                             )
-                            update_data = {"datum": "2020-01-01"}
-                            api2 = requests.put('http://shadowzone.nl/api/resource/Discord server banners/' + response['data'][0]['name'], headers={**headers, 'Content-Type': 'application/json'}, json=update_data)
-                            response2 = api2.json()
-                            await ctx.send(response2['data'])
+                            doc = self.client.get_doc('Discord server banners', response['data'][0]['name'])
+                            doc['name'] = 'Test'
+                            self.client.update(doc)
                                 
                         else:
                             await ctx.send("Failed to download the banner image")
