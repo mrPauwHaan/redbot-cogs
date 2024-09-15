@@ -402,7 +402,7 @@ class Frappe(commands.Cog):
         """Krijg een lijst van de aanmeldingen voor een specifiek event"""
         deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event"], order_by = 'creation desc')
         if not event:
-            event = deelnemers[0][event]
+            event = deelnemers[0]['event']
         eventcheck = self.Frappeclient.get_value("Beheer events", "event_name", {"event_name": event})
         data = ""
         amount = 0
