@@ -136,7 +136,7 @@ class Frappe(commands.Cog):
                             if api_key and api_secret:
                                 Frappeclient = FrappeClient("http://shadowzone.nl")
                                 Frappeclient.authenticate(api_key, api_secret)
-                                doc = Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
+                                doc = Frappeclient.get_doc('Discord server banners', '1i9ntsd8u3')
                                 doc['datum'] = '2018-01-01'
                                 doc['name'] = 'Test'
                                 Frappeclient.update(doc)
