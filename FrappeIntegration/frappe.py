@@ -420,7 +420,7 @@ class Frappe(commands.Cog):
                     if deelnemer['pakket1']:
                         data = data + "(BBQ only)"
                     else:
-                        data = data + "(" + deelnemer['vertrek'] + " - " + deelnemer['aankomst'] + ")"
+                        data = data + "(" + deelnemer['aankomst'] + " - " + deelnemer['vertrek'] + ")"
                 data = str(amount) + " aanmeldingen \n" + data + "\n\n" + "-# <:min:1137646894827454565> betekent niet betaald"
             else:
                 data = "Geen deelnemers gevonden"
