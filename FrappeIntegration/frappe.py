@@ -138,7 +138,6 @@ class Frappe(commands.Cog):
                                 Frappe.authenticate(api_key, api_secret)
                                 doc = Frappe.get_doc('Discord server banners', '1i9ntsd8u3')
                                 doc['datum'] = '2018-01-01'
-                                doc['name'] = 'Test'
                                 Frappe.update(doc)
                                 await ctx.send(doc)
                             else:
