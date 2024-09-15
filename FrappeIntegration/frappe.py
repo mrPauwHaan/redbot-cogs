@@ -138,8 +138,6 @@ class Frappe(commands.Cog):
                             self.Frappeclient.update(doc)
                         else:
                             await ctx.send("Failed to download the banner image")
-            else:
-                await ctx.send('No data found')
 
 
         else:
