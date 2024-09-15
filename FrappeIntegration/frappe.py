@@ -223,7 +223,7 @@ class Frappe(commands.Cog):
             return await ctx.send("Status code:" +str(api.status_code))
     
     @events.command()
-    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
     async def roleupdate(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Checkt op basis van de events in de database of gebruikers de juiste rollen hebben"""
@@ -302,7 +302,7 @@ class Frappe(commands.Cog):
         
 
     @events.command()
-    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
     async def checksystem(self, ctx: commands.Context):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Check of de eventrollen overeenkomen met de database en geeft de verschillen weer"""
