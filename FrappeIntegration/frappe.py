@@ -105,21 +105,8 @@ class Frappe(commands.Cog):
     @frappe.command(aliases=["banner"])
     @commands.is_owner()
     async def serverbanner(self, ctx: commands.Context):
-        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Update server banner based on database"""
-        if frappe_keys.get("api_key") is None:
-            return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
-        api_key =  frappe_keys.get("api_key")
-        api_secret = frappe_keys.get("api_secret")
-        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
-        today = datetime.date.today()
-        params = {
-            "fields": json.dumps(["banner", "name"]),
-            "filters": json.dumps([["datum", "=", str(today)]])
-        }
-        api = requests.get('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params)
-        
-        response = self.Frappeclient.get_list('Discord server banners', fields = ['name', 'banner'], filters = {'datum':str(today)})
+        response = self.Frappeclient.get_list('Discord server banners', fields = ['name', 'banner'], filters = {'datum':str(datetime.date.today())})
         if response:
             banner_url = "http://shadowzone.nl/" + response[0]['banner']
             async with aiohttp.ClientSession() as session:
@@ -422,14 +409,14 @@ class Frappe(commands.Cog):
 
         params = {
             "fields": json.dumps(["event_name"]),
-            "filters": json.dumps([["event", "=", str(today)]])
+            "filters": json.dumps([["event", "=", str(datetime.date.today())]])
         }
         api = requests.get('http://shadowzone.nl/api/resource/Beheer events?', headers=headers, params=params)
 
 
         params = {
             "fields": json.dumps(["event", "naam_deelnemer", "pakket1", "aankomst", "vertrek", "payment_status"]),
-            "filters": json.dumps([["event", "=", str(today)]])
+            "filters": json.dumps([["event", "=", str(datetime.date.today())]])
         }
         api = requests.get('http://shadowzone.nl/api/resource/Event deelnemers?', headers=headers, params=params)
 
