@@ -7,6 +7,7 @@ from redbot.core import Config
 import requests
 import json
 from datetime import date
+import datetime
 from dateutil.relativedelta import relativedelta
 import aiohttp
 from frappeclient import FrappeClient
@@ -132,7 +133,8 @@ class Frappe(commands.Cog):
                                 reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
                             )
                             doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
-                            newDate = response['data'][0]['name'] + relativedelta(years=1)
+                            date = datetime.datetime.strptime(response['data'][0]['name'], '%Y-%m-%d').date()
+                            newDate = date + relativedelta(years=1)
                             doc['datum'] = newDate
                             response2 = self.Frappeclient.update(doc)
                             await ctx.send(doc)
