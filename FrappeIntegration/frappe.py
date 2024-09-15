@@ -400,19 +400,13 @@ class Frappe(commands.Cog):
     @events.command()
     async def aanmeldingen(self, ctx: commands.Context, event):
         frappe_keys = await self.bot.get_shared_api_tokens("frappe")
-        """Krijg een lijst van de aanmeldingen voor een specifiek event"""
+        response = self.Frappeclient.get_list('Beheer events', fields = ['event_name'])
+        """Krijg een lijst van de aanmeldingen voor een specifiek event""" + response
         if frappe_keys.get("api_key") is None:
             return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
-
-        params = {
-            "fields": json.dumps(["event_name"]),
-            "filters": json.dumps([["event", "=", str(datetime.date.today())]])
-        }
-        api = requests.get('http://shadowzone.nl/api/resource/Beheer events?', headers=headers, params=params)
-
 
         params = {
             "fields": json.dumps(["event", "naam_deelnemer", "pakket1", "aankomst", "vertrek", "payment_status"]),
