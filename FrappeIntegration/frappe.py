@@ -417,4 +417,4 @@ class Frappe(commands.Cog):
             embed.set_footer(text="© Shadowzone Gaming")
             await ctx.send(embed=embed)
         else:
-            return await ctx.send("Event niet gevonden: \n " +str(response))
+            return await ctx.send("Event niet gevonden: \n " +str(events))
