@@ -416,7 +416,7 @@ class Frappe(commands.Cog):
                         data = data + "\n <@" + deelnemer['discord_id'] + ">"
                     else: 
                         data = data + "\n <@" + deelnemer['discord_id'] + "> <:min:1137646894827454565>"
-                data = str(amount) + " aanmeldingen \n" + data + "-# <:min:1137646894827454565> betekent niet betaald"
+                data = str(amount) + " aanmeldingen \n" + data + "\n -# <:min:1137646894827454565> betekent niet betaald"
             else:
                 data = "Geen deelnemers gevonden"
             embed.description = data
