@@ -6,7 +6,6 @@ from redbot.core import commands, app_commands
 from redbot.core import Config
 import requests
 import json
-from datetime import date
 import datetime
 from dateutil.relativedelta import relativedelta
 import aiohttp
@@ -113,7 +112,7 @@ class Frappe(commands.Cog):
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
         headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
-        today = date.today()
+        today = datetime.date.today()
         params = {
             "fields": json.dumps(["banner", "name"]),
             "filters": json.dumps([["datum", "=", str(today)]])
