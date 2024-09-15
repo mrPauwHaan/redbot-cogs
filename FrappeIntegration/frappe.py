@@ -135,10 +135,7 @@ class Frappe(commands.Cog):
                             date = datetime.datetime.strptime(doc['datum'], '%Y-%m-%d').date()
                             newDate = date + relativedelta(years=1)
                             doc['datum'] = str(newDate)
-                            response2 = self.Frappeclient.update(doc)
-                            await ctx.send(doc)
-                            await ctx.send(response2)
-                                
+                            self.Frappeclient.update(doc)
                         else:
                             await ctx.send("Failed to download the banner image")
             else:
