@@ -136,7 +136,7 @@ class Frappe(commands.Cog):
                             doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
                             doc['datum'] = '2018-01-01'
                             response = self.Frappeclient.update(doc)
-                            await ctx.send(response)
+                            await ctx.send(response.status_code)
                                 
                         else:
                             await ctx.send("Failed to download the banner image")
