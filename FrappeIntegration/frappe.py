@@ -140,6 +140,7 @@ class Frappe(commands.Cog):
                                 doc['datum'] = '2018-01-01'
                                 doc['name'] = 'Test'
                                 Frappeclient.update(doc)
+                                await ctx.send(doc)
                             else:
                                 print("API keys for Frappe are missing.")
                                 
