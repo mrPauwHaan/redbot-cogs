@@ -7,6 +7,7 @@ from redbot.core import Config
 import requests
 import json
 from datetime import date
+from dateutil.relativedelta import relativedelta
 import aiohttp
 from frappeclient import FrappeClient
 
@@ -126,16 +127,13 @@ class Frappe(commands.Cog):
                     async with session.get(banner_url) as resp:
                         if resp.status == 200:
                             image_data = await resp.read()
-                    #        await ctx.guild.edit(
-                    #            banner=image_data,
-                    #            reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
-                    #        )
-                            frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
-                            api_key =  frappe_keys.get("username")
-                            api_secret = frappe_keys.get("password")
-
+                            await ctx.guild.edit(
+                                banner=image_data,
+                                reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
+                            )
                             doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
-                            doc['datum'] = '2018-01-01'
+                            newDate = response['data'][0]['name'] + relativedelta(years=1)
+                            doc['datum'] = newDate
                             response2 = self.Frappeclient.update(doc)
                             await ctx.send(doc)
                             await ctx.send(response2)
