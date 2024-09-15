@@ -14,14 +14,11 @@ from frappeclient import FrappeClient
 class Frappe(commands.Cog):
     def __init__(self, bot: Red) -> None:
         self.bot = bot
-        self.Frappeclient = None
 
     async def cog_load(self):
         frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
         api_key =  frappe_keys.get("username")
         api_secret = frappe_keys.get("password")
-
-        
         if api_key and api_secret:
             conn = FrappeClient("https://shadowzone.nl")
             conn.login(api_key, api_secret)
@@ -136,7 +133,7 @@ class Frappe(commands.Cog):
                             api_key =  frappe_keys.get("username")
                             api_secret = frappe_keys.get("password")
 
-                            doc = conn.get_doc('Discord server banners', response['data'][0]['name'])
+                            doc = self.conn.get_doc('Discord server banners', response['data'][0]['name'])
                             doc['datum'] = '2018-01-01'
                             response2 = conn.update(doc)
                             await ctx.send(doc)
