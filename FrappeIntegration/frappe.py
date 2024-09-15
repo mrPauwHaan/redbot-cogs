@@ -134,12 +134,12 @@ class Frappe(commands.Cog):
                             api_key =  frappe_keys.get("api_key")
                             api_secret = frappe_keys.get("api_secret")
                             if api_key and api_secret:
-                                Frappeclient = FrappeClient("http://shadowzone.nl")
-                                Frappeclient.authenticate(api_key, api_secret)
-                                doc = Frappeclient.get_doc('Discord server banners', '1i9ntsd8u3')
+                                Frappe = FrappeClient("http://shadowzone.nl")
+                                Frappe.authenticate(api_key, api_secret)
+                                doc = Frappe.get_doc('Discord server banners', '1i9ntsd8u3')
                                 doc['datum'] = '2018-01-01'
                                 doc['name'] = 'Test'
-                                Frappeclient.update(doc)
+                                Frappe.update(doc)
                                 await ctx.send(doc)
                             else:
                                 print("API keys for Frappe are missing.")
