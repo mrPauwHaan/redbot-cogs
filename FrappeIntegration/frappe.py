@@ -130,9 +130,18 @@ class Frappe(commands.Cog):
                                 banner=image_data,
                                 reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
                             )
-                            doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
-                            doc['name'] = 'Test'
-                            self.Frappeclient.update(doc)
+                            frappe_keys = await self.bot.get_shared_api_tokens("frappe")
+                            api_key =  frappe_keys.get("api_key")
+                            api_secret = frappe_keys.get("api_secret")
+                            if api_key and api_secret:
+                                Frappeclient = FrappeClient("http://shadowzone.nl")
+                                Frappeclient.authenticate(api_key, api_secret)
+                                doc = Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
+                                doc['datum'] = '2018-01-01'
+                                doc['name'] = 'Test'
+                                Frappeclient.update(doc)
+                            else:
+                                print("API keys for Frappe are missing.")
                                 
                         else:
                             await ctx.send("Failed to download the banner image")
