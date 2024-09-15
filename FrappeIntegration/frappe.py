@@ -412,8 +412,11 @@ class Frappe(commands.Cog):
             if deelnemers:
                 for deelnemer in deelnemers:
                     amount = amount + 1
-                    data = data + "\n <@" + deelnemer['discord_id'] + ">"
-                data = str(amount) + " aanmeldingen \n" + data
+                    if deelnemer['payment_status'] == "Completed"
+                        data = data + "\n <@" + deelnemer['discord_id'] + ">"
+                    else: 
+                        data = data + "\n <@" + deelnemer['discord_id'] + "> <:min:1137646894827454565>"
+                data = str(amount) + " aanmeldingen \n" + data + "-# <:min:1137646894827454565> betekent niet betaald"
             else:
                 data = "Geen deelnemers gevonden"
             embed.description = data
