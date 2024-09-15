@@ -120,7 +120,7 @@ class Frappe(commands.Cog):
         api = requests.get('http://shadowzone.nl/api/resource/Discord server banners?', headers=headers, params=params)
         
         response = self.Frappeclient.get_list('Discord server banners', fields = ['name', 'banner'], filters = {'datum':str(today)})
-
+        ctx.send(response)
         if api.status_code == 200:
             banner_url = "http://shadowzone.nl/" + response[0]['banner']
             async with aiohttp.ClientSession() as session:
