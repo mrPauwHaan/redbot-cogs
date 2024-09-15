@@ -134,7 +134,7 @@ class Frappe(commands.Cog):
                             doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
                             date = datetime.datetime.strptime(doc['datum'], '%Y-%m-%d').date()
                             newDate = date + relativedelta(years=1)
-                            doc['datum'] = newDate
+                            doc['datum'] = str(newDate)
                             response2 = self.Frappeclient.update(doc)
                             await ctx.send(doc)
                             await ctx.send(response2)
