@@ -132,7 +132,7 @@ class Frappe(commands.Cog):
                                 reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
                             )
                             doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
-                            date = datetime.datetime.strptime(response['data'][0]['name'], '%Y-%m-%d').date()
+                            date = datetime.datetime.strptime(doc['datum'], '%Y-%m-%d').date()
                             newDate = date + relativedelta(years=1)
                             doc['datum'] = newDate
                             response2 = self.Frappeclient.update(doc)
