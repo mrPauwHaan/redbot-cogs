@@ -14,7 +14,9 @@ from frappeclient import FrappeClient
 class Frappe(commands.Cog):
     def __init__(self, bot: Red) -> None:
         self.bot = bot
-        frappe_keys = await bot.get_shared_api_tokens("frappe")
+
+    async def cog_load(self):
+        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         api_key =  frappe_keys.get("api_key")
         api_secret = frappe_keys.get("api_secret")
         client = FrappeClient("http://shadowzone.nl")
