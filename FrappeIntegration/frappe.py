@@ -122,24 +122,22 @@ class Frappe(commands.Cog):
         response = self.Frappeclient.get_list('Discord server banners', fields = ['name', 'banner'], filters = {'datum':str(today)})
 
         if api.status_code == 200:
-            response = response.json()
-            if response['data']:
-                banner_url = "http://shadowzone.nl/" + response['data'][0]['banner']
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(banner_url) as resp:
-                        if resp.status == 200:
-                            image_data = await resp.read()
-                            await ctx.guild.edit(
-                                banner=image_data,
-                                reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
-                            )
-                            doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
-                            date = datetime.datetime.strptime(doc['datum'], '%Y-%m-%d').date()
-                            newDate = date + relativedelta(years=1)
-                            doc['datum'] = str(newDate)
-                            self.Frappeclient.update(doc)
-                        else:
-                            await ctx.send("Failed to download the banner image")
+            banner_url = "http://shadowzone.nl/" + response[0]['banner']
+            async with aiohttp.ClientSession() as session:
+                async with session.get(banner_url) as resp:
+                    if resp.status == 200:
+                        image_data = await resp.read()
+                        await ctx.guild.edit(
+                            banner=image_data,
+                            reason=f"De server banner is veranderd naar: {response[0]['name']}",
+                        )
+                        doc = self.Frappeclient.get_doc('Discord server banners', response[0]['name'])
+                        date = datetime.datetime.strptime(doc['datum'], '%Y-%m-%d').date()
+                        newDate = date + relativedelta(years=1)
+                        doc['datum'] = str(newDate)
+                        self.Frappeclient.update(doc)
+                    else:
+                        await ctx.send("Failed to download the banner image")
 
 
         else:
