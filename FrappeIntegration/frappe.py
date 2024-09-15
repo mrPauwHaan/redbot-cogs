@@ -130,7 +130,7 @@ class Frappe(commands.Cog):
                                 banner=image_data,
                                 reason=f"De server banner is veranderd naar: {response['data'][0]['name']}",
                             )
-                            doc = await self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
+                            doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
                             doc['name'] = 'Test'
                             self.Frappeclient.update(doc)
                                 
