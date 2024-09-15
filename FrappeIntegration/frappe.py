@@ -135,8 +135,8 @@ class Frappe(commands.Cog):
                             api_secret = frappe_keys.get("api_secret")
                             doc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
                             doc['datum'] = '2018-01-01'
-                            response = self.Frappeclient.update(doc)
-                            await ctx.send(response)
+                            response2 = self.Frappeclient.update(doc)
+                            await ctx.send(response2)
                             newdoc = self.Frappeclient.get_doc('Discord server banners', response['data'][0]['name'])
                             await ctx.send(newdoc)
                                 
