@@ -398,6 +398,7 @@ class Frappe(commands.Cog):
             return await ctx.send("Status code:" +str(api.status_code))
 
     @events.command()
+    @commands.is_owner()
     async def aanmeldingen(self, ctx: commands.Context, event: str = None):
         """Krijg een lijst van de aanmeldingen voor een specifiek event"""
         deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event"], order_by = 'creation desc')
