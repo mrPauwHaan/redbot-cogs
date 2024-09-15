@@ -405,12 +405,12 @@ class Frappe(commands.Cog):
         amount = 0
         if eventcheck:
             
-            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "naam_deelnemer", "pakket1", "aankomst", "vertrek", "payment_status"], filters = {'event':event})
+            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "payment_status", "discord_id"], filters = {'event':event})
             embed = discord.Embed()
             if deelnemers:
                 for deelnemer in deelnemers:
                     amount = amount + 1
-                    data = data + "\n" + deelnemer['naam_deelnemer']
+                    data = data + "\n <@" + deelnemer['discord_id'] + ">"
                 data = str(amount) + " aanmeldingen \n" + data
             else:
                 data = "Geen deelnemers gevonden"
