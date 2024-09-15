@@ -398,47 +398,23 @@ class Frappe(commands.Cog):
             return await ctx.send("Status code:" +str(api.status_code))
 
     @events.command()
-    async def aanmeldingen(self, ctx: commands.Context, event):
-        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
-        response = self.Frappeclient.get_list('Beheer events', fields = ['event_name'])
-        """Krijg een lijst van de aanmeldingen voor een specifiek event""" + str(response)
-        if frappe_keys.get("api_key") is None:
-            return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
-        api_key =  frappe_keys.get("api_key")
-        api_secret = frappe_keys.get("api_secret")
-        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
+    async def aanmeldingen(self, ctx: commands.Context, event: str = None):
+        """Krijg een lijst van de aanmeldingen voor een specifiek event"""
 
-        params = {
-            "fields": json.dumps(["event", "naam_deelnemer", "pakket1", "aankomst", "vertrek", "payment_status"]),
-            "filters": json.dumps([["event", "=", str(datetime.date.today())]])
-        }
-        api = requests.get('http://shadowzone.nl/api/resource/Event deelnemers?', headers=headers, params=params)
+        events = self.Frappeclient.get_list('Beheer events', fields = ['event_name'])
 
-        if api.status_code == 200:
-            response = api.json()
-            data = ""
-            prevamount = ""
+        response = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "naam_deelnemer", "pakket1", "aankomst", "vertrek", "payment_status"], filters = {'event':event})
+
+        if response:
             embed = discord.Embed()
-            if response['result']:
-                for member in response['result']:
-                    name = member['discord_id']
-                    amount = member['events']
-                    if member['status'] == 'Actief' and amount > 0:
-                        if amount == prevamount:
-                            data = data + '<@' + name + '> ' + '\n'
-                        else:
-                            if amount == 1:
-                                data = data + '\n' + str(amount) + ' event\n <@' + name + '> ' + '\n'
-                            else:
-                                data = data + '\n' + str(amount) + ' events\n <@' + name + '> ' + '\n'
-                        
-                        embed.description = data
-                        prevamount = amount
-                embed.title = "Aantal bezochte events:"
-                embed.colour = int("ff0502", 16)
-                embed.set_footer(text="© Shadowzone Gaming")
-                await ctx.send(embed=embed)
-            pass
+            data = ""
+            for deelnemer in response:
+                data = data + "\n" + deelnemer['naam_deelnemer']
 
+            embed.description = data
+            embed.title = event + " deelnemers:"
+            embed.colour = int("ff0502", 16)
+            embed.set_footer(text="© Shadowzone Gaming")
+            await ctx.send(embed=embed)
         else:
-            return await ctx.send("Status code:" +str(api.status_code))
+            return await ctx.send("Event niet gevonden: \n " +str(response))
