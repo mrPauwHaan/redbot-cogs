@@ -400,15 +400,14 @@ class Frappe(commands.Cog):
     @events.command()
     async def aanmeldingen(self, ctx: commands.Context, event: str = None):
         """Krijg een lijst van de aanmeldingen voor een specifiek event"""
-        deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "payment_status", "discord_id"], filters = {'event':event}, order_by = 'creation desc')
+        deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event"], order_by = 'creation desc')
         if not event:
             event = deelnemers[0][event]
         eventcheck = self.Frappeclient.get_value("Beheer events", "event_name", {"event_name": event})
         data = ""
         amount = 0
         if eventcheck:
-            
-            
+            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "payment_status", "discord_id"], filters = {'event':event}, order_by = 'creation desc')
             embed = discord.Embed()
             if deelnemers:
                 for deelnemer in deelnemers:
