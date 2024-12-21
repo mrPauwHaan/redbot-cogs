@@ -412,17 +412,16 @@ class Frappe(commands.Cog):
             embed = discord.Embed()
             if deelnemers:
                 for deelnemer in deelnemers:
-                    amount = amount + 1
-                    if deelnemer['payment_status'] == "Cancelled":
-                        pass
-                    elif deelnemer['payment_status'] == "Completed":
-                        data = data + "\n <@" + deelnemer['discord_id'] + "> "
-                    else: 
-                        data = data + "\n <:min:1137646894827454565> <@" + deelnemer['discord_id'] + "> "
-                    if deelnemer['pakket1']:
-                        data = data + "(BBQ only)"
-                    else:
-                        data = data + "(" + deelnemer['aankomst'] + " - " + deelnemer['vertrek'] + ")"
+                    if not deelnemer['payment_status'] == "Cancelled":
+                        amount = amount + 1
+                        if deelnemer['payment_status'] == "Completed":
+                            data = data + "\n <@" + deelnemer['discord_id'] + "> "
+                        else: 
+                            data = data + "\n <:min:1137646894827454565> <@" + deelnemer['discord_id'] + "> "
+                        if deelnemer['pakket1']:
+                            data = data + "(BBQ only)"
+                        else:
+                            data = data + "(" + deelnemer['aankomst'] + " - " + deelnemer['vertrek'] + ")"
                 data = str(amount) + " aanmeldingen \n" + data + "\n\n" + "-# <:min:1137646894827454565> betekent niet betaald"
             else:
                 data = "Geen deelnemers gevonden"
