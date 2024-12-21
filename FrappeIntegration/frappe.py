@@ -413,7 +413,7 @@ class Frappe(commands.Cog):
             if deelnemers:
                 for deelnemer in deelnemers:
                     amount = amount + 1
-                    if deelnemer['payment_status'] == "Canceled":
+                    if deelnemer['payment_status'] == "Cancelled":
                         pass
                     elif deelnemer['payment_status'] == "Completed":
                         data = data + "\n <@" + deelnemer['discord_id'] + "> "
