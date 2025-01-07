@@ -125,6 +125,25 @@ class Frappe(commands.Cog):
                         self.Frappeclient.update(doc)
                     else:
                         await ctx.send("Failed to download the banner image")
+
+    @frappe.command()
+    @commands.is_owner()
+    async def contributie(self, ctx: commands.Context, jaar: str = None):
+        """Check of contributie betaald is"""
+        if jaar:
+            members = self.Frappeclient.get_list('Member', fields = ['name','discord_id', 'custom_status'], filters = {})
+            if members:
+                for member in members:
+                    contributie = self.Frappeclient.get_list('Member', fields = ['Jaar', 'contributie', 'donaties'], filters = {'parent': member.name})
+                    if contributie:
+                        for jaar in contributie:
+                            await ctx.send(member.name)
+                    else:
+                        await ctx.send("Er is een fout opgetreden in de API")  
+            else:
+                await ctx.send("Er is een fout opgetreden in de API")
+        else:
+            await ctx.send("Geef een jaar in")
     
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
