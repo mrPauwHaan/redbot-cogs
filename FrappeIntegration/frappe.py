@@ -136,7 +136,7 @@ class Frappe(commands.Cog):
                 for member in members:
                     contributie = self.Frappeclient.get_list('Member', fields = ['Jaar', 'contributie', 'donaties'], filters = {'parent': member['name']})
                     if contributie:
-                        for jaar in contributie:
+                        if jaar in contributie:
                             await ctx.send(member['name'])
                     else:
                         await ctx.send("Er is een fout opgetreden in de API")  
