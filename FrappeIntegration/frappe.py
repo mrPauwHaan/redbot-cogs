@@ -134,11 +134,10 @@ class Frappe(commands.Cog):
             members = self.Frappeclient.get_list('Member', fields = ['name','discord_id', 'custom_status'], filters = {})
             if members:
                 for member in members:
-                    await ctx.send(member)
-                    contributie = self.Frappeclient.get_list('Member', fields = ['Jaar', 'contributie', 'donaties'], filters = {'parent': member.name})
+                    contributie = self.Frappeclient.get_list('Member', fields = ['Jaar', 'contributie', 'donaties'], filters = {'parent': member['name']})
                     if contributie:
                         for jaar in contributie:
-                            await ctx.send(member.name)
+                            await ctx.send(member['name'])
                     else:
                         await ctx.send("Er is een fout opgetreden in de API")  
             else:
