@@ -130,10 +130,14 @@ class Frappe(commands.Cog):
     @commands.is_owner()
     async def contributie(self, ctx: commands.Context, jaar: int):
         """Check of contributie betaald is"""
-        data = self.Frappeclient.get_list('Member', fields = ['name','discord_id', 'custom_status'], order_by = 'member_name asc', filters=None, limit_start=0, limit_page_length=float('inf'),)
+        data = self.Frappeclient.get_list('Member', fields = ['name', 'membership_type','discord_id', 'custom_status'], order_by = 'member_name asc', filters=None, limit_start=0, limit_page_length=float('inf'),)
         if data:
             message = ""
             for member in data:
+                if member['membership_type'] == 'Lid':
+                    logo = '<:szglogo:945293100824277002>'
+                else:
+                    logo = '<:SZGplus:1188373927119040562>'
                 jaarcheck = 0
                 doc = self.Frappeclient.get_doc("Member", member['name'])
                 for item in doc.get("custom_contributies"):
@@ -141,9 +145,9 @@ class Frappe(commands.Cog):
                         jaarcheck = 1
                     
                 if jaarcheck == 0:
-                    message = message + '<:wrong:847044649679716383> <@' + member['discord_id'] + '> \n'
+                    message = message + '<:wrong:847044649679716383> <@' + logo + member['discord_id'] + '> \n'
                 else:
-                    message = message + '<:check:847044460666814484> <@' + member['discord_id'] + '> \n'
+                    message = message + '<:check:847044460666814484> <@' + logo + member['discord_id'] + '> \n'
             if message:
                 embed = discord.Embed()
                 embed.description = message
