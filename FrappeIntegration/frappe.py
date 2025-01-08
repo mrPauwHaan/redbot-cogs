@@ -130,34 +130,31 @@ class Frappe(commands.Cog):
     @commands.is_owner()
     async def contributie(self, ctx: commands.Context, jaar: int):
         """Check of contributie betaald is"""
-        if jaar:
-            data = self.Frappeclient.get_list('Member', fields = ['name','discord_id', 'custom_status'], filters = {})
-            if data:
-                message = ""
-                for member in data:
-                    jaarcheck = 0
-                    doc = self.Frappeclient.get_doc("Member", member['name'])
-                    for item in doc.get("custom_contributies"):
-                        if item['jaar'] == jaar:
-                            jaarcheck = 1
-                        
-                    if jaarcheck == 0:
-                        message = message + '<:min:1137646894827454565> <@' + member['discord_id'] + '> \n'
-                    else:
-                        message = message + '<:plus:1137646873042243625> <@' + member['discord_id'] + '>'
-                if message:
-                    embed = discord.Embed()
-                    embed.description = message
-                    embed.title = " Betaalde contributies " + jaar
-                    embed.colour = int("ff0502", 16)
-                    embed.set_footer(text="© Shadowzone Gaming")
-                    await ctx.send(embed=embed)
+        data = self.Frappeclient.get_list('Member', fields = ['name','discord_id', 'custom_status'], filters = {})
+        if data:
+            message = ""
+            for member in data:
+                jaarcheck = 0
+                doc = self.Frappeclient.get_doc("Member", member['name'])
+                for item in doc.get("custom_contributies"):
+                    if item['jaar'] == jaar:
+                        jaarcheck = 1
+                    
+                if jaarcheck == 0:
+                    message = message + '<:min:1137646894827454565> <@' + member['discord_id'] + '> \n'
                 else:
-                    await ctx.send('Niks gevonden voor dit jaar')
+                    message = message + '<:plus:1137646873042243625> <@' + member['discord_id'] + '>'
+            if message:
+                embed = discord.Embed()
+                embed.description = message
+                embed.title = " Betaalde contributies " + str(jaar)
+                embed.colour = int("ff0502", 16)
+                embed.set_footer(text="© Shadowzone Gaming")
+                await ctx.send(embed=embed)
             else:
-                await ctx.send("Er is een fout opgetreden in de API")
+                await ctx.send('Niks gevonden voor dit jaar')
         else:
-            await ctx.send("Geef een jaar in")
+            await ctx.send("Er is een fout opgetreden in de API")
     
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
