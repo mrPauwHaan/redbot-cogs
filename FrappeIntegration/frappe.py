@@ -157,7 +157,7 @@ class Frappe(commands.Cog):
                                     if datetime.datetime.strptime(member['custom_einddatum_donateur'], '%Y-%m-%d').year >= jaar:
                                         logo = '<:SZGplus:1188373927119040562>'
                                         progress = 1
-                                else:
+                                elif not member['custom_einde_datum']:
                                     logo = '<:SZGplus:1188373927119040562>'
                                     progress = 1
 
