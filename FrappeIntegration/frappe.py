@@ -137,7 +137,7 @@ class Frappe(commands.Cog):
                 aantal = 0
                 for member in data:
                     progress = 0
-                    if member['custom_start_lidmaatschap']:
+                    if member['membership_type'] == 'Lid':
                         if datetime.datetime.strptime(member['custom_start_lidmaatschap'], '%Y-%m-%d').year <= jaar:
                             if member['custom_einde_datum']:
                                 if datetime.datetime.strptime(member['custom_einde_datum'], '%Y-%m-%d').year >= jaar:
@@ -146,7 +146,7 @@ class Frappe(commands.Cog):
                             else:
                                 logo = '<:szglogo:945293100824277002>'
                                 progress = 1
-                    else:
+                    if progress == 0:
                         if member['custom_startdatum_donateur']:
                             startdatum = member['custom_startdatum_donateur']
                         else:
