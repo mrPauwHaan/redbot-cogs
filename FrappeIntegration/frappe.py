@@ -137,7 +137,7 @@ class Frappe(commands.Cog):
                 aantal = 0
                 for member in data:
                     progress = 0
-                    if member['membership_type'] == 'Lid':
+                    if member['custom_start_lidmaatschap']:
                         if datetime.datetime.strptime(member['custom_start_lidmaatschap'], '%Y-%m-%d').year <= jaar:
                             if member['custom_einde_datum']:
                                 if datetime.datetime.strptime(member['custom_einde_datum'], '%Y-%m-%d').year >= jaar:
