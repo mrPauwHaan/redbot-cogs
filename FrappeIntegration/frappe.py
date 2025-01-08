@@ -128,7 +128,7 @@ class Frappe(commands.Cog):
 
     @frappe.command()
     @commands.is_owner()
-    async def contributie(self, ctx: commands.Context, jaar: str = None):
+    async def contributie(self, ctx: commands.Context, jaar: int):
         """Check of contributie betaald is"""
         if jaar:
             data = self.Frappeclient.get_list('Member', fields = ['name','discord_id', 'custom_status'], filters = {})
