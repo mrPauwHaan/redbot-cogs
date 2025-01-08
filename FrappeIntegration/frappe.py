@@ -135,8 +135,7 @@ class Frappe(commands.Cog):
             if data:
                 for mtc in data:
                     doc = self.Frappeclient.get_doc("Member",mtc['name'])
-                    await ctx.send(doc.get("Member_betalingen"))
-                    for item in doc.get("Member_betalingen"):
+                    for item in doc.get("custom_contributies"):
                         await ctx.send(item.field)
 
             if members:
