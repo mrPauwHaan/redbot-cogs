@@ -140,7 +140,7 @@ class Frappe(commands.Cog):
                     for item in doc.get("custom_contributies"):
                         if item['jaar'] == jaar:
                             jaarcheck = 1
-                        await ctx.send(item)
+                        await ctx.send(item['jaar'])
                         
                     if jaarcheck == 0:
                         message = message + '<:min:1137646894827454565> <@' + member['discord_id'] + '> \n'
