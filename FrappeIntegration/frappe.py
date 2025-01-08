@@ -133,19 +133,14 @@ class Frappe(commands.Cog):
         if jaar:
             data = self.Frappeclient.get_list('Member', fields = ['name','discord_id', 'custom_status'], filters = {})
             if data:
-                for mtc in data:
-                    doc = self.Frappeclient.get_doc("Member",mtc['name'])
+                message = ""
+                for member in data:
+                    doc = self.Frappeclient.get_doc("Member", member['name'])
                     for item in doc.get("custom_contributies"):
-                        await ctx.send(item)
-
-            if members:
-                for member in members:
-                    contributie = self.Frappeclient.get_list('Member_betalingen', fields = ['jaar', 'contributie', 'donaties'], filters = {'parent': member['name']})
-                    if contributie:
-                        if jaar in contributie:
-                            await ctx.send(member['name'])
-                    else:
-                        await ctx.send("Er is een fout opgetreden in de API")  
+                        if jaar in item:
+                            message = message + '<:plus:1137646873042243625> <@' + member['discord_id'] + '>'
+                        else:
+                            message = message + '<:min:1137646894827454565> <@' + member['discord_id'] + '> \n'
             else:
                 await ctx.send("Er is een fout opgetreden in de API")
         else:
