@@ -134,6 +134,7 @@ class Frappe(commands.Cog):
         if data:
             message = ""
             for member in data:
+                await ctx.send(member)
                 jaarcheck = 0
                 doc = self.Frappeclient.get_doc("Member", member['name'])
                 for item in doc.get("custom_contributies"):
@@ -141,9 +142,9 @@ class Frappe(commands.Cog):
                         jaarcheck = 1
                     
                 if jaarcheck == 0:
-                    message = message + '<:min:1137646894827454565> <@' + member['discord_id'] + '> \n'
+                    message = message + '<:wrong:847044649679716383> <@' + member['discord_id'] + '> \n'
                 else:
-                    message = message + '<:plus:1137646873042243625> <@' + member['discord_id'] + '>'
+                    message = message + '<:check:847044460666814484> <@' + member['discord_id'] + '> \n'
             if message:
                 embed = discord.Embed()
                 embed.description = message
