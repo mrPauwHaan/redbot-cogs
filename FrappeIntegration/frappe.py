@@ -137,7 +137,7 @@ class Frappe(commands.Cog):
                 for member in data:
                     doc = self.Frappeclient.get_doc("Member", member['name'])
                     for item in doc.get("custom_contributies"):
-                        if jaar in item:
+                        if jaar in item['jaar']:
                             message = message + '<:plus:1137646873042243625> <@' + member['discord_id'] + '>'
                 await ctx.send(message)
             else:
