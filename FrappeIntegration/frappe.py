@@ -135,8 +135,19 @@ class Frappe(commands.Cog):
             if data:
                 for mtc in data:
                     doc = self.Frappeclient.get_doc("Member",mtc['name'])
+                    await ctx.send(doc)
+
                     for item in doc.get("Member_betalingen"):
                         await ctx.send(item.field)
+
+            if members:
+                for member in members:
+                    contributie = self.Frappeclient.get_list('Member_betalingen', fields = ['jaar', 'contributie', 'donaties'], filters = {'parent': member['name']})
+                    if contributie:
+                        if jaar in contributie:
+                            await ctx.send(member['name'])
+                    else:
+                        await ctx.send("Er is een fout opgetreden in de API")  
             else:
                 await ctx.send("Er is een fout opgetreden in de API")
         else:
