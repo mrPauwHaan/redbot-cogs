@@ -131,15 +131,12 @@ class Frappe(commands.Cog):
     async def contributie(self, ctx: commands.Context, jaar: str = None):
         """Check of contributie betaald is"""
         if jaar:
-            members = self.Frappeclient.get_list('Member', fields = ['name','discord_id', 'custom_status'], filters = {})
-            if members:
-                for member in members:
-                    contributie = self.Frappeclient.get_list('Member_betalingen', fields = ['jaar', 'contributie', 'donaties'], filters = {'parent': member['name']})
-                    if contributie:
-                        if jaar in contributie:
-                            await ctx.send(member['name'])
-                    else:
-                        await ctx.send("Er is een fout opgetreden in de API")  
+            data = self.Frappeclient.get_list('Member', fields = ['name','discord_id', 'custom_status'], filters = {})
+            if data:
+                for mtc in data:
+                    doc = self.Frappeclient.get_doc("Member",mtc['name'])
+                    for item in doc.get("Member_betalingen"):
+                        await ctx.send(item.field)
             else:
                 await ctx.send("Er is een fout opgetreden in de API")
         else:
