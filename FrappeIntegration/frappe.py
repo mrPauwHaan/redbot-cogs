@@ -130,11 +130,11 @@ class Frappe(commands.Cog):
     @commands.is_owner()
     async def contributie(self, ctx: commands.Context, jaar: int):
         """Check of contributie betaald is"""
-        data = self.Frappeclient.get_list('Member', fields = ['name','discord_id', 'custom_status'], filters = {})
+        data = self.Frappeclient.get_list('Member', fields = ['name'], filters = {})
+        await ctx.send(data)
         if data:
             message = ""
             for member in data:
-                await ctx.send(member)
                 jaarcheck = 0
                 doc = self.Frappeclient.get_doc("Member", member['name'])
                 for item in doc.get("custom_contributies"):
