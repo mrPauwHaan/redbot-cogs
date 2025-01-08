@@ -142,9 +142,9 @@ class Frappe(commands.Cog):
                             jaarcheck = 1
                         
                     if jaarcheck == 0:
-                        message = message + '<:min:1137646894827454565> <@ ' + member['discord_id'] + '> \n'
+                        message = message + '<:min:1137646894827454565> <@' + member['discord_id'] + '> \n'
                     else:
-                        message = message + '<:plus:1137646873042243625> <@ ' + member['discord_id'] + '>'
+                        message = message + '<:plus:1137646873042243625> <@' + member['discord_id'] + '>'
                 if message:
                     embed = discord.Embed()
                     embed.description = message
