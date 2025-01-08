@@ -130,36 +130,39 @@ class Frappe(commands.Cog):
     @commands.is_owner()
     async def contributie(self, ctx: commands.Context, jaar: int):
         """Check of contributie betaald is"""
-        data = self.Frappeclient.get_list('Member', fields = ['name', 'membership_type','discord_id', 'custom_status'], order_by = 'member_name asc', filters=None, limit_start=0, limit_page_length=float('inf'),)
-        if data:
-            message = ""
-            for member in data:
-                if not member['custom_status'] == 'Beëindigd':
-                    if member['membership_type'] == 'Lid':
-                        logo = '<:szglogo:945293100824277002>'
-                    else:
-                        logo = '<:SZGplus:1188373927119040562>'
-                    jaarcheck = 0
-                    doc = self.Frappeclient.get_doc("Member", member['name'])
-                    for item in doc.get("custom_contributies"):
-                        if item['jaar'] == jaar:
-                            jaarcheck = 1
-                        
-                    if jaarcheck == 0:
-                        message = message + '<:wrong:847044649679716383> ' + logo + '<@' + member['discord_id'] + '> \n'
-                    else:
-                        message = message + '<:check:847044460666814484> ' + logo + '<@' + member['discord_id'] + '> \n'
-            if message:
-                embed = discord.Embed()
-                embed.description = message
-                embed.title = " Betaalde contributies " + str(jaar)
-                embed.colour = int("ff0502", 16)
-                embed.set_footer(text="© Shadowzone Gaming")
-                await ctx.send(embed=embed)
+        if jaar > 2018:
+            data = self.Frappeclient.get_list('Member', fields = ['name', 'membership_type','member_name', 'custom_achternaam', 'custom_status'], order_by = 'member_name asc', filters=None, limit_start=0, limit_page_length=float('inf'),)
+            if data:
+                message = ""
+                for member in data:
+                    if not member['custom_status'] == 'Beëindigd':
+                        if member['membership_type'] == 'Lid':
+                            logo = '<:szglogo:945293100824277002>'
+                        else:
+                            logo = '<:SZGplus:1188373927119040562>'
+                        jaarcheck = 0
+                        doc = self.Frappeclient.get_doc("Member", member['name'])
+                        for item in doc.get("custom_contributies"):
+                            if item['jaar'] == jaar:
+                                jaarcheck = 1
+                            
+                        if jaarcheck == 0:
+                            message = message + '<:wrong:847044649679716383> ' + logo + member['member_name'] + member['custom_achternaam'] + '\n'
+                        else:
+                            message = message + '<:check:847044460666814484> ' + logo + member['member_name'] + member['custom_achternaam'] + '\n'
+                if message:
+                    embed = discord.Embed()
+                    embed.description = message
+                    embed.title = " Betaalde contributies/donaties " + str(jaar)
+                    embed.colour = int("ff0502", 16)
+                    embed.set_footer(text="© Shadowzone Gaming")
+                    await ctx.send(embed=embed)
+                else:
+                    await ctx.send('Niks gevonden voor dit jaar')
             else:
-                await ctx.send('Niks gevonden voor dit jaar')
+                await ctx.send("Er is een fout opgetreden in de API")
         else:
-            await ctx.send("Er is een fout opgetreden in de API")
+            await ctx.send("Pas sinds 2019 zijn betalingen mogelijk")
     
     @commands.guild_only()
     @commands.bot_has_permissions(embed_links=True)
