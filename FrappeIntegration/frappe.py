@@ -134,8 +134,8 @@ class Frappe(commands.Cog):
             data = self.Frappeclient.get_list('Member', fields = ['name', 'membership_type','member_name', 'custom_achternaam', 'custom_status', 'custom_start_lidmaatschap', 'custom_einde_datum'], order_by = 'member_name asc', filters=None, limit_start=0, limit_page_length=float('inf'),)
             if data:
                 message = ""
-                progress = 0
                 for member in data:
+                    progress = 0
                     if member['membership_type'] == 'Lid':
                         if datetime.datetime.strptime(member['custom_start_lidmaatschap'], '%Y-%m-%d').year <= jaar:
                             if member['custom_einde_datum']:
