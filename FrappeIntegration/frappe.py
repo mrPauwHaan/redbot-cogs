@@ -146,7 +146,12 @@ class Frappe(commands.Cog):
                     else:
                         message = message + '<:plus:1137646873042243625> <@ ' + member['discord_id'] + '>'
                 if message:
-                    await ctx.send(message)
+                    embed = discord.Embed()
+                    embed.description = message
+                    embed.title = " Betaalde contributies" + jaar
+                    embed.colour = int("ff0502", 16)
+                    embed.set_footer(text="© Shadowzone Gaming")
+                    await ctx.send(embed=embed)
                 else:
                     await ctx.send('Niks gevonden voor dit jaar')
             else:
