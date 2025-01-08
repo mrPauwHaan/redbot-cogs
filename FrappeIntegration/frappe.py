@@ -137,11 +137,14 @@ class Frappe(commands.Cog):
                 for member in data:
                     doc = self.Frappeclient.get_doc("Member", member['name'])
                     for item in doc.get("custom_contributies"):
-                        if "jaar" in item:
-                            if item['jaar'] == jaar:
+                        for betaling in item:
+                            if betaling['jaar'] == jaar:
                                 message = message + '<:plus:1137646873042243625> <@' + member['discord_id'] + '>'
 
-                await ctx.send(message)
+                if message:
+                    await ctx.send(message)
+                else:
+                    await ctx.send('Niks gevonden voor dit jaar')
             else:
                 await ctx.send("Er is een fout opgetreden in de API")
         else:
