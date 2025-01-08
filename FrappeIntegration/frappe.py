@@ -146,9 +146,9 @@ class Frappe(commands.Cog):
                             jaarcheck = 1
                         
                     if jaarcheck == 0:
-                        message = message + '<:wrong:847044649679716383> <@' + logo + member['discord_id'] + '> \n'
+                        message = message + '<:wrong:847044649679716383> ' + logo + '<@' + member['discord_id'] + '> \n'
                     else:
-                        message = message + '<:check:847044460666814484> <@' + logo + member['discord_id'] + '> \n'
+                        message = message + '<:check:847044460666814484> ' + logo + '<@' + member['discord_id'] + '> \n'
             if message:
                 embed = discord.Embed()
                 embed.description = message
