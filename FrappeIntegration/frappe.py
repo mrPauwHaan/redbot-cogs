@@ -104,7 +104,7 @@ class Frappe(commands.Cog):
             return await ctx.send("Status code:" +str(api.status_code))
         
     @frappe.command(aliases=["banner"])
-    @commands.has_permissions(administrator=True)
+    @commands.is_owner()
     async def serverbanner(self, ctx: commands.Context):
         """Update server banner based on database"""
         response = self.Frappeclient.get_list('Discord server banners', fields = ['name', 'banner'], filters = {'datum':str(datetime.date.today())})
@@ -127,7 +127,7 @@ class Frappe(commands.Cog):
                         await ctx.send("Failed to download the banner image")
 
     @frappe.command()
-    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
     async def contributie(self, ctx: commands.Context, jaar: int):
         """Check of contributie betaald is"""
         if jaar > 2018:
