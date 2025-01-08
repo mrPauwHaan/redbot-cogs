@@ -134,7 +134,7 @@ class Frappe(commands.Cog):
             members = self.Frappeclient.get_list('Member', fields = ['name','discord_id', 'custom_status'], filters = {})
             if members:
                 for member in members:
-                    contributie = self.Frappeclient.get_list('Member', fields = ['contributie', 'donaties'], filters = {'parent': member['name']})
+                    contributie = self.Frappeclient.get_list('Member_betalingen', fields = ['jaar', 'contributie', 'donaties'], filters = {'parent': member['name']})
                     if contributie:
                         if jaar in contributie:
                             await ctx.send(member['name'])
