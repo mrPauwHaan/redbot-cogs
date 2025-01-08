@@ -138,7 +138,7 @@ class Frappe(commands.Cog):
                     jaarcheck = 0
                     doc = self.Frappeclient.get_doc("Member", member['name'])
                     for item in doc.get("custom_contributies"):
-                        if item['jaar'] == jaar:
+                        if item['jaar'] == '2024':
                             jaarcheck = 1
                         
                     if jaarcheck == 0:
@@ -148,7 +148,7 @@ class Frappe(commands.Cog):
                 if message:
                     embed = discord.Embed()
                     embed.description = message
-                    embed.title = " Betaalde contributies" + jaar
+                    embed.title = " Betaalde contributies " + jaar
                     embed.colour = int("ff0502", 16)
                     embed.set_footer(text="© Shadowzone Gaming")
                     await ctx.send(embed=embed)
