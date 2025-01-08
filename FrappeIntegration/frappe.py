@@ -151,14 +151,15 @@ class Frappe(commands.Cog):
                             startdatum = member['custom_startdatum_donateur']
                         else:
                             startdatum = member['custom_begin_datum']
-                        if datetime.datetime.strptime(startdatum, '%Y-%m-%d').year <= jaar:
-                            if member['custom_einddatum_donateur']:
-                                if datetime.datetime.strptime(member['custom_einddatum_donateur'], '%Y-%m-%d').year >= jaar:
+                        if startdatum:
+                            if datetime.datetime.strptime(startdatum, '%Y-%m-%d').year <= jaar:
+                                if member['custom_einddatum_donateur']:
+                                    if datetime.datetime.strptime(member['custom_einddatum_donateur'], '%Y-%m-%d').year >= jaar:
+                                        logo = '<:SZGplus:1188373927119040562>'
+                                        progress = 1
+                                else:
                                     logo = '<:SZGplus:1188373927119040562>'
                                     progress = 1
-                            else:
-                                logo = '<:SZGplus:1188373927119040562>'
-                                progress = 1
 
                     if progress == 1:
                         jaarcheck = 0
