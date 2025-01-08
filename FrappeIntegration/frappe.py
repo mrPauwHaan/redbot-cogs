@@ -61,7 +61,7 @@ class Frappe(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.guild_only()
-    @commands.is_owner()
+    @commands.has_permissions(administrator=True)
     @commands.bot_has_permissions(embed_links=True)
     @commands.hybrid_group()
     async def frappe(self, ctx: commands.Context) -> None:
