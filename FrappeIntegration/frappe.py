@@ -139,8 +139,6 @@ class Frappe(commands.Cog):
                     for item in doc.get("custom_contributies"):
                         if jaar in item:
                             message = message + '<:plus:1137646873042243625> <@' + member['discord_id'] + '>'
-                        else:
-                            message = message + '<:min:1137646894827454565> <@' + member['discord_id'] + '> \n'
                 await ctx.send(message)
             else:
                 await ctx.send("Er is een fout opgetreden in de API")
