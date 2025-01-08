@@ -165,7 +165,7 @@ class Frappe(commands.Cog):
                             aantal = aantal + 1
                 if message:
                     embed = discord.Embed()
-                    embed.description = "Aantal: " + '\n' + message
+                    embed.description = "Aantal: " + aantal + '\n' + message
                     embed.title = " Betaalde contributies/donaties " + str(jaar)
                     embed.colour = int("ff0502", 16)
                     embed.set_footer(text="© Shadowzone Gaming")
