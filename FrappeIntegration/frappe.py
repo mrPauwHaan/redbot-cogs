@@ -131,7 +131,7 @@ class Frappe(commands.Cog):
     async def contributie(self, ctx: commands.Context, jaar: int):
         """Check of contributie betaald is"""
         if jaar > 2018:
-            data = self.Frappeclient.get_list('Member', fields = ['name', 'membership_type','member_name', 'custom_achternaam', 'custom_status', 'custom_start_lidmaatschap', 'custom_einde_datum'], order_by = 'member_name asc', filters=None, limit_start=0, limit_page_length=float('inf'),)
+            data = self.Frappeclient.get_list('Member', fields = ['name', 'membership_type','member_name', 'custom_achternaam', 'custom_status', 'custom_startdatum_donateur', 'custom_einddatum_donateur', 'custom_begin_datum', 'custom_start_lidmaatschap', 'custom_einde_datum'], order_by = 'member_name asc', filters=None, limit_start=0, limit_page_length=float('inf'),)
             if data:
                 message = ""
                 aantal = 0
@@ -146,9 +146,19 @@ class Frappe(commands.Cog):
                             else:
                                 logo = '<:szglogo:945293100824277002>'
                                 progress = 1
-                    elif not member['custom_status'] == 'Beëindigd':
-                        logo = '<:SZGplus:1188373927119040562>'
-                        progress = 1
+                    else:
+                        if member['custom_startdatum_donateur']:
+                            startdatum = member['custom_startdatum_donateur']
+                        else:
+                            startdatum = member['custom_begin_datum']
+                        if datetime.datetime.strptime(startdatum, '%Y-%m-%d').year <= jaar:
+                            if member['custom_einddatum_donateur']:
+                                if datetime.datetime.strptime(member['custom_einddatum_donateur'], '%Y-%m-%d').year >= jaar:
+                                    logo = '<:SZGplus:1188373927119040562>'
+                                    progress = 1
+                            else:
+                                logo = '<:SZGplus:1188373927119040562>'
+                                progress = 1
 
                     if progress == 1:
                         jaarcheck = 0
@@ -165,7 +175,7 @@ class Frappe(commands.Cog):
                             aantal = aantal + 1
                 if message:
                     embed = discord.Embed()
-                    embed.description = "Aantal: " + aantal + '\n' + message
+                    embed.description = "Aantal: " + str(aantal) + '\n\n' + message
                     embed.title = " Betaalde contributies/donaties " + str(jaar)
                     embed.colour = int("ff0502", 16)
                     embed.set_footer(text="© Shadowzone Gaming")
