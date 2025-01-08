@@ -128,15 +128,15 @@ class Frappe(commands.Cog):
 
     @frappe.command()
     @commands.is_owner()
-    async def contributie(self, ctx: commands.Context, jaar2: str = None):
+    async def contributie(self, ctx: commands.Context, jaar: str = None):
         """Check of contributie betaald is"""
-        if jaar2:
+        if jaar:
             members = self.Frappeclient.get_list('Member', fields = ['name','discord_id', 'custom_status'], filters = {})
             if members:
                 for member in members:
-                    contributie = self.Frappeclient.get_list('Member', fields = ['jaar', 'contributie', 'donaties'], filters = {'parent': member['name']})
+                    contributie = self.Frappeclient.get_list('Member', fields = ['contributie', 'donaties'], filters = {'parent': member['name']})
                     if contributie:
-                        if jaar2 in contributie:
+                        if jaar in contributie:
                             await ctx.send(member['name'])
                     else:
                         await ctx.send("Er is een fout opgetreden in de API")  
