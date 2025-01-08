@@ -134,6 +134,7 @@ class Frappe(commands.Cog):
             data = self.Frappeclient.get_list('Member', fields = ['name', 'membership_type','member_name', 'custom_achternaam', 'custom_status', 'custom_start_lidmaatschap', 'custom_einde_datum'], order_by = 'member_name asc', filters=None, limit_start=0, limit_page_length=float('inf'),)
             if data:
                 message = ""
+                aantal = 0
                 for member in data:
                     progress = 0
                     if member['membership_type'] == 'Lid':
@@ -158,11 +159,13 @@ class Frappe(commands.Cog):
                             
                         if jaarcheck == 0:
                             message = message + '<:wrong:847044649679716383> ' + logo + member['member_name'] + ' ' + member['custom_achternaam'] + '\n'
+                            aantal = aantal + 1
                         else:
                             message = message + '<:check:847044460666814484> ' + logo + member['member_name'] + ' ' + member['custom_achternaam'] + '\n'
+                            aantal = aantal + 1
                 if message:
                     embed = discord.Embed()
-                    embed.description = message
+                    embed.description = "Aantal: " + '\n' + message
                     embed.title = " Betaalde contributies/donaties " + str(jaar)
                     embed.colour = int("ff0502", 16)
                     embed.set_footer(text="© Shadowzone Gaming")
