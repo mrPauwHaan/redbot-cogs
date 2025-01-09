@@ -132,6 +132,7 @@ class Frappe(commands.Cog):
     async def steljezelfvoor(self, ctx: commands.Context):
         """Send stel jezelf voor berichten"""
         response = self.Frappeclient.get_list('Stel jezelf voor planner', filters = {'concept': 0}, fields = ['concept', 'name', 'dag', 'titel', 'url', 'text', 'url_ai'])
+        channel = '1053250316243566654'
         if response:
             for aankondiging in response:
                 if datetime.datetime.strptime(aankondiging['dag'], '%Y-%m-%d').date() <= datetime.date.today():
@@ -145,10 +146,7 @@ class Frappe(commands.Cog):
                                             await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')', file=discord.File(file, aankondiging['titel'] + ".wav"))
                     else:
                         await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
-                else:
-                    await ctx.send('Geen bericht vandaag')
-        else:
-            await ctx.send('ERROR')
+                        await channel.create_thread(name="Thread", content="Test")
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
