@@ -136,7 +136,7 @@ class Frappe(commands.Cog):
             for aankondiging in response:
                 if datetime.datetime.strptime(aankondiging['dag'], '%Y-%m-%d').date() <= datetime.date.today():
                     if aankondiging['url_ai']:
-                        url = "http://shadowzone.nl/" + aankondiging['url_ai']
+                        url = aankondiging['url_ai']
                         async with aiohttp.ClientSession() as session:
                                 async with session.get(url) as resp:
                                     if resp.status == 200:
