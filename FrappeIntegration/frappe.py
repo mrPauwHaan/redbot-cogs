@@ -145,6 +145,7 @@ class Frappe(commands.Cog):
                                             await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')', file=discord.File(file, aankondiging.titel))
                     else:
                         await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
+                        
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
