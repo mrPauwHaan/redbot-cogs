@@ -141,8 +141,7 @@ class Frappe(commands.Cog):
                 async with session.get(url) as resp:
                     if resp.status == 200:
                         image_data = await resp.read()
-                        with io.BytesIO(image_data) as file:
-                            await channel.send(file=discord.File(file, "logo.png"))
+                        await ctx.send(file=discord.File(image_data, "logo.png"))
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
