@@ -141,7 +141,7 @@ class Frappe(commands.Cog):
                                 if resp.status == 200:
                                     image_data = await resp.read()
                                     with io.BytesIO(image_data) as file:
-                                        await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')', file=discord.File(file, "logo.png"))
+                                        await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')', file=discord.File(file, "gesprek.wav"))
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
