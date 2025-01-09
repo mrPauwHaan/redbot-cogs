@@ -133,7 +133,7 @@ class Frappe(commands.Cog):
         response = self.Frappeclient.get_list('Stel jezelf voor planner', filters = {'concept': 0}, fields = ['concept', 'name', 'dag', 'titel', 'url', 'text'])
         if response:
             for aankondiging in response:
-                if datetime.date(aankondiging['dag']) <= datetime.date.today():
+                if datetime.date(datetime.datetime.strptime(aankondiging['dag'], '%Y-%m-%d')) <= datetime.date.today():
                     await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
 
     @frappe.command()
