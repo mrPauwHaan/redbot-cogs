@@ -135,15 +135,18 @@ class Frappe(commands.Cog):
         if response:
             for aankondiging in response:
                 if datetime.datetime.strptime(aankondiging['dag'], '%Y-%m-%d').date() <= datetime.date.today():
-                    await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
+                    url = "https://shadowzone.nl//files/logo.png"
+                    async with aiohttp.ClientSession() as session:
+                            async with session.get(url) as resp:
+                                if resp.status == 200:
+                                    image_data = await resp.read()
+                                    with io.BytesIO(image_data) as file:
+                                        await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')', file=discord.File(file, "logo.png"))
 
-        url = "https://shadowzone.nl//files/logo.png"
-        async with aiohttp.ClientSession() as session:
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        image_data = await resp.read()
-                        with io.BytesIO(image_data) as file:
-                            await ctx.send(file=discord.File(file, "logo.png"))
+
+                    
+
+        
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
