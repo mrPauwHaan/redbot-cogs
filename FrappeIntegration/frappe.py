@@ -133,33 +133,8 @@ class Frappe(commands.Cog):
         response = self.Frappeclient.get_list('Stel jezelf voor planner', filters = {'concept': 0}, fields = ['concept', 'name', 'dag', 'titel', 'url', 'text'])
         if response:
             for aankondiging in response:
-                if aankondiging.dag <= datetime.date.today():
-                    data = {
-                        "username": "Shadowzone Gaming",
-                        "avatar_url": "https://shadowzone.nl/files/logo.png",
-                        "thread_name": aankondiging.titel,
-                        "attachments": [],
-                        "content": aankondiging.text + '\n\n [Lees verder...](' + aankondiging.url + ')',
-                    }
-                    await ctx.send(aankondiging.text + '\n\n [Lees verder...](' + aankondiging.url + ')')
-
-
-            banner_url = "http://shadowzone.nl/" + response[0]['banner']
-            async with aiohttp.ClientSession() as session:
-                async with session.get(banner_url) as resp:
-                    if resp.status == 200:
-                        image_data = await resp.read()
-                        await ctx.guild.edit(
-                            banner=image_data,
-                            reason=f"De server banner is veranderd naar: {response[0]['name']}",
-                        )
-                        doc = self.Frappeclient.get_doc('Discord server banners', response[0]['name'])
-                        date = datetime.datetime.strptime(doc['datum'], '%Y-%m-%d').date()
-                        newDate = date + relativedelta(years=1)
-                        doc['datum'] = str(newDate)
-                        self.Frappeclient.update(doc)
-                    else:
-                        await ctx.send("Failed to download the banner image")
+                if aankondiging['dag'] <= datetime.date.today():
+                    await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
