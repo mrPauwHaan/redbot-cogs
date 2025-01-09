@@ -145,8 +145,10 @@ class Frappe(commands.Cog):
                                         image_data = await resp.read()
                                         with io.BytesIO(image_data) as file:
                                             await channel.create_thread(name = aankondiging['titel'], content = aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ') \n\n Of luister naar een door AI gegenereerde podcast over deze persoon:', file=discord.File(file, aankondiging['titel'] + ".wav"))
+                                            self.Frappeclient.delete('Stel jezelf voor planner', aankondiging.name)
                     else:
                         await channel.create_thread(name = aankondiging['titel'], content = aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
+                        self.Frappeclient.delete('Stel jezelf voor planner', aankondiging.name)
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
