@@ -135,8 +135,7 @@ class Frappe(commands.Cog):
             for aankondiging in response:
                 if datetime.datetime.strptime(aankondiging['dag'], '%Y-%m-%d').date() <= datetime.date.today():
                     await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
-        
-        with open('https://shadowzone.nl//files/logo.png', 'rb') as f: ctx.send(file=discord.File(f))
+        await ctx.send(file=discord.File(r'https://shadowzone.nl//files/logo.png'))
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
