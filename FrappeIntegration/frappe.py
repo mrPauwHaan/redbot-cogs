@@ -144,10 +144,8 @@ class Frappe(commands.Cog):
                                     if resp.status == 200:
                                         image_data = await resp.read()
                                         with io.BytesIO(image_data) as file:
-                                            await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')', file=discord.File(file, aankondiging['titel'] + ".wav"))
                                             await channel.create_thread(name = aankondiging['titel'], content = aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')', file=discord.File(file, aankondiging['titel'] + ".wav"))
                     else:
-                        await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
                         await channel.create_thread(name = aankondiging['titel'], content = aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
 
     @frappe.command()
