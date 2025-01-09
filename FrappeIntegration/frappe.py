@@ -9,6 +9,7 @@ import json
 import datetime
 from dateutil.relativedelta import relativedelta
 import aiohttp
+import io
 from frappeclient import FrappeClient
 
 
@@ -141,7 +142,8 @@ class Frappe(commands.Cog):
                 async with session.get(url) as resp:
                     if resp.status == 200:
                         image_data = await resp.read()
-                        await ctx.send(file=discord.File(image_data, "logo.png"))
+                        with io.BytesIO(image_data) as file:
+                            await ctx.send(file=discord.File(file, "logo.png"))
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
