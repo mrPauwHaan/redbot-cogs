@@ -131,17 +131,20 @@ class Frappe(commands.Cog):
     @commands.is_owner()
     async def steljezelfvoor(self, ctx: commands.Context):
         """Send stel jezelf voor berichten"""
-        response = self.Frappeclient.get_list('Stel jezelf voor planner', filters = {'concept': 0}, fields = ['concept', 'name', 'dag', 'titel', 'url', 'text'])
+        response = self.Frappeclient.get_list('Stel jezelf voor planner', filters = {'concept': 0}, fields = ['concept', 'name', 'dag', 'titel', 'url', 'text', 'url_ai'])
         if response:
             for aankondiging in response:
                 if datetime.datetime.strptime(aankondiging['dag'], '%Y-%m-%d').date() <= datetime.date.today():
-                    url = "https://shadowzone.nl/files/Shadowzone Gaming_ Lidinterview met Beunhaas.wav"
-                    async with aiohttp.ClientSession() as session:
-                            async with session.get(url) as resp:
-                                if resp.status == 200:
-                                    image_data = await resp.read()
-                                    with io.BytesIO(image_data) as file:
-                                        await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')', file=discord.File(file, "gesprek.wav"))
+                    if aankondiging['url_ai']
+                        url = "http://shadowzone.nl/" + aankondiging['url_ai']
+                        async with aiohttp.ClientSession() as session:
+                                async with session.get(url) as resp:
+                                    if resp.status == 200:
+                                        image_data = await resp.read()
+                                        with io.BytesIO(image_data) as file:
+                                            await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')', file=discord.File(file, aankondiging.titel))
+                    else:
+                        await ctx.send(aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
