@@ -133,7 +133,7 @@ class Frappe(commands.Cog):
         """Send stel jezelf voor berichten"""
         response = self.Frappeclient.get_list('Stel jezelf voor planner', filters = {'concept': 0}, fields = ['concept', 'name', 'dag', 'titel', 'url', 'text', 'url_ai'])
         
-        channel = ctx.guild.get_channel('1053250316243566654')
+        channel = ctx.guild.get_channel('1163576610306404463')
         if response:
             for aankondiging in response:
                 if datetime.datetime.strptime(aankondiging['dag'], '%Y-%m-%d').date() <= datetime.date.today():
