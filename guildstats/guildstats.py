@@ -1388,9 +1388,7 @@ class GuildStats(Cog):
                 align_text_center(
                     (768, 712, 1218, 788),
                     text=self.remove_unprintable_characters(
-                        _object.guild.get_channel(
-                            data["top_channels_and_activity"]["text"]["channel"]
-                        ).name
+                        "Test"
                     ),
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
@@ -1409,9 +1407,7 @@ class GuildStats(Cog):
                 align_text_center(
                     (768, 804, 1218, 880),
                     text=self.remove_unprintable_characters(
-                        _object.guild.get_channel(
-                            data["top_channels_and_activity"]["voice"]["channel"]
-                        ).name
+                        "Test"
                     ),
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
@@ -1429,7 +1425,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((768, 896, 1218, 972), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (768, 896, 1218, 972),
-                    text=data["top_channels_and_activity"]["activity"]["activity"],
+                    text="Test",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
