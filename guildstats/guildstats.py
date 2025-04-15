@@ -587,7 +587,7 @@ class GuildStats(Cog):
             draw.rounded_rectangle((1220, 30, 1476, 90), radius=15, fill=(79, 84, 92))
             align_text_center(
                 (1220, 30, 1476, 90),
-                text="Op Discord sinds",
+                text="Op Discord:",
                 fill=(255, 255, 255),
                 font=self.bold_font[30],
             )
@@ -595,14 +595,14 @@ class GuildStats(Cog):
             draw.rounded_rectangle((1200 + 365, 75, 1545 + 365, 175), radius=15, fill=(47, 49, 54))
             align_text_center(
                 (1200 + 365, 75, 1545 + 365, 175),
-                text=_object.joined_at.strftime("%B %d, %Y"),
+                text=_object.joined_at.strftime("%d %B %Y"),
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
             draw.rounded_rectangle((1220 + 365, 30, 1476 + 365, 90), radius=15, fill=(79, 84, 92))
             align_text_center(
                 (1220 + 365, 30, 1476 + 365, 90),
-                text="In server sinds",
+                text="In server:",
                 fill=(255, 255, 255),
                 font=self.bold_font[30],
             )
