@@ -917,7 +917,7 @@ class GuildStats(Cog):
                 draw.ellipse((70, 321, 110, 361), fill=(0, 255, 0), outline=(0, 0, 0))
                 align_text_center(
                     (120, 321, 120, 361),
-                    text=f"{self.number_to_text_with_suffix(data['messages'][30])} Messages",
+                    text=f"{self.number_to_text_with_suffix(0)} Messages",
                     fill=(255, 255, 255),
                     font=self.bold_font[30],
                 )
@@ -925,7 +925,7 @@ class GuildStats(Cog):
                 draw.ellipse((20, 20, 60, 60), fill=(0, 255, 0), outline=(0, 0, 0))
                 align_text_center(
                     (70, 20, 70, 60),
-                    text=f"{self.number_to_text_with_suffix(data['messages'][30])} Messages",
+                    text=f"{self.number_to_text_with_suffix(0)} Messages",
                     fill=(255, 255, 255),
                     font=self.bold_font[30],
                 )
@@ -1242,7 +1242,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (910, 301, 1254, 377),
-                    text=f"{self.number_to_text_with_suffix(data['messages'][1])} messages",
+                    text=f"{self.number_to_text_with_suffix(0)} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -1256,7 +1256,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (910, 395, 1254, 471),
-                    text=f"{self.number_to_text_with_suffix(data['messages'][7])} messages",
+                    text=f"{self.number_to_text_with_suffix(0)} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -1270,7 +1270,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (910, 489, 1254, 565),
-                    text=f"{self.number_to_text_with_suffix(data['messages'][30])} messages",
+                    text=f"{self.number_to_text_with_suffix(0)} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -1594,7 +1594,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (910, 301, 1254, 377),
-                    text=f"{self.number_to_text_with_suffix(data['messages'][1])} messages",
+                    text=f"{self.number_to_text_with_suffix(0)} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -1608,7 +1608,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (910, 395, 1254, 471),
-                    text=f"{self.number_to_text_with_suffix(data['messages'][7])} messages",
+                    text=f"{self.number_to_text_with_suffix(0)} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -1622,7 +1622,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (910, 489, 1254, 565),
-                    text=f"{self.number_to_text_with_suffix(data['messages'][30])} messages",
+                    text=f"{self.number_to_text_with_suffix(0)} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -1842,7 +1842,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (910, 301, 1254, 377),
-                    text=f"{self.number_to_text_with_suffix(data['messages'][1])} messages",
+                    text=f"{self.number_to_text_with_suffix(0)} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -1856,7 +1856,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (910, 395, 1254, 471),
-                    text=f"{self.number_to_text_with_suffix(data['messages'][7])} messages",
+                    text=f"{self.number_to_text_with_suffix(0)} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -1870,7 +1870,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (910, 489, 1254, 565),
-                    text=f"{self.number_to_text_with_suffix(data['messages'][30])} messages",
+                    text=f"{self.number_to_text_with_suffix(0)} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -2554,7 +2554,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (910, 301, 1254, 377),
-                text=f"{self.number_to_text_with_suffix(data['messages'][1])} messages",
+                text=f"{self.number_to_text_with_suffix(0)} messages",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -2565,7 +2565,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (910, 395, 1254, 471),
-                text=f"{self.number_to_text_with_suffix(data['messages'][7])} messages",
+                text=f"{self.number_to_text_with_suffix(0)} messages",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -2576,7 +2576,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (910, 489, 1254, 565),
-                text=f"{self.number_to_text_with_suffix(data['messages'][30])} messages",
+                text=f"{self.number_to_text_with_suffix(0)} messages",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -2789,7 +2789,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (910, 301, 1254, 377),
-                text=f"{self.number_to_text_with_suffix(data['messages'][1])} messages",
+                text=f"{self.number_to_text_with_suffix(0)} messages",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -2800,7 +2800,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (910, 395, 1254, 471),
-                text=f"{self.number_to_text_with_suffix(data['messages'][7])} messages",
+                text=f"{self.number_to_text_with_suffix(0)} messages",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -2811,7 +2811,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (910, 489, 1254, 565),
-                text=f"{self.number_to_text_with_suffix(data['messages'][30])} messages",
+                text=f"{self.number_to_text_with_suffix(0)} messages",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
