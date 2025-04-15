@@ -587,7 +587,7 @@ class GuildStats(Cog):
             draw.rounded_rectangle((1220, 30, 1476, 90), radius=15, fill=(79, 84, 92))
             align_text_center(
                 (1220, 30, 1476, 90),
-                text="Op Discord:",
+                text="Op Discord",
                 fill=(255, 255, 255),
                 font=self.bold_font[30],
             )
@@ -602,26 +602,7 @@ class GuildStats(Cog):
             draw.rounded_rectangle((1220 + 365, 30, 1476 + 365, 90), radius=15, fill=(79, 84, 92))
             align_text_center(
                 (1220 + 365, 30, 1476 + 365, 90),
-                text="In server:",
-                fill=(255, 255, 255),
-                font=self.bold_font[30],
-            )
-        elif isinstance(
-            _object,
-            (discord.Guild, discord.CategoryChannel, discord.TextChannel, discord.VoiceChannel),
-        ):
-            # `created_on`
-            draw.rounded_rectangle((1200 + 365, 75, 1545 + 365, 175), radius=15, fill=(47, 49, 54))
-            align_text_center(
-                (1200 + 365, 75, 1545 + 365, 175),
-                text=_object.created_at.strftime("%B %d, %Y"),
-                fill=(255, 255, 255),
-                font=self.font[36],
-            )
-            draw.rounded_rectangle((1220 + 365, 30, 1476 + 365, 90), radius=15, fill=(79, 84, 92))
-            align_text_center(
-                (1220 + 365, 30, 1476 + 365, 90),
-                text="Created On",
+                text="In server",
                 fill=(255, 255, 255),
                 font=self.bold_font[30],
             )
@@ -727,11 +708,11 @@ class GuildStats(Cog):
         # Data.
         if isinstance(_object, (discord.Member, discord.Role)):
             if _type is None:
-                # Server Lookback. box = 606 / empty = 30 | 2 cases / box = 117 / empty = 30
+                # lidmaatschap. box = 606 / empty = 30 | 2 cases / box = 117 / empty = 30
                 draw.rounded_rectangle((30, 204, 636, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (50, 214, 50, 284),
-                    text="Server Lookback",
+                    text="Lidmaatschap",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
@@ -742,9 +723,9 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((50, 301, 325, 418), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (50, 301, 325, 418),
-                    text="Text",
+                    text="Betrokken sinds",
                     fill=(255, 255, 255),
-                    font=self.bold_font[36],
+                    font=self.bold_font[30],
                 )
                 align_text_center(
                     (325, 301, 616, 418),
