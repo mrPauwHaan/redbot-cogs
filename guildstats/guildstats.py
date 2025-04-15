@@ -1347,9 +1347,7 @@ class GuildStats(Cog):
                 align_text_center(
                     (325, 712, 616, 829),
                     text=(
-                        f"#{data['server_ranks']['text']}"
-                        if data["server_ranks"]["text"] is not None
-                        else _("No data.")
+                        f"No data."
                     ),
                     fill=(255, 255, 255),
                     font=self.font[36],
@@ -1365,9 +1363,7 @@ class GuildStats(Cog):
                 align_text_center(
                     (325, 859, 616, 976),
                     text=(
-                        f"#{data['server_ranks']['voice']}"
-                        if data["server_ranks"]["voice"] is not None
-                        else _("No data.")
+                        f"No data."
                     ),
                     fill=(255, 255, 255),
                     font=self.font[36],
