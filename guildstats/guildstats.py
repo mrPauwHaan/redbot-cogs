@@ -146,9 +146,6 @@ class GuildStats(Cog):
         utc_now: datetime.datetime,
         all_channels_data: typing.Dict[int, dict],
         all_members_data: typing.Dict[int, dict],
-        ignored_categories: typing.List[int],
-        ignored_channels: typing.List[int],
-        ignored_activities: typing.List[str],
     ) -> typing.Dict[str, typing.Any]:
         if isinstance(_object, typing.Tuple):
             _object, _type = _object
@@ -261,20 +258,6 @@ class GuildStats(Cog):
                 all_members_data[member.id]["total_activities_times"][
                     activity_name
                 ] += real_total_time
-        if not isinstance(_object, discord.CategoryChannel):
-            for category_id in ignored_categories:
-                if (
-                    category := (
-                        _object if isinstance(_object, discord.Guild) else _object.guild
-                    ).get_channel(category_id)
-                ) is not None:
-                    for channel in category.channels:
-                        if channel.id in all_channels_data:
-                            del all_channels_data[channel.id]
-        if not isinstance(_object, (discord.TextChannel, discord.VoiceChannel)):
-            for channel_id in ignored_channels:
-                if channel_id in all_channels_data:
-                    del all_channels_data[channel_id]
 
         # Handle `members_type`.
         def is_valid(member_id: int):
@@ -353,7 +336,6 @@ class GuildStats(Cog):
                         for activity_name, total_time in all_members_data.get(
                             _object.id, {"total_activities_times": {}}
                         )["total_activities_times"].items()
-                        if activity_name not in ignored_activities
                     }
                 )
                 return {
@@ -583,7 +565,6 @@ class GuildStats(Cog):
                         .get("total_activities_times", {})
                         .items()
                         for __ in range(count_time)
-                        if activity_name not in ignored_activities
                     ]
                 )
                 return {
@@ -1423,7 +1404,7 @@ class GuildStats(Cog):
                             "total_activities_times"
                         ].items()
                         for __ in range(count_time)
-                        if activity_name not in ignored_activities and is_valid(int(member_id))
+                        is_valid(int(member_id))
                     ]
                 )
                 return {
@@ -2367,19 +2348,6 @@ class GuildStats(Cog):
             _object=_object if _type is None else (_object, _type),
             members_type=members_type,
             utc_now=utc_now,
-            all_channels_data=await self.config.all_channels(),
-            all_members_data=await self.config.all_members(
-                guild=(_object if isinstance(_object, discord.Guild) else _object.guild)
-            ),
-            ignored_categories=await self.config.guild(
-                _object if isinstance(_object, discord.Guild) else _object.guild
-            ).ignored_categories(),
-            ignored_channels=await self.config.guild(
-                _object if isinstance(_object, discord.Guild) else _object.guild
-            ).ignored_channels(),
-            ignored_activities=await self.config.guild(
-                _object if isinstance(_object, discord.Guild) else _object.guild
-            ).ignored_activities(),
         )
 
     def align_text_center(
@@ -3322,10 +3290,6 @@ class GuildStats(Cog):
             data=data,
             to_file=to_file,
             img=img,
-            default_state=await self.config.default_state(),
-            first_loading_time=datetime.datetime.fromtimestamp(
-                await self.config.first_loading_time(), tz=datetime.timezone.utc
-            ),
         )
 
     def _generate_image(
@@ -5551,10 +5515,6 @@ class GuildStats(Cog):
             img=img,
             show_graphic=show_graphic,
             graphic=graphic,
-            default_state=await self.config.default_state(),
-            first_loading_time=datetime.datetime.fromtimestamp(
-                await self.config.first_loading_time(), tz=datetime.timezone.utc
-            ),
         )
 
     @commands.guild_only()
