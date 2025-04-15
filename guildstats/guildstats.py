@@ -2078,7 +2078,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (50, 433, 616, 515),
-                    text=f"hour{'' if 0 < data['server_lookback'] <= 1 else 's'}",
+                    text=f"hours",
                     fill=(255, 255, 255),
                     font=self.bold_font[60],
                 )
@@ -2520,7 +2520,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (325, 301, 616, 418),
-                text=f"{self.number_to_text_with_suffix(data['server_lookback']['text'])} message{'' if 0 < data['server_lookback']['text'] <= 1 else 's'}",
+                text=f"{self.number_to_text_with_suffix(0)} messages",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -2531,7 +2531,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (325, 448, 616, 565),
-                text=f"{self.number_to_text_with_suffix(data['server_lookback']['voice'])} hour{'' if 0 < data['server_lookback']['voice'] <= 1 else 's'}",
+                text=f"{self.number_to_text_with_suffix(0)} hours",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -2760,13 +2760,13 @@ class GuildStats(Cog):
             draw.rounded_rectangle((50, 301, 616, 565), radius=15, fill=(32, 34, 37))
             align_text_center(
                 (50, 351, 616, 433),
-                text=f"{self.number_to_text_with_suffix(data['server_lookback'])}",
+                text=f"{self.number_to_text_with_suffix(0)}",
                 fill=(255, 255, 255),
                 font=self.bold_font[60],
             )
             align_text_center(
                 (50, 433, 616, 515),
-                text=f"message{'' if 0 < data['server_lookback'] <= 1 else 's'}",
+                text=f"messages",
                 fill=(255, 255, 255),
                 font=self.bold_font[60],
             )
@@ -2979,13 +2979,13 @@ class GuildStats(Cog):
             draw.rounded_rectangle((50, 301, 616, 565), radius=15, fill=(32, 34, 37))
             align_text_center(
                 (50, 351, 616, 433),
-                text=f"{self.number_to_text_with_suffix(data['server_lookback'])}",
+                text=f"{self.number_to_text_with_suffix(0)}",
                 fill=(255, 255, 255),
                 font=self.bold_font[60],
             )
             align_text_center(
                 (50, 433, 616, 515),
-                text=f"hour{'' if 0 < data['server_lookback'] <= 1 else 's'}",
+                text=f"hours",
                 fill=(255, 255, 255),
                 font=self.bold_font[60],
             )
