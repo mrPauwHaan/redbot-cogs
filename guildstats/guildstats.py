@@ -739,7 +739,7 @@ class GuildStats(Cog):
                     (50, 448, 325, 565),
                     text="Betrokken sinds",
                     fill=(255, 255, 255),
-                    font=self.bold_font[30],
+                    font=self.bold_font[25],
                 )
                 align_text_center(
                     (325, 448, 616, 565),
@@ -859,7 +859,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((30, 615, 636, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (50, 625, 50, 695),
-                    text="Server Ranks",
+                    text="Events",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
@@ -869,7 +869,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((50, 712, 616, 829), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((50, 712, 325, 829), radius=15, fill=(24, 26, 27))
                 align_text_center(
-                    (50, 712, 325, 829), text="Text", fill=(255, 255, 255), font=self.bold_font[36]
+                    (50, 712, 325, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36]
                 )
                 align_text_center(
                     (325, 712, 616, 829),
@@ -883,7 +883,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((50, 859, 325, 976), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (50, 859, 325, 976),
-                    text="Voice",
+                    text="Laatste",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
