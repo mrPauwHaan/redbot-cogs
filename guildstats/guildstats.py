@@ -1404,7 +1404,7 @@ class GuildStats(Cog):
                             "total_activities_times"
                         ].items()
                         for __ in range(count_time)
-                        is_valid(int(member_id))
+                        if is_valid(int(member_id))
                     ]
                 )
                 return {
