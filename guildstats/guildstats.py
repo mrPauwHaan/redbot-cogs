@@ -529,7 +529,7 @@ class GuildStats(Cog):
 
         # Guild name & Guild icon.
         if guild_icon is not None:
-            image = Image.open(io.BytesIO('https://shadowzone.nl/files/logo.png'))
+            image = Image.open(io.BytesIO(guild_icon))
             image = image.resize((55, 55))
             mask = Image.new("L", image.size, 0)
             d = ImageDraw.Draw(mask)
