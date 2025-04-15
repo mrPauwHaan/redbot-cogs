@@ -1296,7 +1296,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1548, 301, 1892, 377),
-                    text=f"{self.number_to_text_with_suffix(data['voice_activity'][1])} hour{'' if 0 < data['voice_activity'][1] <= 1 else 's'}",
+                    text=f"{self.number_to_text_with_suffix(0)} hours",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -1310,7 +1310,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1548, 395, 1892, 471),
-                    text=f"{self.number_to_text_with_suffix(data['voice_activity'][7])} hour{'' if 0 < data['voice_activity'][7] <= 1 else 's'}",
+                    text=f"{self.number_to_text_with_suffix(0)} hours",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -1324,7 +1324,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1548, 489, 1892, 565),
-                    text=f"{self.number_to_text_with_suffix(data['voice_activity'][30])} hour{'' if 0 < data['voice_activity'][30] <= 1 else 's'}",
+                    text=f"{self.number_to_text_with_suffix(0)} hours",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -2834,7 +2834,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (1548, 301, 1892, 377),
-                text=f"{self.number_to_text_with_suffix(data['contributors'][1])} member{'' if 0 < data['contributors'][1] <= 1 else 's'}",
+                text=f"{self.number_to_text_with_suffix(data['contributors'][1])} members",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -2845,7 +2845,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (1548, 395, 1892, 471),
-                text=f"{self.number_to_text_with_suffix(data['contributors'][7])} member{'' if 0 < data['contributors'][7] <= 1 else 's'}",
+                text=f"{self.number_to_text_with_suffix(data['contributors'][7])} members",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -2859,7 +2859,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (1548, 489, 1892, 565),
-                text=f"{self.number_to_text_with_suffix(data['contributors'][30])} member{'' if 0 < data['contributors'][30] <= 1 else 's'}",
+                text=f"{self.number_to_text_with_suffix(data['contributors'][30])} members",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -2908,7 +2908,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1218, 712, 1573, 788),
-                    text=f"{self.number_to_text_with_suffix(data['top_messages_members'][0][1])} message{'' if 0 < data['top_messages_members'][0][1] <= 1 else 's'}",
+                    text=f"{self.number_to_text_with_suffix(data['top_messages_members'][0][1])} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -2925,7 +2925,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1218, 804, 1573, 880),
-                    text=f"{self.number_to_text_with_suffix(data['top_messages_members'][1][1])} message{'' if 0 < data['top_messages_members'][1][1] <= 1 else 's'}",
+                    text=f"{self.number_to_text_with_suffix(data['top_messages_members'][1][1])} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -2942,7 +2942,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1218, 896, 1573, 972),
-                    text=f"{self.number_to_text_with_suffix(data['top_messages_members'][2][1])} message{'' if 0 < data['top_messages_members'][2][1] <= 1 else 's'}",
+                    text=f"{self.number_to_text_with_suffix(data['top_messages_members'][2][1])} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -3008,7 +3008,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (910, 301, 1254, 377),
-                text=f"{self.number_to_text_with_suffix(data['voice_activity'][1])} hour{'' if 0 < data['voice_activity'][1] <= 1 else 's'}",
+                text=f"{self.number_to_text_with_suffix(data['voice_activity'][1])} hours",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -3019,7 +3019,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (910, 395, 1254, 471),
-                text=f"{self.number_to_text_with_suffix(data['voice_activity'][7])} hour{'' if 0 < data['voice_activity'][7] <= 1 else 's'}",
+                text=f"{self.number_to_text_with_suffix(data['voice_activity'][7])} hours",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -3030,7 +3030,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (910, 489, 1254, 565),
-                text=f"{self.number_to_text_with_suffix(data['voice_activity'][30])} hour{'' if 0 < data['voice_activity'][30] <= 1 else 's'}",
+                text=f"{self.number_to_text_with_suffix(data['voice_activity'][30])} hours",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -3053,7 +3053,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (1548, 301, 1892, 377),
-                text=f"{self.number_to_text_with_suffix(data['contributors'][1])} member{'' if 0 < data['contributors'][1] <= 1 else 's'}",
+                text=f"{self.number_to_text_with_suffix(data['contributors'][1])} members",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -3064,7 +3064,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (1548, 395, 1892, 471),
-                text=f"{self.number_to_text_with_suffix(data['contributors'][7])} member{'' if 0 < data['contributors'][7] <= 1 else 's'}",
+                text=f"{self.number_to_text_with_suffix(data['contributors'][7])} members",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -3078,7 +3078,7 @@ class GuildStats(Cog):
             )
             align_text_center(
                 (1548, 489, 1892, 565),
-                text=f"{self.number_to_text_with_suffix(data['contributors'][30])} member{'' if 0 < data['contributors'][30] <= 1 else 's'}",
+                text=f"{self.number_to_text_with_suffix(data['contributors'][30])} members",
                 fill=(255, 255, 255),
                 font=self.font[36],
             )
@@ -3127,7 +3127,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1218, 712, 1573, 788),
-                    text=f"{self.number_to_text_with_suffix(data['top_voice_members'][0][1])} hour{'' if 0 < data['top_voice_members'][0][1] <= 1 else 's'}",
+                    text=f"{self.number_to_text_with_suffix(data['top_voice_members'][0][1])} hours",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -3144,7 +3144,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1218, 804, 1573, 880),
-                    text=f"{self.number_to_text_with_suffix(data['top_voice_members'][1][1])} hour{'' if 0 < data['top_voice_members'][1][1] <= 1 else 's'}",
+                    text=f"{self.number_to_text_with_suffix(data['top_voice_members'][1][1])} hours",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
