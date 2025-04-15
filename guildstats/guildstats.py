@@ -723,9 +723,9 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((50, 301, 325, 418), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (50, 301, 325, 418),
-                    text="Betrokken sinds",
+                    text="Lid sinds",
                     fill=(255, 255, 255),
-                    font=self.bold_font[30],
+                    font=self.bold_font[36],
                 )
                 align_text_center(
                     (325, 301, 616, 418),
@@ -737,9 +737,9 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((50, 448, 325, 565), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (50, 448, 325, 565),
-                    text="Voice",
+                    text="Betrokken sinds",
                     fill=(255, 255, 255),
-                    font=self.bold_font[36],
+                    font=self.bold_font[30],
                 )
                 align_text_center(
                     (325, 448, 616, 565),
