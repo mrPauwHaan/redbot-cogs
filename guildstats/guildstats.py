@@ -769,8 +769,6 @@ class GuildStats(Cog):
         data: dict,
         to_file: bool,
         img: Image.Image,
-        default_state: bool,
-        first_loading_time: datetime.datetime,
     ) -> typing.Union[Image.Image, discord.File]:
         if isinstance(_object, typing.Tuple):
             _object = _object[0]
@@ -1022,48 +1020,42 @@ class GuildStats(Cog):
             img.paste(image, (0, 0, size[0], size[1]), mask=image.split()[3])
 
         if size is None:
-            if default_state:
-                image = Image.open(self.icons["history"])
-                image = image.resize((50, 50))
-                img.paste(image, (30, 972, 80, 1022), mask=image.split()[3])
-                utc_now = datetime.datetime.now(tz=datetime.timezone.utc)
-                tracking_data_start_time = max(
-                    first_loading_time,
-                    (
-                        _object if isinstance(_object, discord.Guild) else _object.guild
-                    ).me.joined_at,
-                )
-                tracking_data_start_time = tracking_data_start_time.replace(
-                    second=utc_now.second,
-                    minute=(
-                        utc_now.minute
-                        if (utc_now - tracking_data_start_time)
-                        > datetime.timedelta(seconds=3600 * 24 * 7)
-                        else tracking_data_start_time.minute
-                    ),
-                    hour=(
-                        utc_now.hour
-                        if (utc_now - tracking_data_start_time)
-                        > datetime.timedelta(seconds=3600 * 24 * 30)
-                        else tracking_data_start_time.hour
-                    ),
-                    day=(
-                        utc_now.day
-                        if (utc_now - tracking_data_start_time)
-                        > datetime.timedelta(seconds=3600 * 24 * 365)
-                        else tracking_data_start_time.day
-                    ),
-                )
-                align_text_center(
-                    (90, 972, 90, 1022),
-                    text=_("Tracking data in this server for {interval_string}.").format(
-                        interval_string=CogsUtils.get_interval_string(
-                            tracking_data_start_time, utc_now=utc_now
-                        )
-                    ),
-                    fill=(255, 255, 255),
-                    font=self.bold_font[30],
-                )
+            image = Image.open(self.icons["history"])
+            image = image.resize((50, 50))
+            img.paste(image, (30, 972, 80, 1022), mask=image.split()[3])
+            utc_now = datetime.datetime.now(tz=datetime.timezone.utc)
+            tracking_data_start_time = 0
+            tracking_data_start_time = tracking_data_start_time.replace(
+                second=utc_now.second,
+                minute=(
+                    utc_now.minute
+                    if (utc_now - tracking_data_start_time)
+                    > datetime.timedelta(seconds=3600 * 24 * 7)
+                    else tracking_data_start_time.minute
+                ),
+                hour=(
+                    utc_now.hour
+                    if (utc_now - tracking_data_start_time)
+                    > datetime.timedelta(seconds=3600 * 24 * 30)
+                    else tracking_data_start_time.hour
+                ),
+                day=(
+                    utc_now.day
+                    if (utc_now - tracking_data_start_time)
+                    > datetime.timedelta(seconds=3600 * 24 * 365)
+                    else tracking_data_start_time.day
+                ),
+            )
+            align_text_center(
+                (90, 972, 90, 1022),
+                text=_("Tracking data in this server for {interval_string}.").format(
+                    interval_string=CogsUtils.get_interval_string(
+                        tracking_data_start_time, utc_now=utc_now
+                    )
+                ),
+                fill=(255, 255, 255),
+                font=self.bold_font[30],
+            )
             if members_type != "both":
                 members_type_text = _("Only {members_type} are taken into account.").format(
                     members_type=members_type
@@ -1178,8 +1170,6 @@ class GuildStats(Cog):
         data: dict,
         to_file: bool,
         img: Image.Image,
-        default_state: bool,
-        first_loading_time: datetime.datetime,
     ) -> typing.Union[Image.Image, discord.File]:
         if isinstance(_object, typing.Tuple):
             _object, _type = _object
@@ -3194,10 +3184,7 @@ class GuildStats(Cog):
                 img.paste(image, (50, 1123, 1890, 1387 + 200))
 
         utc_now = datetime.datetime.now(tz=datetime.timezone.utc)
-        tracking_data_start_time = max(
-            first_loading_time,
-            (_object if isinstance(_object, discord.Guild) else _object.guild).me.joined_at,
-        )
+        tracking_data_start_time = 0
         tracking_data_start_time = tracking_data_start_time.replace(
             second=utc_now.second,
             minute=(
@@ -3219,20 +3206,19 @@ class GuildStats(Cog):
             ),
         )
         if show_graphic:
-            if default_state:
-                image = Image.open(self.icons["history"])
-                image = image.resize((50, 50))
-                img.paste(image, (30, 1427 + 200, 80, 1477 + 200), mask=image.split()[3])
-                align_text_center(
-                    (90, 1427 + 200, 90, 1477 + 200),
-                    text=_("Tracking data in this server for {interval_string}.").format(
-                        interval_string=CogsUtils.get_interval_string(
-                            tracking_data_start_time, utc_now=utc_now
-                        )
-                    ),
-                    fill=(255, 255, 255),
-                    font=self.bold_font[30],
-                )
+            image = Image.open(self.icons["history"])
+            image = image.resize((50, 50))
+            img.paste(image, (30, 1427 + 200, 80, 1477 + 200), mask=image.split()[3])
+            align_text_center(
+                (90, 1427 + 200, 90, 1477 + 200),
+                text=_("Tracking data in this server for {interval_string}.").format(
+                    interval_string=CogsUtils.get_interval_string(
+                        tracking_data_start_time, utc_now=utc_now
+                    )
+                ),
+                fill=(255, 255, 255),
+                font=self.bold_font[30],
+            )
             if members_type != "both":
                 members_type_text = _("Only {members_type} are taken into account.").format(
                     members_type=members_type
@@ -3261,20 +3247,19 @@ class GuildStats(Cog):
                     font=self.bold_font[30],
                 )
         else:
-            if default_state:
-                image = Image.open(self.icons["history"])
-                image = image.resize((50, 50))
-                img.paste(image, (30, 1016, 80, 1066), mask=image.split()[3])
-                align_text_center(
-                    (90, 1016, 90, 1066),
-                    text=_("Tracking data in this server for {interval_string}.").format(
-                        interval_string=CogsUtils.get_interval_string(
-                            tracking_data_start_time, utc_now=utc_now
-                        )
-                    ),
-                    fill=(255, 255, 255),
-                    font=self.bold_font[30],
-                )
+            image = Image.open(self.icons["history"])
+            image = image.resize((50, 50))
+            img.paste(image, (30, 1016, 80, 1066), mask=image.split()[3])
+            align_text_center(
+                (90, 1016, 90, 1066),
+                text=_("Tracking data in this server for {interval_string}.").format(
+                    interval_string=CogsUtils.get_interval_string(
+                        tracking_data_start_time, utc_now=utc_now
+                    )
+                ),
+                fill=(255, 255, 255),
+                font=self.bold_font[30],
+            )
             if members_type != "both":
                 members_type_text = _("Only {members_type} are taken into account.").format(
                     members_type=members_type
