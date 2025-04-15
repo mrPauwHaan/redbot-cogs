@@ -1025,27 +1025,6 @@ class GuildStats(Cog):
             img.paste(image, (30, 972, 80, 1022), mask=image.split()[3])
             utc_now = datetime.datetime.now(tz=datetime.timezone.utc)
             tracking_data_start_time = 0
-            tracking_data_start_time = tracking_data_start_time.replace(
-                second=utc_now.second,
-                minute=(
-                    utc_now.minute
-                    if (utc_now - tracking_data_start_time)
-                    > datetime.timedelta(seconds=3600 * 24 * 7)
-                    else tracking_data_start_time.minute
-                ),
-                hour=(
-                    utc_now.hour
-                    if (utc_now - tracking_data_start_time)
-                    > datetime.timedelta(seconds=3600 * 24 * 30)
-                    else tracking_data_start_time.hour
-                ),
-                day=(
-                    utc_now.day
-                    if (utc_now - tracking_data_start_time)
-                    > datetime.timedelta(seconds=3600 * 24 * 365)
-                    else tracking_data_start_time.day
-                ),
-            )
             align_text_center(
                 (90, 972, 90, 1022),
                 text=_("Tracking data in this server for {interval_string}.").format(
@@ -3165,26 +3144,6 @@ class GuildStats(Cog):
 
         utc_now = datetime.datetime.now(tz=datetime.timezone.utc)
         tracking_data_start_time = 0
-        tracking_data_start_time = tracking_data_start_time.replace(
-            second=utc_now.second,
-            minute=(
-                utc_now.minute
-                if (utc_now - tracking_data_start_time) > datetime.timedelta(seconds=3600 * 24 * 7)
-                else tracking_data_start_time.minute
-            ),
-            hour=(
-                utc_now.hour
-                if (utc_now - tracking_data_start_time)
-                > datetime.timedelta(seconds=3600 * 24 * 30)
-                else tracking_data_start_time.hour
-            ),
-            day=(
-                utc_now.day
-                if (utc_now - tracking_data_start_time)
-                > datetime.timedelta(seconds=3600 * 24 * 365)
-                else tracking_data_start_time.day
-            ),
-        )
         if show_graphic:
             image = Image.open(self.icons["history"])
             image = image.resize((50, 50))
