@@ -17,6 +17,7 @@ import plotly.graph_objects as go
 from fontTools.ttLib import TTFont
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 from redbot.core.data_manager import bundled_data_path
+from frappeclient import FrappeClient
 
 from .view import GuildStatsView
 
@@ -3515,7 +3516,7 @@ class GuildStats(Cog):
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
-                
+
                 draw.rounded_rectangle((30, 615, 636, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (50, 625, 50, 695),
