@@ -64,7 +64,7 @@ class ObjectConverter(commands.Converter):
                             )
                         except commands.BadArgument:
                             raise commands.BadArgument(
-                                _("No member/category/text channel/voice channel found.")
+                                "No member/category/text channel/voice channel found."
                             )
 
 
@@ -452,14 +452,14 @@ class GuildStats(Cog):
                 img.paste(image, (30, 30, 170, 170), mask=image.split()[3])
             draw.text(
                 (190, 30),
-                _("Role {_object.name}").format(_object=_object),
+                "Role {_object.name}").format(_object=_object,
                 fill=(255, 255, 255),
                 font=self.bold_font[50],
             )
         elif isinstance(_object, discord.Guild):
             if _type is None:
                 draw.text(
-                    (190, 30), text=_("Guild Stats"), fill=(255, 255, 255), font=self.bold_font[50]
+                    (190, 30), text="Guild Stats", fill=(255, 255, 255), font=self.bold_font[50]
                 )
                 image = Image.open(
                     self.icons[
@@ -476,20 +476,20 @@ class GuildStats(Cog):
             elif _type == "messages":
                 draw.text(
                     (190, 30),
-                    text=_("Messages Stats"),
+                    text="Messages Stats",
                     fill=(255, 255, 255),
                     font=self.bold_font[50],
                 )
                 image = Image.open(self.icons["#"])
             elif _type == "voice":
                 draw.text(
-                    (190, 30), text=_("Voice Stats"), fill=(255, 255, 255), font=self.bold_font[50]
+                    (190, 30), text="Voice Stats", fill=(255, 255, 255), font=self.bold_font[50]
                 )
                 image = Image.open(self.icons["sound"])
             elif _type == "activities":
                 draw.text(
                     (190, 30),
-                    text=_("Activities Stats"),
+                    text="Activities Stats",
                     fill=(255, 255, 255),
                     font=self.bold_font[50],
                 )
@@ -499,7 +499,7 @@ class GuildStats(Cog):
         elif isinstance(_object, discord.CategoryChannel):
             draw.text(
                 (190, 30),
-                _("Category - {_object.name}").format(_object=_object),
+                "Category - {_object.name}").format(_object=_object,
                 fill=(255, 255, 255),
                 font=self.bold_font[50],
             )
@@ -587,7 +587,7 @@ class GuildStats(Cog):
             draw.rounded_rectangle((1220, 30, 1476, 90), radius=15, fill=(79, 84, 92))
             align_text_center(
                 (1220, 30, 1476, 90),
-                text=_("Created On"),
+                text="Created On",
                 fill=(255, 255, 255),
                 font=self.bold_font[30],
             )
@@ -602,7 +602,7 @@ class GuildStats(Cog):
             draw.rounded_rectangle((1220 + 365, 30, 1476 + 365, 90), radius=15, fill=(79, 84, 92))
             align_text_center(
                 (1220 + 365, 30, 1476 + 365, 90),
-                text=_("Joined On"),
+                text="Joined On",
                 fill=(255, 255, 255),
                 font=self.bold_font[30],
             )
@@ -621,7 +621,7 @@ class GuildStats(Cog):
             draw.rounded_rectangle((1220 + 365, 30, 1476 + 365, 90), radius=15, fill=(79, 84, 92))
             align_text_center(
                 (1220 + 365, 30, 1476 + 365, 90),
-                text=_("Created On"),
+                text="Created On",
                 fill=(255, 255, 255),
                 font=self.bold_font[30],
             )
@@ -731,7 +731,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((30, 204, 636, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (50, 214, 50, 284),
-                    text=_("Server Lookback"),
+                    text="Server Lookback",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
@@ -742,7 +742,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((50, 301, 325, 418), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (50, 301, 325, 418),
-                    text=_("Text"),
+                    text="Text",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
@@ -756,7 +756,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((50, 448, 325, 565), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (50, 448, 325, 565),
-                    text=_("Voice"),
+                    text="Voice",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
@@ -771,7 +771,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((668, 204, 1274, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (688, 214, 688, 284),
-                    text=_("Messages"),
+                    text="Messages",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
@@ -782,7 +782,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((688, 301, 910, 377), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (688, 301, 910, 377),
-                    text=_("1d"),
+                    text="1d",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
@@ -796,7 +796,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((688, 395, 910, 471), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (688, 395, 910, 471),
-                    text=_("7d"),
+                    text="7d",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
@@ -810,7 +810,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((688, 489, 910, 565), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (688, 489, 910, 565),
-                    text=_("30d"),
+                    text="30d",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
@@ -825,7 +825,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((1306, 204, 1912, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1326, 214, 1326, 284),
-                    text=_("Voice Activity"),
+                    text="Voice Activity",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
@@ -836,7 +836,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((1326, 301, 1548, 377), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (1326, 301, 1548, 377),
-                    text=_("1d"),
+                    text="1d",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
@@ -850,7 +850,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((1326, 395, 1548, 471), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (1326, 395, 1548, 471),
-                    text=_("7d"),
+                    text="7d",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
@@ -864,7 +864,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((1326, 489, 1548, 565), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (1326, 489, 1548, 565),
-                    text=_("30d"),
+                    text="30d",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
@@ -878,7 +878,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((30, 615, 636, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (50, 625, 50, 695),
-                    text=_("Server Ranks"),
+                    text="Server Ranks",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
@@ -902,7 +902,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((50, 859, 325, 976), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (50, 859, 325, 976),
-                    text=_("Voice"),
+                    text="Voice",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
@@ -919,7 +919,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((668, 615, 1593, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (688, 625, 688, 695),
-                    text=_("Top Channels & Activity"),
+                    text="Top Channels & Activity",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
@@ -989,7 +989,7 @@ class GuildStats(Cog):
                     )
                     align_text_center(
                         (50, 1036, 50, 1106),
-                        text=_("Graphic"),
+                        text="Graphic",
                         fill=(255, 255, 255),
                         font=self.bold_font[40],
                     )
@@ -1002,6 +1002,7 @@ class GuildStats(Cog):
                     image: Image.Image = graphic
                     image = image.resize((1840, 464))
                     img.paste(image, (50, 1123, 1890, 1387 + 200))
+
 
         if not to_file:
             return img
