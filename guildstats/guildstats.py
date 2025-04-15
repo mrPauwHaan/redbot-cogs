@@ -153,25 +153,6 @@ class GuildStats(Cog):
         if utc_now is None:
             utc_now = datetime.datetime.now(tz=datetime.timezone.utc)
 
-        # Handle `members_type`.
-        def is_valid(member_id: int):
-            if members_type == "both":
-                return True
-            elif (
-                member := (
-                    _object if isinstance(_object, discord.Guild) else _object.guild
-                ).get_member(member_id)
-            ) is None:
-                return True
-            elif members_type == "humans" and not member.bot:
-                return True
-            elif members_type == "bots" and member.bot:
-                return True
-            else:
-                return False
-
-        members_type_key = "" if members_type == "both" else f"{members_type}_"
-
     async def get_data(
         self,
         _object: typing.Union[
@@ -1021,60 +1002,6 @@ class GuildStats(Cog):
                     image: Image.Image = graphic
                     image = image.resize((1840, 464))
                     img.paste(image, (50, 1123, 1890, 1387 + 200))
-
-            elif _type == "activities":
-                # Top Activities (Applications). box = 925 / empty = 30 | 30 cases / box = 76 / empty = 16
-                draw.rounded_rectangle((30, 204, 955, 996), radius=15, fill=(47, 49, 54))
-                align_text_center(
-                    (50, 214, 50, 284),
-                    text=_("Top Activities (Applications)"),
-                    fill=(255, 255, 255),
-                    font=self.bold_font[40],
-                )
-                image = Image.open(self.icons["game"])
-                image = image.resize((70, 70))
-                img.paste(image, (865, 214, 935, 284), mask=image.split()[3])
-                top_activities = list(data["top_activities"])
-                current_y = 301
-                for i in range(10):
-                    draw.rounded_rectangle(
-                        (50, current_y, 935, current_y + 58), radius=15, fill=(32, 34, 37)
-                    )
-                    draw.rounded_rectangle(
-                        (50, current_y, 580, current_y + 58), radius=15, fill=(24, 26, 27)
-                    )
-                    if len(top_activities) >= i + 1:
-                        # align_text_center((50, current_y, 100, current_y + 50), text=str(i), fill=(255, 255, 255), font=self.bold_font[36])
-                        # align_text_center((100, current_y, 935, current_y + 50), text=top_activities[i - 1], fill=(255, 255, 255), font=self.font[36])
-                        align_text_center(
-                            (50, current_y, 580, current_y + 58),
-                            text=self.remove_unprintable_characters(top_activities[i][:25]),
-                            fill=(255, 255, 255),
-                            font=self.bold_font[36],
-                        )
-                        align_text_center(
-                            (580, current_y, 935, current_y + 58),
-                            text=f"{self.number_to_text_with_suffix(0)} hours",
-                            fill=(255, 255, 255),
-                            font=self.font[36],
-                        )
-                    current_y += 58 + 10
-
-                # Graphic. box = 925 / empty = 30 | 1 case / box = 76 / empty = 16
-                draw.rounded_rectangle((985, 204, 1910, 996), radius=15, fill=(47, 49, 54))
-                align_text_center(
-                    (1005, 214, 1005, 284),
-                    text=_("Graphic"),
-                    fill=(255, 255, 255),
-                    font=self.bold_font[40],
-                )
-                image = Image.open(self.icons["query_stats"])
-                image = image.resize((70, 70))
-                img.paste(image, (1820, 214, 1890, 284), mask=image.split()[3])
-                draw.rounded_rectangle((1005, 301, 1890, 976), radius=15, fill=(32, 34, 37))
-                image: Image.Image = graphic
-                image = image.resize((885, 675))
-                img.paste(image, (1005, 301, 1890, 976))
 
         elif isinstance(_object, discord.Guild):
             if _type is None:
