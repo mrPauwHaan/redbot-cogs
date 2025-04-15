@@ -1385,72 +1385,60 @@ class GuildStats(Cog):
                 img.paste(image, (688, 715, 758, 785), mask=image.split()[3])
                 draw.rounded_rectangle((768, 712, 1573, 788), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((768, 712, 1218, 788), radius=15, fill=(24, 26, 27))
-                if (
-                    data["top_channels_and_activity"]["text"]["channel"] is not None
-                    and data["top_channels_and_activity"]["text"]["value"] is not None
-                ):
-                    align_text_center(
-                        (768, 712, 1218, 788),
-                        text=self.remove_unprintable_characters(
-                            _object.guild.get_channel(
-                                data["top_channels_and_activity"]["text"]["channel"]
-                            ).name
-                        ),
-                        fill=(255, 255, 255),
-                        font=self.bold_font[36],
-                    )
-                    align_text_center(
-                        (1218, 712, 1573, 788),
-                        text=f"{self.number_to_text_with_suffix(data['top_channels_and_activity']['text']['value'])} message{'' if 0 < data['top_channels_and_activity']['text']['value'] <= 1 else 's'}",
-                        fill=(255, 255, 255),
-                        font=self.font[36],
-                    )
+                align_text_center(
+                    (768, 712, 1218, 788),
+                    text=self.remove_unprintable_characters(
+                        _object.guild.get_channel(
+                            data["top_channels_and_activity"]["text"]["channel"]
+                        ).name
+                    ),
+                    fill=(255, 255, 255),
+                    font=self.bold_font[36],
+                )
+                align_text_center(
+                    (1218, 712, 1573, 788),
+                    text=f"{self.number_to_text_with_suffix(0)} messages",
+                    fill=(255, 255, 255),
+                    font=self.font[36],
+                )
                 image = Image.open(self.icons["sound"])
                 image = image.resize((70, 70))
                 img.paste(image, (688, 807, 758, 877), mask=image.split()[3])
                 draw.rounded_rectangle((768, 804, 1573, 880), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((768, 804, 1218, 880), radius=15, fill=(24, 26, 27))
-                if (
-                    data["top_channels_and_activity"]["voice"]["channel"] is not None
-                    and data["top_channels_and_activity"]["voice"]["value"] is not None
-                ):
-                    align_text_center(
-                        (768, 804, 1218, 880),
-                        text=self.remove_unprintable_characters(
-                            _object.guild.get_channel(
-                                data["top_channels_and_activity"]["voice"]["channel"]
-                            ).name
-                        ),
-                        fill=(255, 255, 255),
-                        font=self.bold_font[36],
-                    )
-                    align_text_center(
-                        (1218, 804, 1573, 880),
-                        text=f"{self.number_to_text_with_suffix(data['top_channels_and_activity']['voice']['value'])} hour{'' if 0 < data['top_channels_and_activity']['voice']['value'] <= 1 else 's'}",
-                        fill=(255, 255, 255),
-                        font=self.font[36],
-                    )
+                align_text_center(
+                    (768, 804, 1218, 880),
+                    text=self.remove_unprintable_characters(
+                        _object.guild.get_channel(
+                            data["top_channels_and_activity"]["voice"]["channel"]
+                        ).name
+                    ),
+                    fill=(255, 255, 255),
+                    font=self.bold_font[36],
+                )
+                align_text_center(
+                    (1218, 804, 1573, 880),
+                    text=f"{self.number_to_text_with_suffix(0)} hours",
+                    fill=(255, 255, 255),
+                    font=self.font[36],
+                )
                 image = Image.open(self.icons["game"])
                 image = image.resize((70, 70))
                 img.paste(image, (688, 899, 758, 969), mask=image.split()[3])
                 draw.rounded_rectangle((768, 896, 1573, 972), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((768, 896, 1218, 972), radius=15, fill=(24, 26, 27))
-                if (
-                    data["top_channels_and_activity"]["activity"]["activity"] is not None
-                    and data["top_channels_and_activity"]["activity"]["value"] is not None
-                ):
-                    align_text_center(
-                        (768, 896, 1218, 972),
-                        text=data["top_channels_and_activity"]["activity"]["activity"],
-                        fill=(255, 255, 255),
-                        font=self.bold_font[36],
-                    )
-                    align_text_center(
-                        (1218, 896, 1573, 972),
-                        text=f"{self.number_to_text_with_suffix(data['top_channels_and_activity']['activity']['value'])} hour{'' if 0 < data['top_channels_and_activity']['activity']['value'] <= 1 else 's'}",
-                        fill=(255, 255, 255),
-                        font=self.font[36],
-                    )
+                align_text_center(
+                    (768, 896, 1218, 972),
+                    text=data["top_channels_and_activity"]["activity"]["activity"],
+                    fill=(255, 255, 255),
+                    font=self.bold_font[36],
+                )
+                align_text_center(
+                    (1218, 896, 1573, 972),
+                    text=f"{self.number_to_text_with_suffix(0)} hours",
+                    fill=(255, 255, 255),
+                    font=self.font[36],
+                )
 
                 if show_graphic:
                     # Graphic. box = 940 / empty = 0 | + 411 (381 + 30) / 1 case / box = 264 / empty = 0
@@ -1505,7 +1493,7 @@ class GuildStats(Cog):
                         )
                         align_text_center(
                             (580, current_y, 935, current_y + 58),
-                            text=f"{self.number_to_text_with_suffix(data['top_activities'][top_activities[i]])} hour{'' if 0 < data['top_activities'][top_activities[i]] <= 1 else 's'}",
+                            text=f"{self.number_to_text_with_suffix(0)} hours",
                             fill=(255, 255, 255),
                             font=self.font[36],
                         )
