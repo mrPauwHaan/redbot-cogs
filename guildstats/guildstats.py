@@ -17,7 +17,6 @@ import plotly.graph_objects as go
 from fontTools.ttLib import TTFont
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 from redbot.core.data_manager import bundled_data_path
-from frappeclient import FrappeClient
 
 from .view import GuildStatsView
 
@@ -73,8 +72,7 @@ class GuildStats(Cog):
     """A cog to generate images with messages and voice stats, for members, roles, guilds, categories, text channels, voice channels and activities!"""
 
     def __init__(self, bot: Red) -> None:
-        self.bot = bot
-        self.Frappeclient = None
+        super().__init__(bot=bot)
 
         self.font_path: Path = bundled_data_path(self) / "arial.ttf"
         self.bold_font_path: Path = bundled_data_path(self) / "arial_bold.ttf"
