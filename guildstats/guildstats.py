@@ -17,6 +17,7 @@ import plotly.graph_objects as go
 from fontTools.ttLib import TTFont
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 from redbot.core.data_manager import bundled_data_path
+from frappeclient import FrappeClient
 
 from .view import GuildStatsView
 
@@ -73,6 +74,7 @@ class GuildStats(Cog):
 
     def __init__(self, bot: Red) -> None:
         super().__init__(bot=bot)
+        self.Frappeclient = None
 
         self.font_path: Path = bundled_data_path(self) / "arial.ttf"
         self.bold_font_path: Path = bundled_data_path(self) / "arial_bold.ttf"
@@ -102,6 +104,7 @@ class GuildStats(Cog):
         }
 
     async def cog_load(self):
+        await super().cog_load()
         frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
         api_key =  frappe_keys.get("username")
         api_secret = frappe_keys.get("password")
