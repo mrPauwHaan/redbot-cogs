@@ -264,7 +264,7 @@ class GuildStats(Cog):
         # Guild name & Guild icon.
         image = Image.open(self.icons["logo"])
         image = image.resize((55, 55))
-        img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
+        img.paste(image, (30, 30, 85, 85), mask=image.split()[3])
         draw.text(
             (105, 30),
             text='Shadowzone Gaming',
