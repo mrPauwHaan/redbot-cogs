@@ -264,19 +264,7 @@ class GuildStats(Cog):
         # Guild name & Guild icon.
         image = Image.open(self.icons["logo"])
         image = image.resize((55, 55))
-        mask = Image.new("L", image.size, 0)
-        d = ImageDraw.Draw(mask)
-        d.rounded_rectangle(
-            (0, 0, image.width, image.height),
-            radius=25,
-            fill=255,
-        )
-        try:
-            img.paste(
-                image, (30, 30, 85, 85), mask=ImageChops.multiply(mask, image.split()[3])
-            )
-        except IndexError:
-            img.paste(image, (30, 30, 85, 85), mask=mask)
+        img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
         draw.text(
             (105, 30),
             text='Shadowzone Gaming',
