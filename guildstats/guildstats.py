@@ -431,18 +431,15 @@ class GuildStats(Cog):
                 
                 # Events
                 events = 0
-                highest_event_value = -1
+                highest_event_value = '-'
                 for item in member.get("custom_events"):
                     if item['event_bezocht'] not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
                         events += 1
-                        if not isinstance(item, dict) or "event_bezocht" not in item or not isinstance(item["event_bezocht"], str):
-                            continue
-                        event_name = item["event_bezocht"]
                         try:
-                            event_value = int(event_name.split()[1].strip(":"))
+                            event_value = int(item["event_bezocht"].split()[1].strip(":"))
                             if event_value > highest_event_value:
                                 highest_event = item
-                                highest_event_value = event_value
+                                highest_event_value = str(event_value)
                         except (IndexError, ValueError):
                             continue
 
@@ -480,7 +477,7 @@ class GuildStats(Cog):
                 align_text_center(
                     (1601, 859, 1892, 976),
                     text=(
-                        highest_event
+                        highest_event_value
                     ),
                     fill=(255, 255, 255),
                     font=self.font[36],
