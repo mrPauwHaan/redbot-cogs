@@ -388,107 +388,108 @@ class GuildStats(Cog):
                 # lidmaatschap
                 userid = _object.id
                 doc = self.Frappeclient.get_list('Member', fields = ['name'], filters = {'discord_id': userid})
-                member = self.Frappeclient.get_doc("Member", doc[0]['name'])
+                if doc:
+                    member = self.Frappeclient.get_doc("Member", doc[0]['name'])
 
-                draw.rounded_rectangle((1306, 204, 1912, 585), radius=15, fill=(47, 49, 54))
-                align_text_center(
-                    (1325, 214, 1325, 284),
-                    text="Lidmaatschap",
-                    fill=(255, 255, 255),
-                    font=self.bold_font[40],
-                )
-                image = Image.open(self.icons["person"])
-                image = image.resize((70, 70))
-                img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
-                draw.rounded_rectangle((1325, 301, 1892, 418), radius=15, fill=(32, 34, 37))
-                draw.rounded_rectangle((1325, 301, 1588, 418), radius=15, fill=(24, 26, 27))
-                align_text_center(
-                    (1326, 301, 1601, 418),
-                    text="Lid",
-                    fill=(255, 255, 255),
-                    font=self.bold_font[36],
-                )
-                align_text_center(
-                    (1601, 301, 1892, 418),
-                    text = (
-                        f"{datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y')}"
-                        if member.get('custom_start_lidmaatschap') else "No data"
+                    draw.rounded_rectangle((1306, 204, 1912, 585), radius=15, fill=(47, 49, 54))
+                    align_text_center(
+                        (1325, 214, 1325, 284),
+                        text="Lidmaatschap",
+                        fill=(255, 255, 255),
+                        font=self.bold_font[40],
                     )
-                    fill=(255, 255, 255),
-                    font=self.font[36],
-                )
-                draw.rounded_rectangle((1325, 448, 1892, 565), radius=15, fill=(32, 34, 37))
-                draw.rounded_rectangle((1325, 448, 1601, 565), radius=15, fill=(24, 26, 27))
-                align_text_center(
-                    (1325, 448, 1601, 565),
-                    text="Betrokken",
-                    fill=(255, 255, 255),
-                    font=self.bold_font[30],
-                )
-                align_text_center(
-                    (1601, 448, 1892, 565),
-                    text = (
-                        f"{datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y')}"
-                        if member.get('custom_begin_datum') else "No data"
+                    image = Image.open(self.icons["person"])
+                    image = image.resize((70, 70))
+                    img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
+                    draw.rounded_rectangle((1325, 301, 1892, 418), radius=15, fill=(32, 34, 37))
+                    draw.rounded_rectangle((1325, 301, 1588, 418), radius=15, fill=(24, 26, 27))
+                    align_text_center(
+                        (1326, 301, 1601, 418),
+                        text="Lid",
+                        fill=(255, 255, 255),
+                        font=self.bold_font[36],
                     )
+                    align_text_center(
+                        (1601, 301, 1892, 418),
+                        text = (
+                            f"{datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y')}"
+                            if member.get('custom_start_lidmaatschap') else "No data"
+                        )
+                        fill=(255, 255, 255),
+                        font=self.font[36],
+                    )
+                    draw.rounded_rectangle((1325, 448, 1892, 565), radius=15, fill=(32, 34, 37))
+                    draw.rounded_rectangle((1325, 448, 1601, 565), radius=15, fill=(24, 26, 27))
+                    align_text_center(
+                        (1325, 448, 1601, 565),
+                        text="Betrokken",
+                        fill=(255, 255, 255),
+                        font=self.bold_font[30],
+                    )
+                    align_text_center(
+                        (1601, 448, 1892, 565),
+                        text = (
+                            f"{datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y')}"
+                            if member.get('custom_begin_datum') else "No data"
+                        )
 
-                    fill=(255, 255, 255),
-                    font=self.font[36],
-                )
-                
-                # Events
-                events = 0
-                highest_event_value = -1
-                for item in member.get("custom_events"):
-                    if item['event_bezocht'] not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
-                        events += 1
-                        try:
-                            event_value = int(item["event_bezocht"].split()[1].strip(":"))
-                            if event_value > highest_event_value:
-                                highest_event = item['event_bezocht']
-                                highest_event_value = event_value
-                        except (IndexError, ValueError):
-                            continue
+                        fill=(255, 255, 255),
+                        font=self.font[36],
+                    )
+                    
+                    # Events
+                    events = 0
+                    highest_event_value = -1
+                    for item in member.get("custom_events"):
+                        if item['event_bezocht'] not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
+                            events += 1
+                            try:
+                                event_value = int(item["event_bezocht"].split()[1].strip(":"))
+                                if event_value > highest_event_value:
+                                    highest_event = item['event_bezocht']
+                                    highest_event_value = event_value
+                            except (IndexError, ValueError):
+                                continue
 
-                draw.rounded_rectangle((1306, 615, 1912, 996), radius=15, fill=(47, 49, 54))
-                align_text_center(
-                    (1326, 625, 1326, 695),
-                    text="Events",
-                    fill=(255, 255, 255),
-                    font=self.bold_font[40],
-                )
-                image = Image.open(self.icons["game"])
-                image = image.resize((70, 70))
-                img.paste(image, (1822, 625, 1892, 695), mask=image.split()[3])
-                draw.rounded_rectangle((1326, 712, 1892, 829), radius=15, fill=(32, 34, 37))
-                draw.rounded_rectangle((1326, 712, 1601, 829), radius=15, fill=(24, 26, 27))
-                align_text_center(
-                    (1326, 712, 1601, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36]
-                )
-                align_text_center(
-                    (1601, 712, 1892, 829),
-                    text=(
-                        str(events)
-                    ),
-                    fill=(255, 255, 255),
-                    font=self.font[36],
-                )
-                draw.rounded_rectangle((1326, 859, 1892, 976), radius=15, fill=(32, 34, 37))
-                draw.rounded_rectangle((1326, 859, 1601, 976), radius=15, fill=(24, 26, 27))
-                align_text_center(
-                    (1326, 859, 1601, 976),
-                    text="Laatste",
-                    fill=(255, 255, 255),
-                    font=self.bold_font[36],
-                )
-                align_text_center(
-                    (1601, 859, 1892, 976),
-                    text=(
-                        highest_event
-                    ),
-                    fill=(255, 255, 255),
-                    font=self.font[36],
-                )
+                    draw.rounded_rectangle((1306, 615, 1912, 996), radius=15, fill=(47, 49, 54))
+                    align_text_center(
+                        (1326, 625, 1326, 695),
+                        text="Events",
+                        fill=(255, 255, 255),
+                        font=self.bold_font[40],
+                    )
+                    image = Image.open(self.icons["game"])
+                    image = image.resize((70, 70))
+                    img.paste(image, (1822, 625, 1892, 695), mask=image.split()[3])
+                    draw.rounded_rectangle((1326, 712, 1892, 829), radius=15, fill=(32, 34, 37))
+                    draw.rounded_rectangle((1326, 712, 1601, 829), radius=15, fill=(24, 26, 27))
+                    align_text_center(
+                        (1326, 712, 1601, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36]
+                    )
+                    align_text_center(
+                        (1601, 712, 1892, 829),
+                        text=(
+                            str(events)
+                        ),
+                        fill=(255, 255, 255),
+                        font=self.font[36],
+                    )
+                    draw.rounded_rectangle((1326, 859, 1892, 976), radius=15, fill=(32, 34, 37))
+                    draw.rounded_rectangle((1326, 859, 1601, 976), radius=15, fill=(24, 26, 27))
+                    align_text_center(
+                        (1326, 859, 1601, 976),
+                        text="Laatste",
+                        fill=(255, 255, 255),
+                        font=self.bold_font[36],
+                    )
+                    align_text_center(
+                        (1601, 859, 1892, 976),
+                        text=(
+                            highest_event
+                        ),
+                        fill=(255, 255, 255),
+                        font=self.font[36],
+                    )
 
         if not to_file:
             return img
