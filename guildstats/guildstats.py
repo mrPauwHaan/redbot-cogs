@@ -329,7 +329,7 @@ class GuildStats(Cog):
         except IndexError:
             img.paste(image, (190, 571, 245, 626), mask=mask)
         draw.text(
-            (265, 105),
+            (265, 571),
             text='Lid',
             fill=(163, 163, 163),
             font=self.font[54],
