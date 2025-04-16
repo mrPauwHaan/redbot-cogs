@@ -1,7 +1,7 @@
 from AAA3A_utils import Cog  # isort:skip
 from redbot.core import commands  # isort:skip
 from redbot.core.bot import Red  # isort:skip
-from redbot.core.i18n import cog_i18n  # isort:skip
+from redbot.core.i18n import Translator, cog_i18n  # isort:skip
 import discord  # isort:skip
 import typing  # isort:skip
 
@@ -20,7 +20,11 @@ from frappeclient import FrappeClient
 from .view import GuildStatsView
 
 
-class GuildStats(commands.Cog):
+_: Translator = Translator("GuildStats", __file__)
+
+
+@cog_i18n(_)
+class GuildStats(Cog):
     """A cog to generate images"""
 
     def __init__(self, bot: Red) -> None:
