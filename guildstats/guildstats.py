@@ -262,7 +262,7 @@ class GuildStats(Cog):
         )
 
         # Guild name & Guild icon.
-        image = Image.open(self.icons["person"])
+        image = Image.open(self.icons["logo"])
         image = image.resize((55, 55))
         mask = Image.new("L", image.size, 0)
         d = ImageDraw.Draw(mask)
