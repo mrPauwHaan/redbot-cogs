@@ -437,13 +437,13 @@ class GuildStats(Cog):
                 
                 valid_events = [
                     e for e in member.get("custom_events")
-                    if isinstance(e, dict) and "name" in e and isinstance(e["name"], str)
+                    if isinstance(e, dict) and "event_bezocht" in e and isinstance(e["event_bezocht"], str)
                 ]
 
                 if valid_events:
                     highest_event = max(
                         valid_events,
-                        key=lambda e: int(e["name"].split()[1].strip(":"))
+                        key=lambda e: int(e["event_bezocht"].split()[1].strip(":"))
                     )
                 else:
                     highest_event = "-"  # or fallback value
