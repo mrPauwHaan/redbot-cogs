@@ -70,7 +70,7 @@ class ObjectConverter(commands.Converter):
 
 @cog_i18n(_)
 class GuildStats(Cog):
-    """A cog to generate images with messages and voice stats, for members, roles, guilds, categories, text channels, voice channels and activities!"""
+    """A cog to generate images"""
 
     def __init__(self, bot: Red) -> None:
         super().__init__(bot=bot)
@@ -584,7 +584,7 @@ class GuildStats(Cog):
             _type = None
         img: Image.Image = await self.generate_prefix_image(
             _object if _type is None else (_object, _type),
-            size=(1942, 1026 + 70),
+            size=(1942, 1096),
             to_file=False,
         )  # (1940, 1481) / 1942 + 636
         return await asyncio.to_thread(
