@@ -324,10 +324,10 @@ class GuildStats(Cog):
         )
         try:
             img.paste(
-                image, (190, 571, 245, 626), mask=ImageChops.multiply(mask, image.split()[3])
+                image, (190, 563, 245, 618), mask=ImageChops.multiply(mask, image.split()[3])
             )
         except IndexError:
-            img.paste(image, (190, 571, 245, 626), mask=mask)
+            img.paste(image, (190, 563, 245, 618), mask=mask)
         draw.text(
             (265, 571),
             text='Lid',
