@@ -1,16 +1,14 @@
 from AAA3A_utils import Cog  # isort:skip
 from redbot.core import commands  # isort:skip
 from redbot.core.bot import Red  # isort:skip
-from redbot.core.i18n import Translator, cog_i18n  # isort:skip
+from redbot.core.i18n import cog_i18n  # isort:skip
 import discord  # isort:skip
 import typing  # isort:skip
 
 import asyncio
-import datetime
 import functools
 import io
 from collections import Counter
-from copy import deepcopy
 from pathlib import Path
 
 import plotly.graph_objects as go
@@ -20,9 +18,6 @@ from redbot.core.data_manager import bundled_data_path
 from frappeclient import FrappeClient
 
 from .view import GuildStatsView
-
-
-_: Translator = Translator("GuildStats", __file__)
 
 
 @cog_i18n(_)
