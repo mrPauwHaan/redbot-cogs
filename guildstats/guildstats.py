@@ -387,7 +387,7 @@ class GuildStats(Cog):
             if _type is None:
                 # lidmaatschap
                 userid = _object.id
-                member = self.Frappeclient.get_list('Member', fields = ['discord_id', 'custom_start_lidmaatschap', 'custom_begin_datum'], filters = {'discord_id': userid})
+                member = self.Frappeclient.get_list('Member', fields = ['name', 'discord_id', 'custom_start_lidmaatschap', 'custom_begin_datum'], filters = {'discord_id': userid})
                 draw.rounded_rectangle((1306, 204, 1912, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1325, 214, 1325, 284),
@@ -429,6 +429,7 @@ class GuildStats(Cog):
                 
                 # Events
                 events = 0
+                doc = self.Frappeclient.get_doc("Member", member[0]['name'])
                 for item in member[0].get("custom_events"):
                     events = events + 1
                 draw.rounded_rectangle((1306, 615, 1912, 996), radius=15, fill=(47, 49, 54))
