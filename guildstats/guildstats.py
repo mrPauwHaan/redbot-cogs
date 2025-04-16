@@ -538,7 +538,7 @@ class GuildStats(Cog):
         self,
         ctx: commands.Context,
         *,
-        _object: ObjectConverter,
+        _object: discord.Member,
     ) -> None:
         """Generate images"""
         await GuildStatsView(
