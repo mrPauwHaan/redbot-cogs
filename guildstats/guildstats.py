@@ -446,12 +446,12 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((1326, 712, 1892, 829), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1326, 712, 1601, 829), radius=15, fill=(24, 26, 27))
                 align_text_center(
-                    (1326, 712, 1601, 829), text=str(events), fill=(255, 255, 255), font=self.bold_font[36]
+                    (1326, 712, 1601, 829), text="Events", fill=(255, 255, 255), font=self.bold_font[36]
                 )
                 align_text_center(
                     (1601, 712, 1892, 829),
                     text=(
-                        f"No data."
+                        str(events)
                     ),
                     fill=(255, 255, 255),
                     font=self.font[36],
