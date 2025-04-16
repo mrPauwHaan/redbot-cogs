@@ -249,7 +249,7 @@ class GuildStats(Cog):
                     image, (30, 478, 170, 618), mask=ImageChops.multiply(mask, image.split()[3])
                 )
             except IndexError:
-                img.paste(image, (30, 30, 170, 170), mask=mask)
+                img.paste(image, (30, 478, 170, 618), mask=mask)
             if (
                 sum(
                     (
@@ -275,7 +275,7 @@ class GuildStats(Cog):
                     + self.font[40].getbbox(_object.global_name or _object.name)[2]
                 ) <= 1000:
                     draw.text(
-                        (190 + display_name_size[2] + 25, 48),
+                        (190 + display_name_size[2] + 25, 632),
                         text=(
                             self.remove_unprintable_characters(_object.global_name)
                             if _object.global_name is not None
