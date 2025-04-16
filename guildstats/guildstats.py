@@ -654,14 +654,14 @@ class GuildStats(Cog):
                 # Events
                 draw.rounded_rectangle((1356, 615, 1912, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
-                    (50, 625, 50, 695),
+                    (1326, 625, 1326, 695),
                     text="Events",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
                 image = Image.open(self.icons["trophy"])
                 image = image.resize((70, 70))
-                img.paste(image, (1822, 625, 1892, 695), mask=image.split()[3])
+                img.paste(image, (2272, 625, 1892, 695), mask=image.split()[3])
                 draw.rounded_rectangle((1326, 712, 1892, 829), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1326, 712, 1601, 829), radius=15, fill=(24, 26, 27))
                 align_text_center(
