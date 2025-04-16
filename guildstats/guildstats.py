@@ -304,7 +304,7 @@ class GuildStats(Cog):
             (1220 - 1170, 30 + 618, 1476 - 1170, 90 + 618),
             text="Op Discord",
             fill=(255, 255, 255),
-            font=self.bold_font[30],   30, 478, 170, 618
+            font=self.bold_font[30],
         )
         # `joined_on`
         draw.rounded_rectangle((1200 + 365 - 1170, 75 + 618, 1545 + 365 - 1170, 175 + 618), radius=15, fill=(47, 49, 54))
