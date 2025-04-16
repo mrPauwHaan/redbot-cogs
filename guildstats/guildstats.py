@@ -441,7 +441,7 @@ class GuildStats(Cog):
                             event_value = int(event_name.split()[1].strip(":"))
                             if event_value > highest_event_value:
                                 highest_event = item
-                                highest_event = event_value
+                                highest_event_value = event_value
                         except (IndexError, ValueError):
                             continue
 
