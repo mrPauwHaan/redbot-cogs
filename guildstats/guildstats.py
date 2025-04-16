@@ -25,49 +25,6 @@ from .view import GuildStatsView
 _: Translator = Translator("GuildStats", __file__)
 
 
-class ObjectConverter(commands.Converter):
-    async def convert(
-        self, ctx: commands.Context, argument: str
-    ) -> typing.Union[
-        discord.Member,
-        discord.Role,
-        typing.Literal["messages", "voice", "activities"],
-        discord.CategoryChannel,
-        discord.TextChannel,
-        discord.VoiceChannel,
-    ]:
-        if ctx.command.name == "graphic" and argument.lower() in {
-            "messages",
-            "voice",
-            "activities",
-        }:
-            return argument.lower()
-        try:
-            return await commands.MemberConverter().convert(ctx, argument=argument)
-        except commands.BadArgument:
-            try:
-                return await commands.RoleConverter().convert(ctx, argument=argument)
-            except commands.BadArgument:
-                try:
-                    return await commands.CategoryChannelConverter().convert(
-                        ctx, argument=argument
-                    )
-                except commands.BadArgument:
-                    try:
-                        return await commands.TextChannelConverter().convert(
-                            ctx, argument=argument
-                        )
-                    except commands.BadArgument:
-                        try:
-                            return await commands.VoiceChannelConverter().convert(
-                                ctx, argument=argument
-                            )
-                        except commands.BadArgument:
-                            raise commands.BadArgument(
-                                "No member/category/text channel/voice channel found."
-                            )
-
-
 @cog_i18n(_)
 class GuildStats(Cog):
     """A cog to generate images"""
@@ -195,34 +152,12 @@ class GuildStats(Cog):
         self,
         _object: typing.Union[
             discord.Member,
-            typing.Tuple[discord.Member, typing.Literal["activities"]],
-            discord.Role,
-            discord.Guild,
-            typing.Tuple[
-                discord.Guild,
-                typing.Union[
-                    typing.Literal["messages", "voice", "activities"],
-                    typing.Tuple[
-                        typing.Literal["top", "weekly", "monthly"],
-                        typing.Literal["messages", "voice"],
-                        typing.Literal["members", "channels"],
-                    ],
-                    typing.Tuple[typing.Literal["activity"], str],
-                ],
-            ],
-            discord.CategoryChannel,
-            discord.TextChannel,
-            discord.VoiceChannel,
         ],
         size: typing.Tuple[int, int],
         to_file: bool,
         _object_display: typing.Optional[bytes],
         guild_icon: typing.Optional[bytes],
     ) -> typing.Union[Image.Image, discord.File]:
-        if isinstance(_object, typing.Tuple):
-            _object, _type = _object
-        else:
-            _type = None
         img: Image.Image = Image.new("RGBA", size, (0, 0, 0, 0))
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
         draw.rounded_rectangle(
@@ -233,84 +168,83 @@ class GuildStats(Cog):
         align_text_center = functools.partial(self.align_text_center, draw)
 
         # Member name & Member avatar.
-        if isinstance(_object, discord.Member):
-            image = Image.open(io.BytesIO(_object_display))
-            image = image.resize((140, 140))
-            mask = Image.new("L", image.size, 0)
-            d = ImageDraw.Draw(mask)
-            d.rounded_rectangle(
-                (0, 0, image.width, image.height),
-                radius=20,
-                fill=255,
+        image = Image.open(io.BytesIO(_object_display))
+        image = image.resize((140, 140))
+        mask = Image.new("L", image.size, 0)
+        d = ImageDraw.Draw(mask)
+        d.rounded_rectangle(
+            (0, 0, image.width, image.height),
+            radius=20,
+            fill=255,
+        )
+        # d.ellipse((0, 0, image.width, image.height), fill=255)
+        try:
+            img.paste(
+                image, (30, 478, 170, 618), mask=ImageChops.multiply(mask, image.split()[3])
             )
-            # d.ellipse((0, 0, image.width, image.height), fill=255)
-            try:
-                img.paste(
-                    image, (30, 478, 170, 618), mask=ImageChops.multiply(mask, image.split()[3])
+        except IndexError:
+            img.paste(image, (30, 478, 170, 618), mask=mask)
+        if (
+            sum(
+                (
+                    1
+                    if ord(char) in self.font_to_remove_unprintable_characters.getBestCmap()
+                    else 0
                 )
-            except IndexError:
-                img.paste(image, (30, 478, 170, 618), mask=mask)
+                for char in _object.display_name
+            )
+            / len(_object.display_name)
+            > 0.8
+        ) and len(self.remove_unprintable_characters(_object.display_name)) >= 5:
+            draw.text(
+                (190, 478),
+                text=self.remove_unprintable_characters(_object.display_name),
+                fill=(255, 255, 255),
+                font=self.bold_font[50],
+            )
+            display_name_size = self.bold_font[50].getbbox(_object.display_name)
             if (
+                display_name_size[2]
+                + 25
+                + self.font[40].getbbox(_object.global_name or _object.name)[2]
+            ) <= 1000:
+                draw.text(
+                    (190 + display_name_size[2] + 25, 496),
+                    text=(
+                        self.remove_unprintable_characters(_object.global_name)
+                        if _object.global_name is not None
+                        else _object.name
+                    ),
+                    fill=(163, 163, 163),
+                    font=self.font[40],
+                )
+        elif (
+            _object.global_name is not None
+            and (
                 sum(
                     (
                         1
-                        if ord(char) in self.font_to_remove_unprintable_characters.getBestCmap()
+                        if ord(char)
+                        in self.font_to_remove_unprintable_characters.getBestCmap()
                         else 0
                     )
-                    for char in _object.display_name
+                    for char in _object.global_name
                 )
-                / len(_object.display_name)
+                / len(_object.global_name)
                 > 0.8
-            ) and len(self.remove_unprintable_characters(_object.display_name)) >= 5:
-                draw.text(
-                    (190, 478),
-                    text=self.remove_unprintable_characters(_object.display_name),
-                    fill=(255, 255, 255),
-                    font=self.bold_font[50],
-                )
-                display_name_size = self.bold_font[50].getbbox(_object.display_name)
-                if (
-                    display_name_size[2]
-                    + 25
-                    + self.font[40].getbbox(_object.global_name or _object.name)[2]
-                ) <= 1000:
-                    draw.text(
-                        (190 + display_name_size[2] + 25, 496),
-                        text=(
-                            self.remove_unprintable_characters(_object.global_name)
-                            if _object.global_name is not None
-                            else _object.name
-                        ),
-                        fill=(163, 163, 163),
-                        font=self.font[40],
-                    )
-            elif (
-                _object.global_name is not None
-                and (
-                    sum(
-                        (
-                            1
-                            if ord(char)
-                            in self.font_to_remove_unprintable_characters.getBestCmap()
-                            else 0
-                        )
-                        for char in _object.global_name
-                    )
-                    / len(_object.global_name)
-                    > 0.8
-                )
-                and len(self.remove_unprintable_characters(_object.global_name)) >= 5
-            ):
-                draw.text(
-                    (190, 478),
-                    text=self.remove_unprintable_characters(_object.global_name),
-                    fill=(255, 255, 255),
-                    font=self.bold_font[50],
-                )
-            else:
-                draw.text(
-                    (190, 478), text=_object.name, fill=(255, 255, 255), font=self.bold_font[50]
-                )
+            )
+            and len(self.remove_unprintable_characters(_object.global_name)) >= 5
+        ):
+            draw.text(
+                (190, 478),
+                text=self.remove_unprintable_characters(_object.global_name),
+                fill=(255, 255, 255),
+                font=self.bold_font[50],
+            )
+        else:
+            draw.text(
+                (190, 478), text=_object.name, fill=(255, 255, 255), font=self.bold_font[50]
+            )
 
         # Rol
         image = Image.open(io.BytesIO(guild_icon))
@@ -358,38 +292,36 @@ class GuildStats(Cog):
             font=self.font[54],
         )
 
-        # `joined_on` and `created_on`.
-        if isinstance(_object, discord.Member):
-            # `created_on`
-            draw.rounded_rectangle((1200, 75, 1545, 175), radius=15, fill=(47, 49, 54))
-            align_text_center(
-                (1200, 75, 1545, 175),
-                text=_object.created_at.strftime("%d %B %Y"),
-                fill=(255, 255, 255),
-                font=self.font[36],
-            )
-            draw.rounded_rectangle((1220, 30, 1476, 90), radius=15, fill=(79, 84, 92))
-            align_text_center(
-                (1220, 30, 1476, 90),
-                text="Op Discord",
-                fill=(255, 255, 255),
-                font=self.bold_font[30],
-            )
-            # `joined_on`
-            draw.rounded_rectangle((1200 + 365, 75, 1545 + 365, 175), radius=15, fill=(47, 49, 54))
-            align_text_center(
-                (1200 + 365, 75, 1545 + 365, 175),
-                text=_object.joined_at.strftime("%d %B %Y"),
-                fill=(255, 255, 255),
-                font=self.font[36],
-            )
-            draw.rounded_rectangle((1220 + 365, 30, 1476 + 365, 90), radius=15, fill=(79, 84, 92))
-            align_text_center(
-                (1220 + 365, 30, 1476 + 365, 90),
-                text="In server",
-                fill=(255, 255, 255),
-                font=self.bold_font[30],
-            )
+        # `created_on`
+        draw.rounded_rectangle((1200, 75, 1545, 175), radius=15, fill=(47, 49, 54))
+        align_text_center(
+            (1200, 75, 1545, 175),
+            text=_object.created_at.strftime("%d %B %Y"),
+            fill=(255, 255, 255),
+            font=self.font[36],
+        )
+        draw.rounded_rectangle((1220, 30, 1476, 90), radius=15, fill=(79, 84, 92))
+        align_text_center(
+            (1220, 30, 1476, 90),
+            text="Op Discord",
+            fill=(255, 255, 255),
+            font=self.bold_font[30],
+        )
+        # `joined_on`
+        draw.rounded_rectangle((1200 + 365, 75, 1545 + 365, 175), radius=15, fill=(47, 49, 54))
+        align_text_center(
+            (1200 + 365, 75, 1545 + 365, 175),
+            text=_object.joined_at.strftime("%d %B %Y"),
+            fill=(255, 255, 255),
+            font=self.font[36],
+        )
+        draw.rounded_rectangle((1220 + 365, 30, 1476 + 365, 90), radius=15, fill=(79, 84, 92))
+        align_text_center(
+            (1220 + 365, 30, 1476 + 365, 90),
+            text="In server",
+            fill=(255, 255, 255),
+            font=self.bold_font[30],
+        )
 
         if not to_file:
             return img
@@ -580,24 +512,6 @@ class GuildStats(Cog):
         self,
         _object: typing.Union[
             discord.Member,
-            typing.Tuple[discord.Member, typing.Literal["activities"]],
-            discord.Role,
-            discord.Guild,
-            typing.Tuple[
-                discord.Guild,
-                typing.Union[
-                    typing.Literal["messages", "voice", "activities"],
-                    typing.Tuple[
-                        typing.Literal["top", "weekly", "monthly"],
-                        typing.Literal["messages", "voice"],
-                        typing.Literal["members", "channels"],
-                    ],
-                    typing.Tuple[typing.Literal["activity"], str],
-                ],
-            ],
-            discord.CategoryChannel,
-            discord.TextChannel,
-            discord.VoiceChannel,
         ],
         to_file: bool = True,
     ) -> typing.Union[Image.Image, discord.File]:
