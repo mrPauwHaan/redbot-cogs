@@ -292,31 +292,31 @@ class GuildStats(Cog):
         )
 
         # `created_on`
-        draw.rounded_rectangle((1200 - 1170, 75 + 478, 1545 - 1170, 175 + 478), radius=15, fill=(47, 49, 54))
+        draw.rounded_rectangle((1200 - 1170, 75 + 618, 1545 - 1170, 175 + 618), radius=15, fill=(47, 49, 54))
         align_text_center(
-            (1200 - 1170, 75 + 478, 1545 - 1170, 175 + 478),
+            (1200 - 1170, 75 + 618, 1545 - 1170, 175 + 618),
             text=_object.created_at.strftime("%d %B %Y"),
             fill=(255, 255, 255),
             font=self.font[36],
         )
-        draw.rounded_rectangle((1220 - 1170, 30 + 478, 1476 - 1170, 90 + 478), radius=15, fill=(79, 84, 92))
+        draw.rounded_rectangle((1220 - 1170, 30 + 618, 1476 - 1170, 90 + 618), radius=15, fill=(79, 84, 92))
         align_text_center(
-            (1220 - 1170, 30 + 478, 1476 - 1170, 90 + 478),
+            (1220 - 1170, 30 + 618, 1476 - 1170, 90 + 618),
             text="Op Discord",
             fill=(255, 255, 255),
-            font=self.bold_font[30],
+            font=self.bold_font[30],   30, 478, 170, 618
         )
         # `joined_on`
-        draw.rounded_rectangle((1200 + 365 - 1170, 75 + 478, 1545 + 365 - 1170, 175 + 478), radius=15, fill=(47, 49, 54))
+        draw.rounded_rectangle((1200 + 365 - 1170, 75 + 618, 1545 + 365 - 1170, 175 + 618), radius=15, fill=(47, 49, 54))
         align_text_center(
-            (1200 + 365 - 1170, 75 + 478, 1545 + 365 - 1170, 175 + 478),
+            (1200 + 365 - 1170, 75 + 618, 1545 + 365 - 1170, 175 + 618),
             text=_object.joined_at.strftime("%d %B %Y"),
             fill=(255, 255, 255),
             font=self.font[36],
         )
-        draw.rounded_rectangle((1220 + 365 - 1170, 30 + 478, 1476 + 365 - 1170, 90 + 478), radius=15, fill=(79, 84, 92))
+        draw.rounded_rectangle((1220 + 365 - 1170, 30 + 618, 1476 + 365 - 1170, 90 + 618), radius=15, fill=(79, 84, 92))
         align_text_center(
-            (1220 + 365 - 1170, 30 + 478, 1476 + 365 - 1170, 90 + 478),
+            (1220 + 365 - 1170, 30 + 618, 1476 + 365 - 1170, 90 + 618),
             text="In server",
             fill=(255, 255, 255),
             font=self.bold_font[30],
