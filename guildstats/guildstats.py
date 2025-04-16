@@ -398,8 +398,8 @@ class GuildStats(Cog):
                 image = Image.open(self.icons["person"])
                 image = image.resize((70, 70))
                 img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
-                draw.rounded_rectangle((1325 - 125, 301, 1892 - 125, 418), radius=15, fill=(32, 34, 37))
-                draw.rounded_rectangle((1325 - 125, 301, 1588, 418), radius=15, fill=(24, 26, 27))
+                draw.rounded_rectangle((1325 - 125, 301, 1892, 418), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((1325 - 125, 301, 1588 - 125, 418), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (1326 - 125, 301, 1601 - 125, 418),
                     text="Lid",
@@ -412,16 +412,16 @@ class GuildStats(Cog):
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
-                draw.rounded_rectangle((1325, 448, 1892, 565), radius=15, fill=(32, 34, 37))
-                draw.rounded_rectangle((1325, 448, 1601, 565), radius=15, fill=(24, 26, 27))
+                draw.rounded_rectangle((1325 - 125, 448, 1892, 565), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((1325 - 125, 448, 1601 - 125, 565), radius=15, fill=(24, 26, 27))
                 align_text_center(
-                    (1325, 448, 1601, 565),
+                    (1325 - 125, 448, 1601 - 125, 565),
                     text="Betrokken",
                     fill=(255, 255, 255),
                     font=self.bold_font[30],
                 )
                 align_text_center(
-                    (1601, 448, 1892, 565),
+                    (1601 - 125, 448, 1892 - 125, 565),
                     text=f"{datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_begin_datum') else 'No data'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
