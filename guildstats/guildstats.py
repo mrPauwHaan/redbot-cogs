@@ -209,54 +209,6 @@ class GuildStats(Cog):
         draw.text((x1 + x, y1 + y), text=text, fill=fill, font=font)
         return text_size
 
-    def number_to_text_with_suffix(self, number: float) -> str:
-        suffixes = [
-            "k",
-            "m",
-            "b",
-            "t",
-            "q",
-            "Q",
-            "s",
-            "S",
-            "o",
-            "n",
-            "d",
-            "U",
-            "D",
-            "T",
-            "Qa",
-            "Qi",
-            "Sx",
-            "Sp",
-            "Oc",
-            "No",
-            "Vi",
-        ]
-        index = None
-        while abs(number) >= 1000 and (index or -1) < len(suffixes) - 1:
-            number /= 1000.0
-            if index is None:
-                index = -1
-            index += 1
-        # return f"{number:.1f}{suffixes[index] if index is not None else ''}"
-        if number == int(number):
-            formatted_number = int(number)
-        elif f"{number:.1f}" != "0.0":
-            formatted_number = (
-                int(float(f"{number:.1f}"))
-                if float(f"{number:.1f}") == int(float(f"{number:.1f}"))
-                else f"{number:.1f}"
-            )
-        else:
-            formatted_number = (
-                int(float(f"{number:.2f}"))
-                if float(f"{number:.2f}") == int(float(f"{number:.2f}"))
-                else f"{number:.2f}"
-            )
-        suffix = suffixes[index] if index is not None else ""
-        return f"{formatted_number}{suffix}"
-
     def remove_unprintable_characters(self, text: str) -> str:
         return (
             "".join(
@@ -431,53 +383,29 @@ class GuildStats(Cog):
                 )
 
         # Guild name & Guild icon.
-        if guild_icon is not None:
-            image = Image.open(io.BytesIO(guild_icon))
-            image = image.resize((55, 55))
-            mask = Image.new("L", image.size, 0)
-            d = ImageDraw.Draw(mask)
-            d.rounded_rectangle(
-                (0, 0, image.width, image.height),
-                radius=25,
-                fill=255,
+        image = Image.open(io.BytesIO(guild_icon))
+        image = image.resize((55, 55))
+        mask = Image.new("L", image.size, 0)
+        d = ImageDraw.Draw(mask)
+        d.rounded_rectangle(
+            (0, 0, image.width, image.height),
+            radius=25,
+            fill=255,
+        )
+        try:
+            img.paste(
+                image, (190, 105, 245, 160), mask=ImageChops.multiply(mask, image.split()[3])
             )
-            try:
-                img.paste(
-                    image, (190, 105, 245, 160), mask=ImageChops.multiply(mask, image.split()[3])
-                )
-            except IndexError:
-                img.paste(image, (190, 105, 245, 160), mask=mask)
-            draw.text(
-                (265, 105),
-                text=(_object if isinstance(_object, discord.Guild) else _object.guild).name,
-                fill=(163, 163, 163),
-                font=self.font[54],
-            )
-        else:
-            image = Image.open(
-                self.icons[
-                    (
-                        "home"
-                        if "DISCOVERABLE"
-                        not in (
-                            _object if isinstance(_object, discord.Guild) else _object.guild
-                        ).features
-                        else "globe"
-                    )
-                ]
-            )
-            image = image.resize((55, 55))
-            img.paste(image, (190, 105, 245, 160), mask=image.split()[3])
-            draw.text(
-                (255, 105),
-                text=self.remove_unprintable_characters(
-                    (_object if isinstance(_object, discord.Guild) else _object.guild).name
-                ),
-                fill=(163, 163, 163),
-                font=self.font[54],
-            )
+        except IndexError:
+            img.paste(image, (190, 105, 245, 160), mask=mask)
+        draw.text(
+            (265, 105),
+            text='Shadowzone Gaming',
+            fill=(163, 163, 163),
+            font=self.font[54],
+        )
 
-        # Optional `joined_on` and `created_on`.
+        # `joined_on` and `created_on`.
         if isinstance(_object, discord.Member):
             # `created_on`
             draw.rounded_rectangle((1200, 75, 1545, 175), radius=15, fill=(47, 49, 54))
@@ -632,7 +560,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1601, 301, 1892, 418),
-                    text=f"{self.number_to_text_with_suffix(0)} messages",
+                    text="0 messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -646,7 +574,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1601, 448, 1892, 565),
-                    text=f"{self.number_to_text_with_suffix(0)} hours",
+                    text="0 hours",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
