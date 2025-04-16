@@ -431,7 +431,7 @@ class GuildStats(Cog):
                 events = 0
                 doc = self.Frappeclient.get_doc("Member", member[0]['name'])
                 for item in doc.get("custom_events"):
-                    if not item.name == 'Qmusic Foute Party: 24 - 26 juni 2022' or 'Vakantie: 11-18 augustus 2023':
+                    if not item == 'Qmusic Foute Party: 24 - 26 juni 2022' or 'Vakantie: 11-18 augustus 2023':
                         events = events + 1
                 draw.rounded_rectangle((1306, 615, 1912, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
