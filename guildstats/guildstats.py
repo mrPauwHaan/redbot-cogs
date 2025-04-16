@@ -480,7 +480,7 @@ class GuildStats(Cog):
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
-
+        
         if not to_file:
             return img
         buffer = io.BytesIO()
