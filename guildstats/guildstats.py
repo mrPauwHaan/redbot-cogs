@@ -437,7 +437,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((1306, 615, 1912, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1326, 625, 1326, 695),
-                    text="Events",
+                    text=member.get("custom_events"),
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
