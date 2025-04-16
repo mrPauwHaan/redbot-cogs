@@ -275,7 +275,7 @@ class GuildStats(Cog):
                     + self.font[40].getbbox(_object.global_name or _object.name)[2]
                 ) <= 1000:
                     draw.text(
-                        (190 + display_name_size[2] + 25, 632),
+                        (190 + display_name_size[2] + 25, 496),
                         text=(
                             self.remove_unprintable_characters(_object.global_name)
                             if _object.global_name is not None
@@ -302,14 +302,14 @@ class GuildStats(Cog):
                 and len(self.remove_unprintable_characters(_object.global_name)) >= 5
             ):
                 draw.text(
-                    (190, 30),
+                    (478, 30),
                     text=self.remove_unprintable_characters(_object.global_name),
                     fill=(255, 255, 255),
                     font=self.bold_font[50],
                 )
             else:
                 draw.text(
-                    (190, 30), text=_object.name, fill=(255, 255, 255), font=self.bold_font[50]
+                    (478, 30), text=_object.name, fill=(255, 255, 255), font=self.bold_font[50]
                 )
 
         # Guild name & Guild icon.
