@@ -652,7 +652,7 @@ class GuildStats(Cog):
                 )
                 
                 # Events
-                draw.rounded_rectangle((1356, 615, 1912, 996), radius=15, fill=(47, 49, 54))
+                draw.rounded_rectangle((1306, 615, 1912, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1326, 625, 1326, 695),
                     text="Events",
