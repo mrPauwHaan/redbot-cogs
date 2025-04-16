@@ -411,10 +411,7 @@ class GuildStats(Cog):
                     )
                     align_text_center(
                         (1601, 301, 1892, 418),
-                        text = (
-                            f"{datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y')}"
-                            if member.get('custom_start_lidmaatschap') else "No data"
-                        )
+                        text=f"{datetime.strptime(member['custom_start_lidmaatschap'], '%Y-%m-%d').strftime('%d %B %Y') if member['custom_start_lidmaatschap'] else 'No data'}",
                         fill=(255, 255, 255),
                         font=self.font[36],
                     )
@@ -428,11 +425,7 @@ class GuildStats(Cog):
                     )
                     align_text_center(
                         (1601, 448, 1892, 565),
-                        text = (
-                            f"{datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y')}"
-                            if member.get('custom_begin_datum') else "No data"
-                        )
-
+                        text=f"{datetime.strptime(member['custom_begin_datum'], '%Y-%m-%d').strftime('%d %B %Y') if member['custom_begin_datum'] else 'No data'}",
                         fill=(255, 255, 255),
                         font=self.font[36],
                     )
