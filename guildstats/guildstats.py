@@ -263,7 +263,7 @@ class GuildStats(Cog):
             img.paste(image, (190, 553, 245, 608), mask=mask)
         draw.text(
             (265, 553),
-            text='Lid',
+            text='<:szglogo:945293100824277002> Lid',
             fill=(163, 163, 163),
             font=self.font[54],
         )
