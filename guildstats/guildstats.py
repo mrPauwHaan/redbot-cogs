@@ -46,16 +46,9 @@ class GuildStats(Cog):
         self.icons: typing.Dict[str, Path] = {
             name: (bundled_data_path(self) / f"{name}.png")
             for name in (
-                "trophy",
-                "#",
-                "sound",
-                "history",
+                "logo",
                 "person",
-                "graphic",
-                "query_stats",
                 "game",
-                "home",
-                "globe",
             )
         }
 
@@ -269,7 +262,7 @@ class GuildStats(Cog):
         )
 
         # Guild name & Guild icon.
-        image = Image.open(io.BytesIO(guild_icon))
+        image = Image.open(self.icons["person"])
         image = image.resize((55, 55))
         mask = Image.new("L", image.size, 0)
         d = ImageDraw.Draw(mask)
@@ -475,7 +468,7 @@ class GuildStats(Cog):
                 align_text_center(
                     (1601 - 125, 859, 1892, 976),
                     text=(
-                        'Event ' + highest_event_value
+                        'Event ' + str(highest_event_value)
                     ),
                     fill=(255, 255, 255),
                     font=self.font[36],
