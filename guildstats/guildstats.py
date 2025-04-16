@@ -390,7 +390,7 @@ class GuildStats(Cog):
 
                 draw.rounded_rectangle((1306, 204, 1912, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
-                    (1325, 214, 1325, 284),
+                    (1325 - 125, 214, 1325, 284),
                     text="Lidmaatschap",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
@@ -398,16 +398,16 @@ class GuildStats(Cog):
                 image = Image.open(self.icons["person"])
                 image = image.resize((70, 70))
                 img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
-                draw.rounded_rectangle((1325, 301, 1892, 418), radius=15, fill=(32, 34, 37))
-                draw.rounded_rectangle((1325, 301, 1588, 418), radius=15, fill=(24, 26, 27))
+                draw.rounded_rectangle((1325 - 125, 301, 1892, 418), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((1325 - 125, 301, 1588, 418), radius=15, fill=(24, 26, 27))
                 align_text_center(
-                    (1326, 301, 1601, 418),
+                    (1326 - 125, 301, 1601 - 125, 418),
                     text="Lid",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
                 align_text_center(
-                    (1601, 301, 1892, 418),
+                    (1601 - 125, 301, 1892 - 125, 418),
                     text=f"{datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_start_lidmaatschap') else 'No data'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
