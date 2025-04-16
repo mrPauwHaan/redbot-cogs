@@ -390,7 +390,7 @@ class GuildStats(Cog):
 
                 draw.rounded_rectangle((1306 - 125, 204, 1912, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
-                    (1325 - 125, 214, 1325, 284),
+                    (1325 - 125, 214, 1325 - 125, 284),
                     text="Lidmaatschap",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
@@ -407,7 +407,7 @@ class GuildStats(Cog):
                     font=self.bold_font[36],
                 )
                 align_text_center(
-                    (1601 - 125, 301, 1892 - 125, 418),
+                    (1601 - 125, 301, 1892, 418),
                     text=f"{datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_start_lidmaatschap') else 'No data'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
@@ -421,7 +421,7 @@ class GuildStats(Cog):
                     font=self.bold_font[30],
                 )
                 align_text_center(
-                    (1601 - 125, 448, 1892 - 125, 565),
+                    (1601 - 125, 448, 1892, 565),
                     text=f"{datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_begin_datum') else 'No data'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
@@ -457,7 +457,7 @@ class GuildStats(Cog):
                     (1326 - 125, 712, 1601 - 125, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36]
                 )
                 align_text_center(
-                    (1601 - 125, 712, 1892 - 125, 829),
+                    (1601 - 125, 712, 1892, 829),
                     text=(
                         str(events)
                     ),
@@ -473,7 +473,7 @@ class GuildStats(Cog):
                     font=self.bold_font[36],
                 )
                 align_text_center(
-                    (1601 - 125, 859, 1892 - 125, 976),
+                    (1601 - 125, 859, 1892, 976),
                     text=(
                         highest_event
                     ),
