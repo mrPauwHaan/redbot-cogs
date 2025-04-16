@@ -395,7 +395,7 @@ class GuildStats(Cog):
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
-                image = Image.open(self.icons["person"])
+                image = Image.open(self.icons["history"])
                 image = image.resize((70, 70))
                 img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
                 draw.rounded_rectangle((1325, 301, 1892, 418), radius=15, fill=(32, 34, 37))
@@ -428,6 +428,9 @@ class GuildStats(Cog):
                 )
                 
                 # Events
+                events = 0
+                for item in member[0].get("custom_events"):
+                    events = events + 1
                 draw.rounded_rectangle((1306, 615, 1912, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1326, 625, 1326, 695),
@@ -441,7 +444,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((1326, 712, 1892, 829), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1326, 712, 1601, 829), radius=15, fill=(24, 26, 27))
                 align_text_center(
-                    (1326, 712, 1601, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36]
+                    (1326, 712, 1601, 829), text=events, fill=(255, 255, 255), font=self.bold_font[36]
                 )
                 align_text_center(
                     (1601, 712, 1892, 829),
