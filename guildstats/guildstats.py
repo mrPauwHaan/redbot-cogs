@@ -419,7 +419,8 @@ class GuildStats(Cog):
         if isinstance(_object, (discord.Member)):
             if _type is None:
                 # lidmaatschap
-                member = self.Frappeclient.get_list('Member', fields = ['discord_id', 'custom_start_lidmaatschap'], filters = {'discord_id': discord.Member.id})
+                userid = _object.id
+                member = self.Frappeclient.get_list('Member', fields = ['discord_id', 'custom_start_lidmaatschap'], filters = {'discord_id': userid})
                 draw.rounded_rectangle((1306, 204, 1912, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1325, 214, 1325, 284),
