@@ -419,6 +419,7 @@ class GuildStats(Cog):
         if isinstance(_object, (discord.Member)):
             if _type is None:
                 # lidmaatschap
+                member = self.Frappeclient.get_list('Member', fields = ['discord_id', 'custom_start_lidmaatschap'], filters = {'discord_id': discord.Member.id})
                 draw.rounded_rectangle((1306, 204, 1912, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1325, 214, 1325, 284),
@@ -439,7 +440,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1601, 301, 1892, 418),
-                    text="0 messages",
+                    text=f"{member.custom_start_lidmaatschap if member else 'No data'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -453,7 +454,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1601, 448, 1892, 565),
-                    text="0 hours",
+                    text="No data.",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
