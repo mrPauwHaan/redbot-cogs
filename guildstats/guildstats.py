@@ -576,7 +576,6 @@ class GuildStats(Cog):
             discord.TextChannel,
             discord.VoiceChannel,
         ],
-        data: typing.Optional[dict] = None,
         to_file: bool = True,
     ) -> typing.Union[Image.Image, discord.File]:
         if isinstance(_object, typing.Tuple):
@@ -591,7 +590,6 @@ class GuildStats(Cog):
         return await asyncio.to_thread(
             self._generate_image,
             _object=_object if _type is None else (_object, _type),
-            data=data,
             to_file=to_file,
             img=img,
         )
