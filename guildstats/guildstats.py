@@ -397,7 +397,7 @@ class GuildStats(Cog):
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
-                image = Image.open(self.icons["history"])
+                image = Image.open(self.icons["person"])
                 image = image.resize((70, 70))
                 img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
                 draw.rounded_rectangle((1325, 301, 1892, 418), radius=15, fill=(32, 34, 37))
@@ -434,6 +434,7 @@ class GuildStats(Cog):
                 for item in member.get("custom_events"):
                     if item['event_bezocht'] not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
                         events = events + 1
+                highest_event = max(events, key=lambda s: int(s.split()[1].strip(':')))
                 draw.rounded_rectangle((1306, 615, 1912, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1326, 625, 1326, 695),
@@ -468,7 +469,7 @@ class GuildStats(Cog):
                 align_text_center(
                     (1601, 859, 1892, 976),
                     text=(
-                        f"No data."
+                        highest_event
                     ),
                     fill=(255, 255, 255),
                     font=self.font[36],
