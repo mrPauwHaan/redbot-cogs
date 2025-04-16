@@ -1,5 +1,5 @@
-from AAA3A_utils import Cog, Loop, CogsUtils, Menu  # isort:skip
-from redbot.core import commands, Config  # isort:skip
+from AAA3A_utils import Cog  # isort:skip
+from redbot.core import commands  # isort:skip
 from redbot.core.bot import Red  # isort:skip
 from redbot.core.i18n import Translator, cog_i18n  # isort:skip
 import discord  # isort:skip
@@ -119,76 +119,6 @@ class GuildStats(Cog):
         for icon in self.icons.values():
             icon.close()
         await super().cog_unload() 
-
-    def _get_data(
-        self,
-        _object: typing.Union[
-            discord.Member,
-            typing.Tuple[discord.Member, typing.Literal["activities"]],
-            discord.Role,
-            discord.Guild,
-            typing.Tuple[
-                discord.Guild,
-                typing.Union[
-                    typing.Literal["messages", "voice", "activities"],
-                    typing.Tuple[
-                        typing.Literal["top", "weekly", "monthly"],
-                        typing.Literal["messages", "voice"],
-                        typing.Literal["members", "channels"],
-                    ],
-                    typing.Tuple[typing.Literal["activity"], str],
-                ],
-            ],
-            discord.CategoryChannel,
-            discord.TextChannel,
-            discord.VoiceChannel,
-        ],
-        members_type: typing.Literal["humans", "bots", "both"],
-        utc_now: datetime.datetime,
-    ) -> typing.Dict[str, typing.Any]:
-        if isinstance(_object, typing.Tuple):
-            _object, _type = _object
-        else:
-            _type = None
-        if utc_now is None:
-            utc_now = datetime.datetime.now(tz=datetime.timezone.utc)
-
-    async def get_data(
-        self,
-        _object: typing.Union[
-            discord.Member,
-            typing.Tuple[discord.Member, typing.Literal["activities"]],
-            discord.Role,
-            discord.Guild,
-            typing.Tuple[
-                discord.Guild,
-                typing.Union[
-                    typing.Literal["messages", "voice", "activities"],
-                    typing.Tuple[
-                        typing.Literal["top", "weekly", "monthly"],
-                        typing.Literal["messages", "voice"],
-                        typing.Literal["members", "channels"],
-                    ],
-                    typing.Tuple[typing.Literal["activity"], str],
-                ],
-            ],
-            discord.CategoryChannel,
-            discord.TextChannel,
-            discord.VoiceChannel,
-        ],
-        members_type: typing.Literal["humans", "bots", "both"] = "humans",
-        utc_now: datetime.datetime = None,
-    ) -> typing.Dict[str, typing.Any]:
-        if isinstance(_object, typing.Tuple):
-            _object, _type = _object
-        else:
-            _type = None
-        return await asyncio.to_thread(
-            self._get_data,
-            _object=_object if _type is None else (_object, _type),
-            members_type=members_type,
-            utc_now=utc_now,
-        )
 
     def align_text_center(
         self,
