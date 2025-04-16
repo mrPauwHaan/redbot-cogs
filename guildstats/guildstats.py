@@ -430,7 +430,8 @@ class GuildStats(Cog):
                 # Events
                 events = 0
                 doc = self.Frappeclient.get_doc("Member", member[0]['name'])
-                for item in member[0].get("custom_events"):
+                print(doc)
+                for item in doc.get("custom_events"):
                     events = events + 1
                 draw.rounded_rectangle((1306, 615, 1912, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
