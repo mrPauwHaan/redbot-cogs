@@ -332,23 +332,6 @@ class GuildStats(Cog):
         self,
         _object: typing.Union[
             discord.Member,
-            discord.Role,
-            discord.Guild,
-            typing.Tuple[
-                discord.Guild,
-                typing.Union[
-                    typing.Literal["messages", "voice", "activities"],
-                    typing.Tuple[
-                        typing.Literal["top", "weekly", "monthly"],
-                        typing.Literal["messages", "voice"],
-                        typing.Literal["members", "channels"],
-                    ],
-                    typing.Tuple[typing.Literal["activity"], str],
-                ],
-            ],
-            discord.CategoryChannel,
-            discord.TextChannel,
-            discord.VoiceChannel,
         ],
         size: typing.Tuple[int, int] = (1942, 1026),
         to_file: bool = True,
@@ -387,23 +370,6 @@ class GuildStats(Cog):
         self,
         _object: typing.Union[
             discord.Member,
-            discord.Role,
-            discord.Guild,
-            typing.Tuple[
-                discord.Guild,
-                typing.Union[
-                    typing.Literal["messages", "voice", "activities"],
-                    typing.Tuple[
-                        typing.Literal["top", "weekly", "monthly"],
-                        typing.Literal["messages", "voice"],
-                        typing.Literal["members", "channels"],
-                    ],
-                    typing.Tuple[typing.Literal["activity"], str],
-                ],
-            ],
-            discord.CategoryChannel,
-            discord.TextChannel,
-            discord.VoiceChannel,
         ],
         to_file: bool,
         img: Image.Image,
@@ -420,7 +386,7 @@ class GuildStats(Cog):
             if _type is None:
                 # lidmaatschap
                 userid = _object.id
-                member = self.Frappeclient.get_list('Member', fields = ['discord_id', 'custom_start_lidmaatschap'], filters = {'discord_id': userid})
+                member = self.Frappeclient.get_list('Member', fields = ['discord_id', 'custom_start_lidmaatschap', 'custom_begin_datum'], filters = {'discord_id': userid})
                 draw.rounded_rectangle((1306, 204, 1912, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1325, 214, 1325, 284),
@@ -441,7 +407,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1601, 301, 1892, 418),
-                    text=f"{member[0]['custom_start_lidmaatschap'] if member else 'No data'}",
+                    text=f"{member[0]['custom_start_lidmaatschap'].strftime("%d %B %Y") if member else 'No data'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -455,7 +421,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1601, 448, 1892, 565),
-                    text="No data.",
+                    text=f"{member[0]['custom_begin_datum'].strftime("%d %B %Y") if member else 'No data'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
