@@ -452,10 +452,6 @@ class GuildStats(Cog):
             discord.TextChannel,
             discord.VoiceChannel,
         ],
-        members_type: typing.Literal["humans", "bots", "both"],
-        show_graphic: bool,
-        graphic: typing.Optional[Image.Image],
-        data: dict,
         to_file: bool,
         img: Image.Image,
     ) -> typing.Union[Image.Image, discord.File]:
@@ -581,7 +577,6 @@ class GuildStats(Cog):
             discord.VoiceChannel,
         ],
         members_type: typing.Literal["humans", "bots", "both"] = "humans",
-        show_graphic: bool = False,
         data: typing.Optional[dict] = None,
         to_file: bool = True,
     ) -> typing.Union[Image.Image, discord.File]:
@@ -591,26 +586,9 @@ class GuildStats(Cog):
             _type = None
         img: Image.Image = await self.generate_prefix_image(
             _object if _type is None else (_object, _type),
-            size=(1942, 1437 + 200 + 70 if show_graphic else 1026 + 70),
+            size=(1942, 1026 + 70),
             to_file=False,
         )  # (1940, 1481) / 1942 + 636
-        if data is None:
-            data = await self.get_data(
-                _object if _type is None else (_object, _type), members_type=members_type
-            )
-        if show_graphic:
-            graphic = await self.generate_graphic(
-                _object, size=(1840, 464), data=data, to_file=False
-            )
-        elif _type == "activities" or (
-            isinstance(_type, typing.Tuple)
-            and _type[0] in ("top", "weekly", "monthly", "activity")
-        ):
-            graphic = await self.generate_graphic(
-                _object, size=(885, 675), data=data, to_file=False
-            )
-        else:
-            graphic = None
         return await asyncio.to_thread(
             self._generate_image,
             _object=_object if _type is None else (_object, _type),
@@ -618,8 +596,6 @@ class GuildStats(Cog):
             data=data,
             to_file=to_file,
             img=img,
-            show_graphic=show_graphic,
-            graphic=graphic,
         )
 
     @commands.guild_only()
@@ -629,7 +605,6 @@ class GuildStats(Cog):
         self,
         ctx: commands.Context,
         members_type: typing.Optional[typing.Literal["humans", "bots", "both"]] = "humans",
-        show_graphic: typing.Optional[bool] = False,
         *,
         _object: ObjectConverter,
     ) -> None:
@@ -642,7 +617,6 @@ class GuildStats(Cog):
                 if isinstance(_object, discord.Member)
                 else members_type
             ),
-            show_graphic_in_main=show_graphic if _object != "activities" else False,
             graphic_mode=False,
         ).start(ctx)
 
@@ -650,7 +624,6 @@ class GuildStats(Cog):
     async def member(
         self,
         ctx: commands.Context,
-        show_graphic: typing.Optional[bool] = False,
         *,
         member: discord.Member = commands.Author,
     ) -> None:
@@ -659,6 +632,5 @@ class GuildStats(Cog):
             cog=self,
             _object=member,
             members_type="bots" if member.bot else "humans",
-            show_graphic_in_main=show_graphic,
             graphic_mode=False,
         ).start(ctx)
