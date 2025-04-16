@@ -611,7 +611,7 @@ class GuildStats(Cog):
         # Data.
         if isinstance(_object, (discord.Member)):
             if _type is None:
-                # lidmaatschap. box = 606 / empty = 30 | 2 cases / box = 117 / empty = 30
+                # lidmaatschap
                 draw.rounded_rectangle((1306, 204, 1912, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1325, 214, 1325, 284),
