@@ -434,7 +434,7 @@ class GuildStats(Cog):
                 for item in member.get("custom_events"):
                     if item['event_bezocht'] not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
                         events = events + 1
-                highest_event = max(events, key=lambda s: int(s.split()[1].strip(':')))
+                highest_event = max(member.get("custom_events"), key=lambda s: int(s.split()[1].strip(':')))
                 draw.rounded_rectangle((1306, 615, 1912, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1326, 625, 1326, 695),
