@@ -544,3 +544,5 @@ class GuildStats(Cog):
                 cog=self,
                 _object=member,
             ).start(ctx)
+        else: 
+            await ctx.send('Niet mogelijk voor bot')
