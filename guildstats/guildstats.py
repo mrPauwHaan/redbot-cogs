@@ -475,7 +475,7 @@ class GuildStats(Cog):
                 align_text_center(
                     (1601 - 125, 859, 1892, 976),
                     text=(
-                        highest_event
+                        'Event ' + highest_event_value
                     ),
                     fill=(255, 255, 255),
                     font=self.font[36],
