@@ -10,6 +10,7 @@ import functools
 import io
 from collections import Counter
 from pathlib import Path
+from datetime import datetime
 
 import plotly.graph_objects as go
 from fontTools.ttLib import TTFont
@@ -407,7 +408,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1601, 301, 1892, 418),
-                    text=f"{member[0]['custom_start_lidmaatschap'].strftime('%d %B %Y') if member else 'No data'}",
+                    text=f"{datetime.strptime(member[0]['custom_start_lidmaatschap'], '%Y-%m-%d').strftime('%d %B %Y') if member else 'No data'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -421,7 +422,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1601, 448, 1892, 565),
-                    text=f"{member[0]['custom_begin_datum'].strftime('%d %B %Y') if member else 'No data'}",
+                    text=f"{datetime.strptime(member[0]['custom_begin_datum'], '%Y-%m-%d').strftime('%d %B %Y') if member else 'No data'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
