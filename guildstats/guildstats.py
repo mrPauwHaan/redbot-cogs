@@ -481,14 +481,12 @@ class GuildStats(Cog):
                     font=self.font[36],
                 )
 
-                if not to_file:
-                    return img
-                buffer = io.BytesIO()
-                img.save(buffer, format="png", optimize=True)
-                buffer.seek(0)
-                return discord.File(buffer, filename="image.png")
-            else:
-                raise ValueError("Gebruiker niet gevonden in database")
+        if not to_file:
+            return img
+        buffer = io.BytesIO()
+        img.save(buffer, format="png", optimize=True)
+        buffer.seek(0)
+        return discord.File(buffer, filename="image.png")
 
     async def generate_image(
         self,
