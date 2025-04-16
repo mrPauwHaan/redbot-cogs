@@ -312,7 +312,7 @@ class GuildStats(Cog):
                     (190, 478), text=_object.name, fill=(255, 255, 255), font=self.bold_font[50]
                 )
 
-        # Rol.
+        # Rol
         image = Image.open(io.BytesIO(guild_icon))
         image = image.resize((55, 55))
         mask = Image.new("L", image.size, 0)
@@ -324,10 +324,10 @@ class GuildStats(Cog):
         )
         try:
             img.paste(
-                image, (190, 105, 245, 160), mask=ImageChops.multiply(mask, image.split()[3])
+                image, (190, 571, 245, 626), mask=ImageChops.multiply(mask, image.split()[3])
             )
         except IndexError:
-            img.paste(image, (190, 105, 245, 160), mask=mask)
+            img.paste(image, (190, 571, 245, 626), mask=mask)
         draw.text(
             (265, 105),
             text='Lid',
