@@ -302,14 +302,14 @@ class GuildStats(Cog):
                 and len(self.remove_unprintable_characters(_object.global_name)) >= 5
             ):
                 draw.text(
-                    (478, 30),
+                    (190, 478),
                     text=self.remove_unprintable_characters(_object.global_name),
                     fill=(255, 255, 255),
                     font=self.bold_font[50],
                 )
             else:
                 draw.text(
-                    (478, 30), text=_object.name, fill=(255, 255, 255), font=self.bold_font[50]
+                    (190, 478), text=_object.name, fill=(255, 255, 255), font=self.bold_font[50]
                 )
 
         # Guild name & Guild icon.
