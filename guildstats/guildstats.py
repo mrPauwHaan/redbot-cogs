@@ -576,7 +576,6 @@ class GuildStats(Cog):
             discord.TextChannel,
             discord.VoiceChannel,
         ],
-        members_type: typing.Literal["humans", "bots", "both"] = "humans",
         data: typing.Optional[dict] = None,
         to_file: bool = True,
     ) -> typing.Union[Image.Image, discord.File]:
@@ -592,7 +591,6 @@ class GuildStats(Cog):
         return await asyncio.to_thread(
             self._generate_image,
             _object=_object if _type is None else (_object, _type),
-            members_type=members_type,
             data=data,
             to_file=to_file,
             img=img,
@@ -604,7 +602,6 @@ class GuildStats(Cog):
     async def guildstats(
         self,
         ctx: commands.Context,
-        members_type: typing.Optional[typing.Literal["humans", "bots", "both"]] = "humans",
         *,
         _object: ObjectConverter,
     ) -> None:
@@ -612,12 +609,6 @@ class GuildStats(Cog):
         await GuildStatsView(
             cog=self,
             _object=_object,
-            members_type=(
-                ("bots" if _object.bot else "humans")
-                if isinstance(_object, discord.Member)
-                else members_type
-            ),
-            graphic_mode=False,
         ).start(ctx)
 
     @guildstats.command()
@@ -628,9 +619,8 @@ class GuildStats(Cog):
         member: discord.Member = commands.Author,
     ) -> None:
         """Display stats for a specified member."""
-        await GuildStatsView(
-            cog=self,
-            _object=member,
-            members_type="bots" if member.bot else "humans",
-            graphic_mode=False,
-        ).start(ctx)
+        if not member.bot:
+            await GuildStatsView(
+                cog=self,
+                _object=member,
+            ).start(ctx)

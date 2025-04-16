@@ -31,8 +31,6 @@ class GuildStatsView(discord.ui.View):
             discord.TextChannel,
             discord.VoiceChannel,
         ],
-        members_type: typing.Literal["humans", "bots", "both"] = "humans",
-        graphic_mode: bool = False,
     ) -> None:
         super().__init__(timeout=60 * 60)
         self.cog: commands.Cog = cog
@@ -59,24 +57,16 @@ class GuildStatsView(discord.ui.View):
             discord.TextChannel,
             discord.VoiceChannel,
         ] = _object
-        self.members_type: typing.Literal["humans", "bots", "both"] = members_type
-        self.graphic_mode: bool = graphic_mode
 
         self._message: discord.Message = None
         self._ready: asyncio.Event = asyncio.Event()
 
     async def start(self, ctx: commands.Context) -> discord.Message:
         self.ctx: commands.Context = ctx
-        if self.graphic_mode:
-            file: discord.File = await self.cog.generate_graphic(
-                self._object, members_type=self.members_type, to_file=True
-            )
-        else:
-            file: discord.File = await self.cog.generate_image(
-                self._object,
-                members_type=self.members_type,
-                to_file=True,
-            )
+        file: discord.File = await self.cog.generate_image(
+            self._object,
+            to_file=True,
+        )
         self._message: discord.Message = await self.ctx.send(file=file, view=self)
         self.cog.views[self._message] = self
         await self._ready.wait()
@@ -108,17 +98,10 @@ class GuildStatsView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(thinking=False)  # thinking=True
-        self.graphic_mode: bool = not self.graphic_mode
-        if self.graphic_mode:
-            file: discord.File = await self.cog.generate_graphic(
-                self._object, members_type=self.members_type, to_file=True
-            )
-        else:
-            file: discord.File = await self.cog.generate_image(
-                self._object,
-                members_type=self.members_type,
-                to_file=True,
-            )
+        file: discord.File = await self.cog.generate_image(
+            self._object,
+            to_file=True,
+        )
         # try:
         #     await interaction.delete_original_response()
         # except discord.HTTPException:
@@ -130,16 +113,10 @@ class GuildStatsView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(thinking=False)  # thinking=True
-        if self.graphic_mode:
-            file: discord.File = await self.cog.generate_graphic(
-                self._object, members_type=self.members_type, to_file=True
-            )
-        else:
-            file: discord.File = await self.cog.generate_image(
-                self._object,
-                members_type=self.members_type,
-                to_file=True,
-            )
+        file: discord.File = await self.cog.generate_image(
+            self._object,
+            to_file=True,
+        )
         # try:
         #     await interaction.delete_original_response()
         # except discord.HTTPException:
