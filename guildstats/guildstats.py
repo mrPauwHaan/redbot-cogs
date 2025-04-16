@@ -263,7 +263,7 @@ class GuildStats(Cog):
             img.paste(image, (190, 553, 245, 608), mask=mask)
         draw.text(
             (265, 553),
-            text='<:szglogo:945293100824277002> Lid',
+            text='Lid',
             fill=(163, 163, 163),
             font=self.font[54],
         )
@@ -292,31 +292,31 @@ class GuildStats(Cog):
         )
 
         # `created_on`
-        draw.rounded_rectangle((1200 - 1170, 75 + 618, 1545 - 1170, 175 + 618), radius=15, fill=(47, 49, 54))
+        draw.rounded_rectangle((1200, 75, 1545, 175), radius=15, fill=(47, 49, 54))
         align_text_center(
-            (1200 - 1170, 75 + 618, 1545 - 1170, 175 + 618),
+            (1200, 75, 1545, 175),
             text=_object.created_at.strftime("%d %B %Y"),
             fill=(255, 255, 255),
             font=self.font[36],
         )
-        draw.rounded_rectangle((1220 - 1170, 30 + 618, 1476 - 1170, 90 + 618), radius=15, fill=(79, 84, 92))
+        draw.rounded_rectangle((1220, 30, 1476, 90), radius=15, fill=(79, 84, 92))
         align_text_center(
-            (1220 - 1170, 30 + 618, 1476 - 1170, 90 + 618),
+            (1220, 30, 1476, 90),
             text="Op Discord",
             fill=(255, 255, 255),
             font=self.bold_font[30],
         )
         # `joined_on`
-        draw.rounded_rectangle((1200 + 365 - 1170, 75 + 618, 1545 + 365 - 1170, 175 + 618), radius=15, fill=(47, 49, 54))
+        draw.rounded_rectangle((1200 + 365, 75, 1545 + 365, 175), radius=15, fill=(47, 49, 54))
         align_text_center(
-            (1200 + 365 - 1170, 75 + 618, 1545 + 365 - 1170, 175 + 618),
+            (1200 + 365, 75, 1545 + 365, 175),
             text=_object.joined_at.strftime("%d %B %Y"),
             fill=(255, 255, 255),
             font=self.font[36],
         )
-        draw.rounded_rectangle((1220 + 365 - 1170, 30 + 618, 1476 + 365 - 1170, 90 + 618), radius=15, fill=(79, 84, 92))
+        draw.rounded_rectangle((1220 + 365, 30, 1476 + 365, 90), radius=15, fill=(79, 84, 92))
         align_text_center(
-            (1220 + 365 - 1170, 30 + 618, 1476 + 365 - 1170, 90 + 618),
+            (1220 + 365, 30, 1476 + 365, 90),
             text="In server",
             fill=(255, 255, 255),
             font=self.bold_font[30],
