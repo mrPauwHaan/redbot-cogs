@@ -32,7 +32,6 @@ class GuildStatsView(discord.ui.View):
             discord.VoiceChannel,
         ],
         members_type: typing.Literal["humans", "bots", "both"] = "humans",
-        show_graphic_in_main: bool = False,
         graphic_mode: bool = False,
     ) -> None:
         super().__init__(timeout=60 * 60)
@@ -61,7 +60,6 @@ class GuildStatsView(discord.ui.View):
             discord.VoiceChannel,
         ] = _object
         self.members_type: typing.Literal["humans", "bots", "both"] = members_type
-        self.show_graphic_in_main: bool = show_graphic_in_main
         self.graphic_mode: bool = graphic_mode
 
         self._message: discord.Message = None
@@ -77,7 +75,6 @@ class GuildStatsView(discord.ui.View):
             file: discord.File = await self.cog.generate_image(
                 self._object,
                 members_type=self.members_type,
-                show_graphic=self.show_graphic_in_main,
                 to_file=True,
             )
         self._message: discord.Message = await self.ctx.send(file=file, view=self)
@@ -120,7 +117,6 @@ class GuildStatsView(discord.ui.View):
             file: discord.File = await self.cog.generate_image(
                 self._object,
                 members_type=self.members_type,
-                show_graphic=self.show_graphic_in_main,
                 to_file=True,
             )
         # try:
@@ -142,7 +138,6 @@ class GuildStatsView(discord.ui.View):
             file: discord.File = await self.cog.generate_image(
                 self._object,
                 members_type=self.members_type,
-                show_graphic=self.show_graphic_in_main,
                 to_file=True,
             )
         # try:
