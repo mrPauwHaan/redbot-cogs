@@ -347,12 +347,12 @@ class GuildStats(Cog):
         )
         try:
             img.paste(
-                image, (30, 30, 245 - 160, 160 - 75), mask=ImageChops.multiply(mask, image.split()[3])
+                image, (30, 30, 85, 85), mask=ImageChops.multiply(mask, image.split()[3])
             )
         except IndexError:
-            img.paste(image, (190, 105, 245, 160), mask=mask)
+            img.paste(image, (30, 30, 85, 85), mask=mask)
         draw.text(
-            (265, 105),
+            (105, 30),
             text='Shadowzone Gaming',
             fill=(163, 163, 163),
             font=self.font[54],
