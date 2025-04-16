@@ -263,7 +263,7 @@ class GuildStats(Cog):
                 > 0.8
             ) and len(self.remove_unprintable_characters(_object.display_name)) >= 5:
                 draw.text(
-                    (190, 30),
+                    (190, 478),
                     text=self.remove_unprintable_characters(_object.display_name),
                     fill=(255, 255, 255),
                     font=self.bold_font[50],
