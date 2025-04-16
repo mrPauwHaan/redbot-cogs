@@ -625,7 +625,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((1325, 301, 1892, 418), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1325, 301, 1588, 418), radius=15, fill=(24, 26, 27))
                 align_text_center(
-                    (1601, 301, 1601, 418),
+                    (1326, 301, 1601, 418),
                     text="Lid",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
@@ -650,11 +650,9 @@ class GuildStats(Cog):
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
-
                 
-
                 # Events
-                draw.rounded_rectangle((30, 615, 636, 996), radius=15, fill=(47, 49, 54))
+                draw.rounded_rectangle((1356, 615, 1912, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (50, 625, 50, 695),
                     text="Events",
@@ -663,30 +661,30 @@ class GuildStats(Cog):
                 )
                 image = Image.open(self.icons["trophy"])
                 image = image.resize((70, 70))
-                img.paste(image, (546, 625, 616, 695), mask=image.split()[3])
-                draw.rounded_rectangle((50, 712, 616, 829), radius=15, fill=(32, 34, 37))
-                draw.rounded_rectangle((50, 712, 325, 829), radius=15, fill=(24, 26, 27))
+                img.paste(image, (1822, 625, 1892, 695), mask=image.split()[3])
+                draw.rounded_rectangle((1326, 712, 1892, 829), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((1326, 712, 1601, 829), radius=15, fill=(24, 26, 27))
                 align_text_center(
-                    (50, 712, 325, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36]
+                    (1326, 712, 1601, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36]
                 )
                 align_text_center(
-                    (325, 712, 616, 829),
+                    (1601, 712, 1892, 829),
                     text=(
                         f"No data."
                     ),
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
-                draw.rounded_rectangle((50, 859, 616, 976), radius=15, fill=(32, 34, 37))
-                draw.rounded_rectangle((50, 859, 325, 976), radius=15, fill=(24, 26, 27))
+                draw.rounded_rectangle((1326, 859, 1892, 976), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((1326, 859, 1601, 976), radius=15, fill=(24, 26, 27))
                 align_text_center(
-                    (50, 859, 325, 976),
+                    (1326, 859, 1601, 976),
                     text="Laatste",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
                 align_text_center(
-                    (325, 859, 616, 976),
+                    (1601, 859, 1892, 976),
                     text=(
                         f"No data."
                     ),
