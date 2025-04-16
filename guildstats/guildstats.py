@@ -446,7 +446,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((1306, 615, 1912, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1326, 625, 1326, 695),
-                    text="Totaal",
+                    text="Events",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
@@ -456,7 +456,7 @@ class GuildStats(Cog):
                 draw.rounded_rectangle((1326, 712, 1892, 829), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1326, 712, 1601, 829), radius=15, fill=(24, 26, 27))
                 align_text_center(
-                    (1326, 712, 1601, 829), text="Events", fill=(255, 255, 255), font=self.bold_font[36]
+                    (1326, 712, 1601, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36]
                 )
                 align_text_center(
                     (1601, 712, 1892, 829),
