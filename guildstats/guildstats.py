@@ -408,7 +408,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1601, 301, 1892, 418),
-                    text=f"{datetime.strptime(member[0]['custom_start_lidmaatschap'], '%Y-%m-%d').strftime('%d %B %Y') if member else 'No data'}",
+                    text=_(f"{datetime.strptime(member[0]['custom_start_lidmaatschap'], '%Y-%m-%d').strftime('%d %B %Y') if member else 'No data'}"),
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
