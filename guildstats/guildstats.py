@@ -246,7 +246,7 @@ class GuildStats(Cog):
             # d.ellipse((0, 0, image.width, image.height), fill=255)
             try:
                 img.paste(
-                    image, (30, 30, 170, 170), mask=ImageChops.multiply(mask, image.split()[3])
+                    image, (30, 478, 170, 618), mask=ImageChops.multiply(mask, image.split()[3])
                 )
             except IndexError:
                 img.paste(image, (30, 30, 170, 170), mask=mask)
