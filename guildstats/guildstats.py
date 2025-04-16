@@ -388,7 +388,7 @@ class GuildStats(Cog):
             if doc:
                 member = self.Frappeclient.get_doc("Member", doc[0]['name'])
 
-                draw.rounded_rectangle((1306, 204, 1912, 585), radius=15, fill=(47, 49, 54))
+                draw.rounded_rectangle((1306 - 125, 204, 1912, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1325 - 125, 214, 1325, 284),
                     text="Lidmaatschap",
@@ -398,7 +398,7 @@ class GuildStats(Cog):
                 image = Image.open(self.icons["person"])
                 image = image.resize((70, 70))
                 img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
-                draw.rounded_rectangle((1325 - 125, 301, 1892, 418), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((1325 - 125, 301, 1892 - 125, 418), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1325 - 125, 301, 1588, 418), radius=15, fill=(24, 26, 27))
                 align_text_center(
                     (1326 - 125, 301, 1601 - 125, 418),
