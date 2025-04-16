@@ -430,14 +430,14 @@ class GuildStats(Cog):
                 )
                 
                 # Events
-                events = 0
+                events = ""
                 for item in member.get("custom_events"):
                     if not item['event_bezocht'] == 'Qmusic Foute Party: 24 - 26 juni 2022' or 'Vakantie: 11-18 augustus 2023':
-                        events = events + 1
+                        events = events + item
                 draw.rounded_rectangle((1306, 615, 1912, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1326, 625, 1326, 695),
-                    text=member.get("custom_events"),
+                    text="Totaal",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
