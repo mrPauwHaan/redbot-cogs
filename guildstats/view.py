@@ -12,24 +12,6 @@ class GuildStatsView(discord.ui.View):
         cog: commands.Cog,
         _object: typing.Union[
             discord.Member,
-            typing.Tuple[discord.Member, typing.Literal["activities"]],
-            discord.Role,
-            discord.Guild,
-            typing.Tuple[
-                discord.Guild,
-                typing.Union[
-                    typing.Literal["messages", "voice", "activities"],
-                    typing.Tuple[
-                        typing.Literal["top"],
-                        typing.Literal["messages", "voice"],
-                        typing.Literal["members", "channels"],
-                    ],
-                    typing.Tuple[typing.Literal["activity"], str],
-                ],
-            ],
-            discord.CategoryChannel,
-            discord.TextChannel,
-            discord.VoiceChannel,
         ],
     ) -> None:
         super().__init__(timeout=60 * 60)
@@ -38,24 +20,6 @@ class GuildStatsView(discord.ui.View):
 
         self._object: typing.Union[
             discord.Member,
-            typing.Tuple[discord.Member, typing.Literal["activities"]],
-            discord.Role,
-            discord.Guild,
-            typing.Tuple[
-                discord.Guild,
-                typing.Union[
-                    typing.Literal["messages", "voice", "activities"],
-                    typing.Tuple[
-                        typing.Literal["top"],
-                        typing.Literal["messages", "voice"],
-                        typing.Literal["members", "channels"],
-                    ],
-                    typing.Tuple[typing.Literal["activity"], str],
-                ],
-            ],
-            discord.CategoryChannel,
-            discord.TextChannel,
-            discord.VoiceChannel,
         ] = _object
 
         self._message: discord.Message = None
@@ -67,7 +31,10 @@ class GuildStatsView(discord.ui.View):
             self._object,
             to_file=True,
         )
-        self._message: discord.Message = await self.ctx.send(file=file, view=self)
+        if file:
+            self._message: discord.Message = await self.ctx.send(file=file, view=self)
+        else:
+            self._message: discord.Message = await self.ctx.send('Geen bestand')
         self.cog.views[self._message] = self
         await self._ready.wait()
         return self._message
