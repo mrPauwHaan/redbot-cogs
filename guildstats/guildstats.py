@@ -536,19 +536,6 @@ class GuildStats(Cog):
         self,
         ctx: commands.Context,
         *,
-        _object: discord.Member,
-    ) -> None:
-        """Generate images"""
-        await GuildStatsView(
-            cog=self,
-            _object=_object,
-        ).start(ctx)
-
-    @guildstats.command()
-    async def member(
-        self,
-        ctx: commands.Context,
-        *,
         member: discord.Member = commands.Author,
     ) -> None:
         """Display stats for a specified member."""
