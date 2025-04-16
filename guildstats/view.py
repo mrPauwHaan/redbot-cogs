@@ -60,21 +60,6 @@ class GuildStatsView(discord.ui.View):
             pass
         self._ready.set()
 
-    @discord.ui.button(emoji="📈", custom_id="change_mode", style=discord.ButtonStyle.secondary)
-    async def change_mode(
-        self, interaction: discord.Interaction, button: discord.ui.Button
-    ) -> None:
-        await interaction.response.defer(thinking=False)  # thinking=True
-        file: discord.File = await self.cog.generate_image(
-            self._object,
-            to_file=True,
-        )
-        # try:
-        #     await interaction.delete_original_response()
-        # except discord.HTTPException:
-        #     pass
-        await self._message.edit(attachments=[file])
-
     @discord.ui.button(emoji="🔄", custom_id="reload_page", style=discord.ButtonStyle.secondary)
     async def reload_page(
         self, interaction: discord.Interaction, button: discord.ui.Button
