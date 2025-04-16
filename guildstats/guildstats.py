@@ -612,41 +612,84 @@ class GuildStats(Cog):
         if isinstance(_object, (discord.Member)):
             if _type is None:
                 # lidmaatschap. box = 606 / empty = 30 | 2 cases / box = 117 / empty = 30
-                draw.rounded_rectangle((30, 204, 636, 585), radius=15, fill=(47, 49, 54))
+                draw.rounded_rectangle((1306, 204, 1912, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
-                    (50, 214, 50, 284),
+                    (1325, 214, 1325, 284),
                     text="Lidmaatschap",
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
                 image = Image.open(self.icons["history"])
                 image = image.resize((70, 70))
-                img.paste(image, (546, 214, 616, 284), mask=image.split()[3])
-                draw.rounded_rectangle((50, 301, 616, 418), radius=15, fill=(32, 34, 37))
-                draw.rounded_rectangle((50, 301, 325, 418), radius=15, fill=(24, 26, 27))
+                img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
+                draw.rounded_rectangle((1325, 301, 1892, 418), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((1325, 301, 1588, 418), radius=15, fill=(24, 26, 27))
                 align_text_center(
-                    (50, 301, 325, 418),
+                    (1601, 301, 1601, 418),
                     text="Lid",
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
                 align_text_center(
-                    (325, 301, 616, 418),
+                    (1601, 301, 1892, 418),
                     text=f"{self.number_to_text_with_suffix(0)} messages",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
-                draw.rounded_rectangle((50, 448, 616, 565), radius=15, fill=(32, 34, 37))
-                draw.rounded_rectangle((50, 448, 325, 565), radius=15, fill=(24, 26, 27))
+                draw.rounded_rectangle((1325, 448, 1892, 565), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((1325, 448, 1601, 565), radius=15, fill=(24, 26, 27))
                 align_text_center(
-                    (50, 448, 325, 565),
+                    (1325, 448, 1601, 565),
                     text="Betrokken",
                     fill=(255, 255, 255),
                     font=self.bold_font[30],
                 )
                 align_text_center(
-                    (325, 448, 616, 565),
+                    (1601, 448, 1892, 565),
                     text=f"{self.number_to_text_with_suffix(0)} hours",
+                    fill=(255, 255, 255),
+                    font=self.font[36],
+                )
+
+                
+
+                # Events
+                draw.rounded_rectangle((30, 615, 636, 996), radius=15, fill=(47, 49, 54))
+                align_text_center(
+                    (50, 625, 50, 695),
+                    text="Events",
+                    fill=(255, 255, 255),
+                    font=self.bold_font[40],
+                )
+                image = Image.open(self.icons["trophy"])
+                image = image.resize((70, 70))
+                img.paste(image, (546, 625, 616, 695), mask=image.split()[3])
+                draw.rounded_rectangle((50, 712, 616, 829), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((50, 712, 325, 829), radius=15, fill=(24, 26, 27))
+                align_text_center(
+                    (50, 712, 325, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36]
+                )
+                align_text_center(
+                    (325, 712, 616, 829),
+                    text=(
+                        f"No data."
+                    ),
+                    fill=(255, 255, 255),
+                    font=self.font[36],
+                )
+                draw.rounded_rectangle((50, 859, 616, 976), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((50, 859, 325, 976), radius=15, fill=(24, 26, 27))
+                align_text_center(
+                    (50, 859, 325, 976),
+                    text="Laatste",
+                    fill=(255, 255, 255),
+                    font=self.bold_font[36],
+                )
+                align_text_center(
+                    (325, 859, 616, 976),
+                    text=(
+                        f"No data."
+                    ),
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
