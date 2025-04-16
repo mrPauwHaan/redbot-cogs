@@ -438,8 +438,8 @@ class GuildStats(Cog):
                         try:
                             event_value = int(item["event_bezocht"].split()[1].strip(":"))
                             if event_value > highest_event_value:
-                                highest_event = item
-                                highest_event_value = str(event_value)
+                                highest_event = item['event_bezocht']
+                                highest_event_value = event_value
                         except (IndexError, ValueError):
                             continue
 
@@ -477,7 +477,7 @@ class GuildStats(Cog):
                 align_text_center(
                     (1601, 859, 1892, 976),
                     text=(
-                        highest_event_value
+                        highest_event
                     ),
                     fill=(255, 255, 255),
                     font=self.font[36],
