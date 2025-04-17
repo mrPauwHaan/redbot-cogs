@@ -455,7 +455,7 @@ class usercard(Cog):
         *,
         member: discord.Member = commands.Author,
     ) -> None:
-        """Display stats for a specified member."""
+        """Krijg profiel van gebruiker"""
         if not member.bot:
             await usercardView(
                 cog=self,
