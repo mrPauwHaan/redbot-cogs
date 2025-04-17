@@ -398,7 +398,7 @@ class GuildStats(Cog):
                 
                 # Events
                 events = 0
-                highest_event_value = -1
+                highest_event_value = 0
                 for item in member.get("custom_events"):
                     if item['event_bezocht'] not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
                         events += 1
@@ -443,9 +443,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1601 - 125, 859, 1892, 976),
-                    text=(
-                        'Event ' + str(highest_event_value)
-                    ),
+                    text=f"{'Event ' + str(highest_event_value) if highest_event_value > 0 else '-'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
