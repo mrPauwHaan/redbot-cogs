@@ -245,7 +245,7 @@ class GuildStats(Cog):
             # Rol
             draw.text(
                 (265, 553),
-                text=f"{member.get('custom_titel_op_website') if member.get('custom_titel_op_website') else ''}",
+                text=f"{member.get('membership_type') if member.get('custom_status') == 'Actief' else ''}",
                 fill=(163, 163, 163),
                 font=self.font[54],
             )
