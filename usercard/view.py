@@ -58,14 +58,7 @@ class usercardView(discord.ui.View):
             pass
         self._ready.set()
 
-    @discord.ui.button(emoji="🆔", custom_id="id_page", style=discord.ButtonStyle.secondary)
-    async def id_page(
-        self, interaction: discord.Interaction, button: discord.ui.Button
-    ) -> None:
-        await interaction.response.defer(thinking=False)  # thinking=True
-        await self._message.edit(content=self._object.id, attachments=[])
-
-    @discord.ui.button(emoji="🔄", custom_id="reload_page", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(emoji="👤", custom_id="reload_page", style=discord.ButtonStyle.secondary)
     async def reload_page(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
@@ -79,6 +72,13 @@ class usercardView(discord.ui.View):
         # except discord.HTTPException:
         #     pass
         await self._message.edit(content="", attachments=[file])
+
+    @discord.ui.button(emoji="🆔", custom_id="id_page", style=discord.ButtonStyle.secondary)
+    async def id_page(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        await interaction.response.defer(thinking=False)  # thinking=True
+        await self._message.edit(content=self._object.id, attachments=[])
 
     @discord.ui.button(style=discord.ButtonStyle.danger, emoji="✖️", custom_id="close_page")
     async def close_page(
