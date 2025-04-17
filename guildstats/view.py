@@ -54,7 +54,7 @@ class GuildStatsView(discord.ui.View):
             pass
         self._ready.set()
 
-    @discord.ui.button(emoji="🆔", custom_id="reload_page", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(emoji="🆔", custom_id="id_page", style=discord.ButtonStyle.secondary)
     async def id_page(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
