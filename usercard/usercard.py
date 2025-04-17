@@ -466,7 +466,7 @@ class usercard(Cog):
 
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
-    @commands.hybrid_group(name="id", description="Krijg Discord ID van gebruiker")
+    @commands.hybrid_group(invoke_without_command=True, name="id", description="Krijg Discord ID van gebruiker")
     async def id(
         self,
         ctx: commands.Context,
