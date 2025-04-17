@@ -292,12 +292,12 @@ class GuildStats(Cog):
                 font=self.bold_font[30],
             )
 
-            if not to_file:
-                return img
-            buffer = io.BytesIO()
-            img.save(buffer, format="png", optimize=True)
-            buffer.seek(0)
-            return discord.File(buffer, filename="image.png")
+        if not to_file:
+            return img
+        buffer = io.BytesIO()
+        img.save(buffer, format="png", optimize=True)
+        buffer.seek(0)
+        return discord.File(buffer, filename="image.png")
 
     async def generate_prefix_image(
         self,
