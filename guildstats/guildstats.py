@@ -391,7 +391,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1601 - 125, 448, 1892, 565),
-                    text=f"{datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_begin_datum') else 'No data'}",
+                    text=f"{datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_begin_datum') else '-'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
