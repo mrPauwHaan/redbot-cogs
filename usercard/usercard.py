@@ -453,9 +453,11 @@ class usercard(Cog):
         self,
         ctx: commands.Context,
         *,
-        member: discord.Member = commands.Author,
+        member: discord.Member = None,
     ) -> None:
         """Krijg profiel van gebruiker"""
+        if not member:
+            member = ctx.author
         if not member.bot:
             await usercardView(
                 cog=self,
@@ -471,9 +473,11 @@ class usercard(Cog):
         self,
         ctx: commands.Context,
         *,
-        member: discord.Member = commands.Author,
+        member: discord.Member = None,
     ) -> None:
         """Krijg Discord ID van gebruiker"""
+        if not member:
+            member = ctx.author
         if not member.bot:
             await usercardView(
                 cog=self,
