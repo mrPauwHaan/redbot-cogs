@@ -87,9 +87,9 @@ class GuildStats(Cog):
                 / len(member.display_name)
                 > 0.8
             )
-            and len(self.remove_unprintable_characters(member.display_name)) >= 5
+            and len(member.display_name) >= 5
             else (
-                self.remove_unprintable_characters(member.global_name)
+                member.global_name
                 if member.global_name is not None
                 and (
                     sum(
@@ -101,7 +101,7 @@ class GuildStats(Cog):
                     / len(member.global_name)
                     > 0.8
                 )
-                and len(self.remove_unprintable_characters(member.global_name)) >= 5
+                and len(member.global_name) >= 5
                 else member.name
             )
         )
@@ -152,10 +152,10 @@ class GuildStats(Cog):
                 )
                 / len(_object.display_name)
                 > 0.8
-            ) and len(self.remove_unprintable_characters(_object.display_name)) >= 5:
+            ) and len(_object.display_name) >= 5:
                 draw.text(
                     (190, 478),
-                    text=self.remove_unprintable_characters(_object.display_name),
+                    text=_object.display_name,
                     fill=(255, 255, 255),
                     font=self.bold_font[50],
                 )
@@ -168,7 +168,7 @@ class GuildStats(Cog):
                     draw.text(
                         (190 + display_name_size[2] + 25, 496),
                         text=(
-                            self.remove_unprintable_characters(_object.global_name)
+                            _object.global_name
                             if _object.global_name is not None
                             else _object.name
                         ),
@@ -187,11 +187,11 @@ class GuildStats(Cog):
                     / len(_object.global_name)
                     > 0.8
                 )
-                and len(self.remove_unprintable_characters(_object.global_name)) >= 5
+                and len(_object.global_name) >= 5
             ):
                 draw.text(
                     (190, 478),
-                    text=self.remove_unprintable_characters(_object.global_name),
+                    text=_object.global_name,
                     fill=(255, 255, 255),
                     font=self.bold_font[50],
                 )
