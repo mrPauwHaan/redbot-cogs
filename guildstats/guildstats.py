@@ -460,6 +460,24 @@ class GuildStats(Cog):
             await GuildStatsView(
                 cog=self,
                 _object=member,
-            ).start(ctx)
+            ).start(ctx, command='card')
+        else: 
+            await ctx.send('Niet mogelijk voor bot')
+
+    @commands.guild_only()
+    @commands.bot_has_permissions(attach_files=True)
+    @commands.hybrid_group(invoke_without_command=True, name="id", description="Krijg Discord ID van gebruiker")
+    async def id(
+        self,
+        ctx: commands.Context,
+        *,
+        member: discord.Member = commands.Author,
+    ) -> None:
+        """Display stats for a specified member."""
+        if not member.bot:
+            await GuildStatsView(
+                cog=self,
+                _object=member,
+            ).start(ctx, command='id')
         else: 
             await ctx.send('Niet mogelijk voor bot')

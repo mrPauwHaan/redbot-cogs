@@ -29,7 +29,7 @@ class Frappe(commands.Cog):
             print("API keys for Frappe are missing.")
 
     @commands.guild_only()
-    @commands.hybrid_command(name="id", description="Return the user ID")
+    @commands.hybrid_command(name="id", description="Krijg Discord ID van gebruiker")
     async def id(self, ctx, *, user: discord.Member=None):
         """Krijg Discord ID van gebruiker"""
         author = ctx.author

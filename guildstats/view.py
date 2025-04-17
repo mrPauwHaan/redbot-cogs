@@ -19,16 +19,18 @@ class GuildStatsView(discord.ui.View):
         self._message: discord.Message = None
         self._ready: asyncio.Event = asyncio.Event()
 
-    async def start(self, ctx: commands.Context) -> discord.Message:
+    async def start(self, ctx: commands.Context, command) -> discord.Message:
         self.ctx: commands.Context = ctx
         file: discord.File = await self.cog.generate_image(
             self._object,
             to_file=True,
         )
-        if file:
+        if file and command == 'card':
             self._message: discord.Message = await self.ctx.send(file=file, view=self)
+        elif command == 'id':
+            self._message: discord.Message = await self.ctx.send(self._object.id, view=self)
         else:
-            self._message: discord.Message = await self.ctx.send(self._object.id)
+            self._message: discord.Message = await self.ctx.send('Gebruiker niet gevonden in database')
         self.cog.views[self._message] = self
         await self._ready.wait()
         return self._message
