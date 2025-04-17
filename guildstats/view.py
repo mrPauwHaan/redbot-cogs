@@ -74,7 +74,7 @@ class GuildStatsView(discord.ui.View):
         #     await interaction.delete_original_response()
         # except discord.HTTPException:
         #     pass
-        await self._message.edit(attachments=[file])
+        await self._message.edit(content="", attachments=[file])
 
     @discord.ui.button(style=discord.ButtonStyle.danger, emoji="✖️", custom_id="close_page")
     async def close_page(
