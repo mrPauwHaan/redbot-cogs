@@ -8,11 +8,9 @@ import typing  # isort:skip
 import asyncio
 import functools
 import io
-from collections import Counter
 from pathlib import Path
 from datetime import datetime
 
-import plotly.graph_objects as go
 from fontTools.ttLib import TTFont
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 from redbot.core.data_manager import bundled_data_path
@@ -32,17 +30,6 @@ class GuildStats(Cog):
         super().__init__(bot=bot)
         self.Frappeclient = None
 
-        self.font_path: Path = bundled_data_path(self) / "arial.ttf"
-        self.bold_font_path: Path = bundled_data_path(self) / "arial_bold.ttf"
-        self.font: typing.Dict[int, ImageFont.ImageFont] = {
-            size: ImageFont.truetype(str(self.font_path), size=size)
-            for size in {28, 30, 36, 40, 54}
-        }
-        self.bold_font: typing.Dict[int, ImageFont.ImageFont] = {
-            size: ImageFont.truetype(str(self.bold_font_path), size=size)
-            for size in {30, 36, 40, 50, 60}
-        }
-        self.font_to_remove_unprintable_characters: TTFont = TTFont(self.font_path)
         self.icons: typing.Dict[str, Path] = {
             name: (bundled_data_path(self) / f"{name}.png")
             for name in (
@@ -319,16 +306,6 @@ class GuildStats(Cog):
                     if isinstance(_object, discord.Role) and _object.display_icon is not None
                     else None
                 )
-            ),
-            guild_icon=(
-                (
-                    await (
-                        _object if isinstance(_object, discord.Guild) else _object.guild
-                    ).icon.read()
-                )
-                if (_object if isinstance(_object, discord.Guild) else _object.guild).icon
-                is not None
-                else None
             ),
         )
 
