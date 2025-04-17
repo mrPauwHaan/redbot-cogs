@@ -59,11 +59,8 @@ class GuildStatsView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(thinking=False)  # thinking=True
-        # try:
-        #     await interaction.delete_original_response()
-        # except discord.HTTPException:
-        #     pass
-        await self._message.edit(self._object.id)
+        await self._message.removeAttachments()
+        await self._message.edit(content=self._object.id)
 
     @discord.ui.button(emoji="🔄", custom_id="reload_page", style=discord.ButtonStyle.secondary)
     async def reload_page(
