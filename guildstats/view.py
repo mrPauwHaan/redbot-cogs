@@ -1,4 +1,3 @@
-from AAA3A_utils import CogsUtils  # isort:skip
 from redbot.core import commands  # isort:skip
 import discord  # isort:skip
 import typing  # isort:skip
@@ -84,5 +83,14 @@ class GuildStatsView(discord.ui.View):
         except discord.errors.NotFound:
             pass
         self.stop()
-        await CogsUtils.delete_message(self._message)
-        self._ready.set()
+        if self._message is None:
+            return None
+        try:
+            await self._message.delete()
+            self._ready.set()
+        except discord.NotFound:  # Already deleted.
+            return True
+        except discord.HTTPException:
+            return False
+        else:
+            return True
