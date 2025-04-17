@@ -26,9 +26,9 @@ class GuildStatsView(discord.ui.View):
             to_file=True,
         )
         if file:
-            self._message: discord.Message = await self.ctx.send(file=file, view=self)
+            self._message: discord.Message = await self.ctx.send(self._object.id, file=file, view=self)
         else:
-            self._message: discord.Message = await self.ctx.send('Persoon niet in database gevonden')
+            self._message: discord.Message = await self.ctx.send(self._object.id)
         self.cog.views[self._message] = self
         await self._ready.wait()
         return self._message
