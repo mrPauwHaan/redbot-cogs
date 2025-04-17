@@ -449,7 +449,7 @@ class GuildStats(Cog):
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
     @commands.hybrid_group(invoke_without_command=True)
-    async def guildstats(
+    async def lid(
         self,
         ctx: commands.Context,
         *,
@@ -466,14 +466,14 @@ class GuildStats(Cog):
 
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
-    @commands.hybrid_group(invoke_without_command=True, name="id2", description="Krijg Discord ID van gebruiker")
-    async def id2(
+    @commands.hybrid_group(invoke_without_command=True, name="id", description="Krijg Discord ID van gebruiker")
+    async def id(
         self,
         ctx: commands.Context,
         *,
         member: discord.Member = commands.Author,
     ) -> None:
-        """Display stats for a specified member."""
+        """Krijg Discord ID van gebruiker"""
         if not member.bot:
             await GuildStatsView(
                 cog=self,

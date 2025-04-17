@@ -27,6 +27,8 @@ class GuildStatsView(discord.ui.View):
         )
         if file and command == 'card':
             self._message: discord.Message = await self.ctx.send(file=file, view=self)
+        elif file and command == 'id':
+            self._message: discord.Message = await self.ctx.send(self._object.id, view=self)
         elif command == 'id':
             self._message: discord.Message = await self.ctx.send(self._object.id, view=self)
         else:

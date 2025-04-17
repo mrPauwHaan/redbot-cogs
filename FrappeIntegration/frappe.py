@@ -29,17 +29,6 @@ class Frappe(commands.Cog):
             print("API keys for Frappe are missing.")
 
     @commands.guild_only()
-    @commands.hybrid_command(name="id", description="Krijg Discord ID van gebruiker")
-    async def id(self, ctx, *, user: discord.Member=None):
-        """Krijg Discord ID van gebruiker"""
-        author = ctx.author
-
-        if not user:
-            user = author
-
-        await ctx.send(user.id)
-
-    @commands.guild_only()
     @commands.hybrid_command(name="sponsorkliks", description="Zie de Sponsorkliks status")
     async def sponsorkliks(self, ctx):
         """Zie de Sponsorkliks status"""
