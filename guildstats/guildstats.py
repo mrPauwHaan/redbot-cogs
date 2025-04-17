@@ -51,7 +51,6 @@ class GuildStats(Cog):
             print("API keys for Frappe are missing.")
 
     async def cog_unload(self) -> None:
-        self.font_to_remove_unprintable_characters.close()
         for icon in self.icons.values():
             icon.close()
         await super().cog_unload() 
@@ -75,30 +74,13 @@ class GuildStats(Cog):
         draw.text((x1 + x, y1 + y), text=text, fill=fill, font=font)
         return text_size
 
-    def remove_unprintable_characters(self, text: str) -> str:
-        return (
-            "".join(
-                [
-                    char
-                    for char in text
-                    if ord(char) in self.font_to_remove_unprintable_characters.getBestCmap()
-                    and char.isascii()
-                ]
-            )
-            .strip()
-            .strip("-|_")
-            .strip()
-        )
-
     def get_member_display(self, member: discord.Member) -> str:
         return (
-            self.remove_unprintable_characters(member.display_name)
+            member.display_name
             if (
                 sum(
                     (
                         1
-                        if ord(char) in self.font_to_remove_unprintable_characters.getBestCmap()
-                        else 0
                     )
                     for char in member.display_name
                 )
@@ -113,9 +95,6 @@ class GuildStats(Cog):
                     sum(
                         (
                             1
-                            if ord(char)
-                            in self.font_to_remove_unprintable_characters.getBestCmap()
-                            else 0
                         )
                         for char in member.global_name
                     )
@@ -168,8 +147,6 @@ class GuildStats(Cog):
                 sum(
                     (
                         1
-                        if ord(char) in self.font_to_remove_unprintable_characters.getBestCmap()
-                        else 0
                     )
                     for char in _object.display_name
                 )
@@ -204,9 +181,6 @@ class GuildStats(Cog):
                     sum(
                         (
                             1
-                            if ord(char)
-                            in self.font_to_remove_unprintable_characters.getBestCmap()
-                            else 0
                         )
                         for char in _object.global_name
                     )
