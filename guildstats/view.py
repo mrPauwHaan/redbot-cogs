@@ -26,7 +26,7 @@ class GuildStatsView(discord.ui.View):
             to_file=True,
         )
         if file:
-            self._message: discord.Message = await self.ctx.send(self._object.id, file=file, view=self)
+            self._message: discord.Message = await self.ctx.send(file=file, view=self)
         else:
             self._message: discord.Message = await self.ctx.send(self._object.id)
         self.cog.views[self._message] = self
@@ -53,6 +53,17 @@ class GuildStatsView(discord.ui.View):
         except discord.HTTPException:
             pass
         self._ready.set()
+
+    @discord.ui.button(emoji="🆔", custom_id="reload_page", style=discord.ButtonStyle.secondary)
+    async def id_page(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        await interaction.response.defer(thinking=False)  # thinking=True
+        # try:
+        #     await interaction.delete_original_response()
+        # except discord.HTTPException:
+        #     pass
+        await self._message.edit(self._object.id)
 
     @discord.ui.button(emoji="🔄", custom_id="reload_page", style=discord.ButtonStyle.secondary)
     async def reload_page(
