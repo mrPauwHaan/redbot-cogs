@@ -142,13 +142,10 @@ class GuildStats(Cog):
 
     def _generate_prefix_image(
         self,
-        _object: typing.Union[
-            discord.Member,
-        ],
+        _object: discord.Member,
         size: typing.Tuple[int, int],
         to_file: bool,
         _object_display: typing.Optional[bytes],
-        guild_icon: typing.Optional[bytes],
     ) -> typing.Union[Image.Image, discord.File]:
         img: Image.Image = Image.new("RGBA", size, (0, 0, 0, 0))
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
@@ -301,9 +298,7 @@ class GuildStats(Cog):
 
     async def generate_prefix_image(
         self,
-        _object: typing.Union[
-            discord.Member,
-        ],
+        _object: discord.Member,
         size: typing.Tuple[int, int] = (1942, 1026),
         to_file: bool = True,
     ) -> typing.Union[Image.Image, discord.File]:
@@ -339,14 +334,10 @@ class GuildStats(Cog):
 
     def _generate_image(
         self,
-        _object: typing.Union[
-            discord.Member,
-        ],
+        _object: discord.Member,
         to_file: bool,
         img: Image.Image,
     ) -> typing.Union[Image.Image, discord.File]:
-        if isinstance(_object, typing.Tuple):
-            _object = _object
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
         align_text_center = functools.partial(self.align_text_center, draw)
 
@@ -457,23 +448,17 @@ class GuildStats(Cog):
 
     async def generate_image(
         self,
-        _object: typing.Union[
-            discord.Member,
-        ],
+        _object: discord.Member,
         to_file: bool = True,
     ) -> typing.Union[Image.Image, discord.File]:
-        if isinstance(_object, typing.Tuple):
-            _object, _type = _object
-        else:
-            _type = None
         img: Image.Image = await self.generate_prefix_image(
-            _object if _type is None else (_object, _type),
+            _object,
             size=(1942, 1096),
             to_file=False,
         )  # (1940, 1481) / 1942 + 636
         return await asyncio.to_thread(
             self._generate_image,
-            _object=_object if _type is None else (_object, _type),
+            _object,
             to_file=to_file,
             img=img,
         )
