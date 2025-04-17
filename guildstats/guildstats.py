@@ -377,7 +377,7 @@ class GuildStats(Cog):
                 )
                 align_text_center(
                     (1601 - 125, 301, 1892, 418),
-                    text=f"{datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_start_lidmaatschap') else 'No data'}",
+                    text=f"{datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_start_lidmaatschap') and  member.get('custom_status') == 'Actief' and  member.get('membership_type') == 'Lid' else '-'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
