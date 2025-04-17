@@ -15,10 +15,10 @@ from PIL import Image, ImageChops, ImageDraw, ImageFont
 from redbot.core.data_manager import bundled_data_path
 from frappeclient import FrappeClient
 
-from .view import GuildStatsView
+from .view import usercardView
 
 
-class GuildStats(Cog):
+class usercard(Cog):
     """A cog to generate images"""
 
     def __init__(self, bot: Red) -> None:
@@ -457,7 +457,7 @@ class GuildStats(Cog):
     ) -> None:
         """Display stats for a specified member."""
         if not member.bot:
-            await GuildStatsView(
+            await usercardView(
                 cog=self,
                 _object=member,
             ).start(ctx, command='card')
@@ -475,7 +475,7 @@ class GuildStats(Cog):
     ) -> None:
         """Krijg Discord ID van gebruiker"""
         if not member.bot:
-            await GuildStatsView(
+            await usercardView(
                 cog=self,
                 _object=member,
             ).start(ctx, command='id')

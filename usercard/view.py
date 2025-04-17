@@ -4,7 +4,7 @@ import discord  # isort:skip
 import asyncio
 
 
-class GuildStatsView(discord.ui.View):
+class usercardView(discord.ui.View):
     def __init__(
         self,
         cog: commands.Cog,
@@ -30,7 +30,7 @@ class GuildStatsView(discord.ui.View):
         elif file and command == 'id':
             self._message: discord.Message = await self.ctx.send(self._object.id, view=self)
         elif command == 'id':
-            self._message: discord.Message = await self.ctx.send(self._object.id, view=self)
+            self._message: discord.Message = await self.ctx.send(self._object.id)
         else:
             self._message: discord.Message = await self.ctx.send('Gebruiker niet gevonden in database')
         self.cog.views[self._message] = self
