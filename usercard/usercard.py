@@ -448,16 +448,14 @@ class usercard(Cog):
 
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
-    @commands.hybrid_group(invoke_without_command=True)
+    @commands.hybrid_command(name="lid", description="Krijg profiel van gebruiker")
     async def lid(
         self,
         ctx: commands.Context,
         *,
-        member: discord.Member = None,
+        member: discord.Member = commands.Author,
     ) -> None:
         """Krijg profiel van gebruiker"""
-        if not member:
-            member = ctx.author
         if not member.bot:
             await usercardView(
                 cog=self,
@@ -468,16 +466,14 @@ class usercard(Cog):
 
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
-    @commands.hybrid_group(invoke_without_command=True, name="id", description="Krijg Discord ID van gebruiker")
+    @commands.hybrid_command(name="id", description="Krijg Discord ID van gebruiker")
     async def id(
         self,
         ctx: commands.Context,
         *,
-        member: discord.Member = None,
+        member: discord.Member = commands.Author,
     ) -> None:
         """Krijg Discord ID van gebruiker"""
-        if not member:
-            member = ctx.author
         if not member.bot:
             await usercardView(
                 cog=self,
