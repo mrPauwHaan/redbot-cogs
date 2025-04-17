@@ -9,17 +9,13 @@ class GuildStatsView(discord.ui.View):
     def __init__(
         self,
         cog: commands.Cog,
-        _object: typing.Union[
-            discord.Member,
-        ],
+        _object: discord.Member,
     ) -> None:
         super().__init__(timeout=60 * 60)
         self.cog: commands.Cog = cog
         self.ctx: commands.Context = None
 
-        self._object: typing.Union[
-            discord.Member,
-        ] = _object
+        self._object: discord.Member = _object
 
         self._message: discord.Message = None
         self._ready: asyncio.Event = asyncio.Event()
