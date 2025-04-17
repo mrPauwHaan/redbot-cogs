@@ -25,7 +25,7 @@ _: Translator = Translator("GuildStats", __file__)
 
 
 @cog_i18n(_)
-class GuildStats(Cog):
+class GuildStats(commands.Cog):
     """A cog to generate images"""
 
     def __init__(self, bot: Red) -> None:
