@@ -59,8 +59,7 @@ class GuildStatsView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(thinking=False)  # thinking=True
-        await self._message.removeAttachments()
-        await self._message.edit(content=self._object.id)
+        await self._message.edit(content=self._object.id, attachments=[])
 
     @discord.ui.button(emoji="🔄", custom_id="reload_page", style=discord.ButtonStyle.secondary)
     async def reload_page(
