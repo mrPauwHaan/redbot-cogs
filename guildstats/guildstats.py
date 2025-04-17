@@ -19,7 +19,6 @@ from frappeclient import FrappeClient
 from .view import GuildStatsView
 
 
-@cog_i18n()
 class GuildStats(Cog):
     """A cog to generate images"""
 
