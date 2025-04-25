@@ -1,11 +1,7 @@
 import discord
-from discord.ext import tasks
-import asyncio
 from redbot.core.bot import Red
-from redbot.core import commands, app_commands
-from redbot.core import Config
+from redbot.core import commands
 import requests
-import json
 import datetime
 from dateutil.relativedelta import relativedelta
 import aiohttp
