@@ -72,7 +72,7 @@ class ChannelChanger(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(manage_channels=True)
-    async def removevc(self, ctx: commands.Context, channelid = None):
+    async def removevc(self, ctx: commands.Context, channelid: str = None):
         """Removes a voice channel from the watchlist based on provided ID.
         """
 
@@ -164,12 +164,14 @@ class ChannelChanger(commands.Cog):
 
 
     # --- Helper function to scan and update a single channel ---
-    async def scan_one(self, channel: discord.VoiceChannel, channel_configs: dict): # Removed ctx, takes channel object
-        """Scans a single voice channel and updates its name if needed."""
+    async def scan_one(self, channel: discord.VoiceChannel, channel_configs: dict):
+        """Scans a single voice channel and updates its topic if needed.""" # Updated docstring
 
         # Get guild config using the channel object
         guild_config = await self.config.guild(channel.guild).get_raw()
-        ignored_statuses = guild_config.get("ignoredStatus", ["Spotify", "Custom Status"])
+        # Ensure ignored_statuses is always a list even if config is missing or None
+        ignored_statuses = guild_config.get("ignoredStatus")
+
 
         # Get specific channel config using string ID
         channel_id_str = str(channel.id)
@@ -182,7 +184,6 @@ class ChannelChanger(commands.Cog):
              print(f"Scan requested for channel {channel.id} but not found in config.")
              return
 
-
         original_name = channel_config.get("name", channel.name) # Use stored name or current if missing
         majority_threshold = channel_config.get("majority", 0.5)
         template = channel_config.get("template", "X - Y")
@@ -190,34 +191,59 @@ class ChannelChanger(commands.Cog):
 
         members_amount = len(channel.members)
 
-        # Default title is the original name
-        new_title = original_name
+        # Default status is the original name
+        # Renamed new_title to new_status for clarity
+        new_status = original_name
 
         if members_amount > 0:
             # Get the majority game, filtering ignored statuses within the function
             game_title = await self.get_majority_game(channel, majority_threshold, ignored_statuses)
 
             if game_title: # If a game met the majority threshold and was not ignored
-                # Construct the new title using the template
-                # Ensure template variables are handled even if missing (though defaults are set)
-                template_to_use = channel_config.get("template", "X - Y")
-                new_title = template_to_use.replace("X", original_name).replace("Y", game_title)
+                 # Construct the new status string using the template
+                 template_to_use = channel_config.get("template", "X - Y") # Use .get() again for safety
+                 # Replace X with original name, Y with game title
+                 new_status = template_to_use.replace("X", original_name).replace("Y", game_title)
+            # else: # No majority game, new_status remains original_name (or the original name plus placeholder if template includes Y but game_title is None)
+            # A better fallback might be just the original_name if template contains Y and game_title is None
+            elif 'Y' in template:
+                 # If template expects a game but none is found, revert to original name or simple template
+                 if 'X' in template:
+                      new_status = template.replace("X", original_name).replace("Y", "") # Remove Y placeholder
+                 else:
+                      new_status = original_name # Fallback entirely if template is weird
 
 
-        # Update the channel name only if it's different
-        if channel.name != new_title:
+        # Ensure the new status string does not exceed Discord's topic limit (1024 characters)
+        if len(new_status) > 1024:
+            new_status = new_status[:1021] + "..." # Truncate and add ellipsis
+
+        # Update the channel topic only if it's different and bot has permission
+        # Check against channel.topic, not channel.name
+        if channel.topic != new_status:
+            # Check bot's permissions for this specific channel
+            bot_member = channel.guild.me
+            # Changing topic requires manage_channels permission
+            if not channel.permissions_for(bot_member).manage_channels:
+                print(f"Bot lacks manage_channels permission for channel {channel.name} in guild {channel.guild.name}. Cannot change topic.")
+                # Consider adding a way to inform the guild owner about this missing permission.
+                return # Exit scan_one if no permission
+
             try:
-                # Discord has a rate limit of 2 name changes per 10 minutes per channel
-                # Rapid changes (e.g., users joining/leaving quickly, or changing games rapidly)
-                # might hit this. Redbot handles some rate limits internally, but heavy use
-                # might still cause issues. Consider adding a small delay or cooldown per channel
-                # if rate limits become a problem.
-                await channel.edit(name=new_title)
-                print(f"Changed channel {channel.name} name to {new_title}")
+                # Discord has a rate limit for topic changes (usually 1 change per 1 minute per channel)
+                # Rapid changes might hit this. Consider adding cooldowns if needed.
+                # (Not implemented here, but be aware)
+                await channel.edit(topic=new_status) # Change topic= instead of name=
+                print(f"Changed channel `{channel.name}` (ID: {channel.id}) topic to `{new_status}`")
             except discord.Forbidden:
-                print(f"Bot lacks permissions to rename channel {channel.name} in guild {channel.guild.name}.")
+                # This should ideally be caught by the permission check above, but included as a fallback
+                print(f"Bot lacks permissions to change topic for channel {channel.name} in guild {channel.guild.name}.")
             except discord.HTTPException as e:
-                print(f"Failed to change channel name for {channel.name}: {e}")
+                # This might catch rate limits or other API errors (like topic too long, though we truncated)
+                print(f"Failed to change channel topic for {channel.name} (ID: {channel.id}): {e}")
+            except Exception as e:
+                # Catch any other unexpected errors
+                print(f"An unexpected error occurred changing topic for channel {channel.name} (ID: {channel.id}): {e}")
 
 
     # --- Listeners ---
