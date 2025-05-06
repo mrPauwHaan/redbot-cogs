@@ -76,7 +76,7 @@ class ChannelChanger(commands.Cog):
             await self.config.guild(ctx.guild).channels.set(existing_channels) # Save changes
             await ctx.send(f"Successfully removed `{channel.name}` from my list.")
         else:
-            await ctx.send(f"`{channel.name}` is not currently being watched."
+            await ctx.send(f"`{channel.name}` is not currently being watched.")
 
     @commands.command()
     @commands.has_permissions(manage_channels=True)
