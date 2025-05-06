@@ -79,7 +79,7 @@ class ChannelChanger(commands.Cog):
         # If no channel argument was provided, try using the author's current VC
         if channelid is None:
             if ctx.author.voice and ctx.author.voice.channel:
-                channelid = ctx.author.voice.channel
+                channelid = str(ctx.author.voice.channel.id)
             else:
                 await ctx.send("You must be in a voice channel or provide a channel ID/mention.")
                 return
