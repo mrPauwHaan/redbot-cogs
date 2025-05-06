@@ -22,51 +22,82 @@ class ChannelChanger(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(manage_channels=True)
-    async def addvc(self, ctx: commands.Context, majority: float = 0.5):
+    async def addvc(self, ctx: commands.Context, channel: discord.VoiceChannel = None, majority: float = 0.5):
         """Adds a voice channel to the watchlist.
-        Optional: add a number between 0 and 1 for amount of people needed to play the game
+        Optionally provide a channel ID/mention. Defaults to your current VC.
+        Optional: add a number between 0 and 1 for amount of people needed to play the game (only if providing channel ID/mention).
         """
-        if not ctx.author.voice or not ctx.author.voice.channel:
-            await ctx.send("You must be in a voice channel to use this command.")
+        target_channel = channel # Start with the provided channel
+
+        # If no channel argument was provided, try using the author's current VC
+        if target_channel is None:
+            if ctx.author.voice and ctx.author.voice.channel:
+                target_channel = ctx.author.voice.channel
+            else:
+                await ctx.send("You must be in a voice channel or provide a channel ID/mention.")
+                return
+
+        # Ensure the resolved target is actually a voice channel
+        if not isinstance(target_channel, discord.VoiceChannel):
+            await ctx.send("The provided ID/mention does not point to a valid voice channel in this guild.")
+            return
+            
+        # Ensure the bot can see the channel (discord.py converter usually handles this, but double check)
+        if target_channel.guild != ctx.guild:
+             await ctx.send("That channel is not in this guild.")
+             return
+
+        if not 0 <= majority <= 1:
+            await ctx.send("You must enter a number between 0 and 1 for the majority threshold.")
             return
 
-        if not 0 <= majority <= 1: # Simplified range check
-            await ctx.send("You must enter a number between 0 and 1.")
-            return
-
-        channel = ctx.author.voice.channel
-        channel_id_str = str(channel.id) # Store as string ID
+        channel_id_str = str(target_channel.id) # Use string ID
 
         # Get existing channel data
         existing_channels = await self.config.guild(ctx.guild).channels()
 
         if channel_id_str in existing_channels:
-             await ctx.send(f"`{channel.name}` is already being watched. Updating settings.")
+             await ctx.send(f"`{target_channel.name}` is already being watched. Updating settings.")
 
         # Add/Update the channel data with string ID
         existing_channels[channel_id_str] = {
-            "name": channel.name, # Store original name
+            "name": target_channel.name, # Store original name
             "majority": majority,
             "template": "X - Y" # Default template
         }
 
         # Save updated channel data
         await self.config.guild(ctx.guild).channels.set(existing_channels)
-        await ctx.send(f"Successfully added `{channel.name}` to my list.")
-
-    # --- Unimplemented Commands (Placeholders) ---
+        await ctx.send(f"Successfully added `{target_channel.name}` to my list with majority threshold {majority:.0%}.")
 
     @commands.command()
     @commands.has_permissions(manage_channels=True)
-    async def removevc(self, ctx):
-        """Removes a voice channel from the watchlist (WIP)."""
-        # Implementation needed: Get channel, get config, remove channel ID key, save config
-        if not ctx.author.voice or not ctx.author.voice.channel:
-            await ctx.send("You must be in a voice channel to use this command.")
-            return
+    async def removevc(self, ctx: commands.Context, channel: discord.VoiceChannel = None):
+        """Removes a voice channel from the watchlist.
+        Optionally provide a channel ID/mention. Defaults to your current VC.
+        """
+        target_channel = channel # Start with the provided channel
 
-        channel = ctx.author.voice.channel
-        channel_id_str = str(channel.id) # Use string ID for lookup
+        # If no channel argument was provided, try using the author's current VC
+        if target_channel is None:
+            if ctx.author.voice and ctx.author.voice.channel:
+                target_channel = ctx.author.voice.channel
+            else:
+                await ctx.send("You must be in a voice channel or provide a channel ID/mention.")
+                return
+
+        # Ensure the resolved target is actually a voice channel
+        if not isinstance(target_channel, discord.VoiceChannel):
+            await ctx.send("The provided ID/mention does not point to a valid voice channel in this guild.")
+            return
+            
+        # Ensure the bot can see the channel
+        if target_channel.guild != ctx.guild:
+             await ctx.send("That channel is not in this guild.")
+             return
+
+
+        channel_id_str = str(target_channel.id) # Use string ID for lookup
 
         # Get existing channel data
         existing_channels = await self.config.guild(ctx.guild).channels()
@@ -74,9 +105,11 @@ class ChannelChanger(commands.Cog):
         if channel_id_str in existing_channels:
             del existing_channels[channel_id_str] # Remove the channel
             await self.config.guild(ctx.guild).channels.set(existing_channels) # Save changes
-            await ctx.send(f"Successfully removed `{channel.name}` from my list.")
+            await ctx.send(f"Successfully removed `{target_channel.name}` from my list.")
         else:
-            await ctx.send(f"`{channel.name}` is not currently being watched.")
+            await ctx.send(f"`{target_channel.name}` is not currently being watched.")
+
+    # --- Unimplemented Commands (Placeholders) ---
 
     @commands.command()
     @commands.has_permissions(manage_channels=True)
