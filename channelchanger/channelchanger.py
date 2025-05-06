@@ -20,11 +20,6 @@ class ChannelChanger(commands.Cog):
         }
         self.config.register_guild(**default_guild)
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print(f'Logged in as {self.bot.user} (ID: {self.bot.user.id})')
-        print('------')
-
     @commands.command()
     @commands.has_permissions(manage_channels=True)
     async def addvc(self, ctx: commands.Context, majority: float = 0.5):
@@ -66,7 +61,22 @@ class ChannelChanger(commands.Cog):
     async def removevc(self, ctx):
         """Removes a voice channel from the watchlist (WIP)."""
         # Implementation needed: Get channel, get config, remove channel ID key, save config
-        await ctx.send("Command not possible yet")
+        if not ctx.author.voice or not ctx.author.voice.channel:
+            await ctx.send("You must be in a voice channel to use this command.")
+            return
+
+        channel = ctx.author.voice.channel
+        channel_id_str = str(channel.id) # Use string ID for lookup
+
+        # Get existing channel data
+        existing_channels = await self.config.guild(ctx.guild).channels()
+
+        if channel_id_str in existing_channels:
+            del existing_channels[channel_id_str] # Remove the channel
+            await self.config.guild(ctx.guild).channels.set(existing_channels) # Save changes
+            await ctx.send(f"Successfully removed `{channel.name}` from my list.")
+        else:
+            await ctx.send(f"`{channel.name}` is not currently being watched."
 
     @commands.command()
     @commands.has_permissions(manage_channels=True)
