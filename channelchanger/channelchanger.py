@@ -87,6 +87,7 @@ class ChannelChanger(commands.Cog):
 
         # Get existing channel data
         existing_channels = await self.config.guild(ctx.guild).channels()
+        print(existing_channels)
 
         if channelid in existing_channels:
             del existing_channels[channelid] # Remove the channel
