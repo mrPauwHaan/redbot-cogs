@@ -229,4 +229,147 @@ class ChannelChanger(commands.Cog):
     @commands.has_permissions(manage_channels=True)
     async def changingchannels(self, ctx: commands.Context):
         """See all channels that change based on activity."""
-        channel_configs = await self.config.guild(
+        channel_configs = await self.config.guild(ctx.guild).channels()
+        if not channel_configs:
+            await ctx.send("No voice channels are currently being watched in this guild.")
+            return
+
+        message = "Watching the following voice channels:\n"
+        for channel_id, config in channel_configs.items():
+            # Attempt to fetch the channel by ID in case it was deleted
+            channel = ctx.guild.get_channel(int(channel_id))
+            # Prefer the current channel name if it exists, otherwise use the stored name, fallback to ID
+            channel_name = channel.name if channel else config.get("name", f"Unknown Channel (ID: {channel_id})")
+
+            message += f"- `{channel_name}` (Majority: {config.get('majority', 0.5):.0%}, Template: `{config.get('template', 'X - Y')}`)\n"
+
+        # Split message if too long
+        if len(message) > 2000:
+             messages = [message[i:i+2000] for i in range(0, len(message), 2000)]
+             for msg in messages:
+                 await ctx.send(msg)
+        else:
+            await ctx.send(message)
+
+
+    # --- Helper function to determine majority game ---
+    async def get_majority_game(self, channel: discord.VoiceChannel, majority_percent: float, ignored_statuses: list):
+        """Determines the majority game being played in a voice channel."""
+        games = {}
+        user_count = 0
+
+        active_members = [m for m in channel.members if not m.bot]
+        user_count = len(active_members)
+
+        if user_count == 0:
+            return None
+
+        for member in active_members:
+            for activity in member.activities:
+                if isinstance(activity, discord.Activity) and activity.type == discord.ActivityType.playing and activity.name not in ignored_statuses:
+                    game_name = activity.name
+                    games[game_name] = games.get(game_name, 0) + 1
+                    break
+
+        if not games:
+             return None
+
+        majority_name = ""
+        majority_number = 0
+        for game, count in games.items():
+            if count > majority_number:
+                majority_number = count
+                majority_name = game
+
+        if majority_number / user_count >= majority_percent:
+            return majority_name
+        else:
+            return None
+
+
+    # --- Helper function to scan and update a single channel ---
+    async def scan_one(self, channel: discord.VoiceChannel, channel_configs: dict):
+        """Scans a single voice channel and updates its name if needed."""
+        # This function requires a valid discord.VoiceChannel object
+
+        guild = channel.guild
+        guild_config = await self.config.guild(guild).get_raw()
+        ignored_statuses = guild_config.get("ignoredStatus", ["Spotify", "Custom Status"])
+
+        channel_id_str = str(channel.id)
+        channel_config = channel_configs.get(channel_id_str)
+
+        if not channel_config:
+             print(f"Scan requested for channel {channel.name} ({channel.id}) in guild {guild.name} but not found in config. Skipping.")
+             return
+
+        original_name = channel_config.get("name", channel.name)
+        majority_threshold = channel_config.get("majority", 0.5)
+        template = channel_config.get("template", "X - Y")
+
+        members_amount = len(channel.members)
+
+        new_title = original_name
+
+        if members_amount > 0:
+            game_title = await self.get_majority_game(channel, majority_threshold, ignored_statuses)
+
+            if game_title:
+                template_to_use = channel_config.get("template", "X - Y")
+                name_for_template = channel_config.get("name", channel.name)
+                new_title = template_to_use.replace("X", name_for_template).replace("Y", game_title)
+
+
+        if channel.name != new_title:
+            try:
+                await channel.edit(name=new_title)
+                print(f"Changed channel {channel.name} name to {new_title} in guild {guild.name}")
+            except discord.Forbidden:
+                print(f"Bot lacks permissions (Manage Channels) to rename channel {channel.name} ({channel.id}) in guild {guild.name}.")
+            except discord.HTTPException as e:
+                print(f"Failed to change channel name for {channel.name} ({channel.id}): {e} in guild {guild.name}")
+
+
+    # --- Listeners ---
+
+    @commands.Cog.listener(name='on_voice_state_update')
+    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+        """Handles users joining, leaving, or moving voice channels."""
+        guild = member.guild
+        if not guild:
+             return
+
+        channel_configs = await self.config.guild(guild).channels()
+
+        if after.channel and str(after.channel.id) in channel_configs:
+            # Ensure the channel object is valid before scanning
+            if guild.get_channel(after.channel.id): # after.channel should be valid here
+                 await self.scan_one(after.channel, channel_configs)
+            else:
+                 # This case is highly unlikely for 'after.channel' as it's the channel the user *is in*
+                 print(f"User joined channel {after.channel.id} but channel object is not found. Cannot scan.")
+
+
+        if before.channel and str(before.channel.id) in channel_configs and before.channel != after.channel:
+            # Ensure the channel object is valid before scanning (user left/moved from this one)
+            if guild.get_channel(before.channel.id):
+                 await self.scan_one(before.channel, channel_configs)
+            else:
+                 # Channel was deleted, listener triggered but can't scan.
+                 # The config entry remains and can be removed with the removevc command using the ID.
+                 print(f"User left channel {before.channel.id} which seems to be deleted. Cannot scan.")
+
+
+    @commands.Cog.listener(name='on_presence_update')
+    async def on_presence_update(self, before: discord.Member, after: discord.Member):
+        """Handles users changing their activity (playing a game)."""
+        guild = after.guild
+        if not guild or not after.voice or not after.voice.channel:
+            return
+
+        channel = after.voice.channel
+        channel_configs = await self.config.guild(guild).channels()
+
+        if str(channel.id) in channel_configs:
+            # after.voice.channel should always be a valid object if the user is in VC
+            await self.scan_one(channel, channel_configs)
