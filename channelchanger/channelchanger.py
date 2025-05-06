@@ -163,14 +163,25 @@ class ChannelChanger(commands.Cog):
             return None # No game reached the required majority
 
 
-    # --- Helper function to scan and update a single channel ---
+   # --- Helper function to scan and update a single channel ---
+    # Updated docstring as we are changing the status
     async def scan_one(self, channel: discord.VoiceChannel, channel_configs: dict):
-        """Scans a single voice channel and updates its topic if needed.""" # Updated docstring
+        """Scans a single voice channel and updates its status if needed."""
+
+        # --- Compatibility Check (Optional but Recommended) ---
+        # Ensure the channel object actually supports the 'status' attribute.
+        # This helps if the cog is loaded on a discord.py version older than v2.3.
+        if not hasattr(channel, 'status'):
+            print(f"Warning: Channel {channel.name} (ID: {channel.id}) of type {type(channel).__name__} does not support the 'status' attribute in this discord.py version.")
+            print("Please ensure your bot is running discord.py v2.3 or newer to use this feature.")
+            # Consider informing the guild owner via a message or log if this happens often
+            return # Cannot proceed if status isn't supported
+
 
         # Get guild config using the channel object
         guild_config = await self.config.guild(channel.guild).get_raw()
         # Ensure ignored_statuses is always a list even if config is missing or None
-        ignored_statuses = guild_config.get("ignoredStatus")
+        ignored_statuses = guild_config.get("ignoredStatus", ["Spotify", "Custom Status"]) or ["Spotify", "Custom Status"]
 
 
         # Get specific channel config using string ID
@@ -178,73 +189,67 @@ class ChannelChanger(commands.Cog):
         channel_config = channel_configs.get(channel_id_str)
 
         if not channel_config:
-             # This channel might have been removed from config but listener fired
-             # Or it was never added. Should not happen if called correctly from listeners
-             # but defensive check is good.
              print(f"Scan requested for channel {channel.id} but not found in config.")
              return
 
-        original_name = channel_config.get("name", channel.name) # Use stored name or current if missing
+        # Use stored name (needed for template X) or current if missing
+        original_name = channel_config.get("name", channel.name)
         majority_threshold = channel_config.get("majority", 0.5)
         template = channel_config.get("template", "X - Y")
 
 
         members_amount = len(channel.members)
 
-        # Default status is the original name
-        # Renamed new_title to new_status for clarity
-        new_status = original_name
+        # Determine the new status string
+        # Discord API docs suggest setting status to null/empty string when channel is empty.
+        # We can set it based on activity when members are present, and revert or use original name when not.
+        new_status = "" # Default to empty status if no members or no majority game found
 
         if members_amount > 0:
-            # Get the majority game, filtering ignored statuses within the function
+            # Get the majority game, filtering ignored statuses
             game_title = await self.get_majority_game(channel, majority_threshold, ignored_statuses)
 
             if game_title: # If a game met the majority threshold and was not ignored
                  # Construct the new status string using the template
-                 template_to_use = channel_config.get("template", "X - Y") # Use .get() again for safety
+                 template_to_use = channel_config.get("template", "X - Y")
                  # Replace X with original name, Y with game title
                  new_status = template_to_use.replace("X", original_name).replace("Y", game_title)
-            # else: # No majority game, new_status remains original_name (or the original name plus placeholder if template includes Y but game_title is None)
-            # A better fallback might be just the original_name if template contains Y and game_title is None
-            elif 'Y' in template:
-                 # If template expects a game but none is found, revert to original name or simple template
-                 if 'X' in template:
-                      new_status = template.replace("X", original_name).replace("Y", "") # Remove Y placeholder
-                 else:
-                      new_status = original_name # Fallback entirely if template is weird
+            # else: new_status remains "" (empty string)
 
 
-        # Ensure the new status string does not exceed Discord's topic limit (1024 characters)
-        if len(new_status) > 1024:
-            new_status = new_status[:1021] + "..." # Truncate and add ellipsis
+        # Discord voice channel status limit is 100 characters
+        if len(new_status) > 100:
+            new_status = new_status[:97] + "..." # Truncate and add ellipsis
 
-        # Update the channel topic only if it's different and bot has permission
-        # Check against channel.topic, not channel.name
-        if channel.topic != new_status:
+
+        # Update the channel status only if it's different and bot has permission
+        # Check against channel.status. channel.status might be None if no status is currently set.
+        current_status = channel.status if channel.status is not None else "" # Treat None as empty string for comparison
+
+        if current_status != new_status:
             # Check bot's permissions for this specific channel
             bot_member = channel.guild.me
-            # Changing topic requires manage_channels permission
+            # Changing status requires manage_channels permission
             if not channel.permissions_for(bot_member).manage_channels:
-                print(f"Bot lacks manage_channels permission for channel {channel.name} in guild {channel.guild.name}. Cannot change topic.")
+                print(f"Bot lacks manage_channels permission for channel {channel.name} in guild {channel.guild.name}. Cannot change status.")
                 # Consider adding a way to inform the guild owner about this missing permission.
                 return # Exit scan_one if no permission
 
             try:
-                # Discord has a rate limit for topic changes (usually 1 change per 1 minute per channel)
+                # Discord has a rate limit for status changes (usually 1 change per minute per channel)
                 # Rapid changes might hit this. Consider adding cooldowns if needed.
                 # (Not implemented here, but be aware)
-                await channel.edit(topic=new_status) # Change topic= instead of name=
-                print(f"Changed channel `{channel.name}` (ID: {channel.id}) topic to `{new_status}`")
+                await channel.edit(status=new_status) # *** CHANGE IS HERE ***
+                print(f"Changed channel `{channel.name}` (ID: {channel.id}) status to `{new_status}`")
             except discord.Forbidden:
                 # This should ideally be caught by the permission check above, but included as a fallback
-                print(f"Bot lacks permissions to change topic for channel {channel.name} in guild {channel.guild.name}.")
+                print(f"Bot lacks permissions to change status for channel {channel.name} in guild {channel.guild.name}.")
             except discord.HTTPException as e:
-                # This might catch rate limits or other API errors (like topic too long, though we truncated)
-                print(f"Failed to change channel topic for {channel.name} (ID: {channel.id}): {e}")
+                # This might catch rate limits or other API errors (like status too long, though we truncated)
+                print(f"Failed to change channel status for {channel.name} (ID: {channel.id}): {e}")
             except Exception as e:
                 # Catch any other unexpected errors
-                print(f"An unexpected error occurred changing topic for channel {channel.name} (ID: {channel.id}): {e}")
-
+                print(f"An unexpected error occurred changing status for channel {channel.name} (ID: {channel.id}): {e}")
 
     # --- Listeners ---
 
