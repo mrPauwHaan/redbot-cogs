@@ -149,7 +149,10 @@ class usercard(Cog):
         )
         align_text_center = functools.partial(self.align_text_center, draw)
 
-        doc = self.Frappeclient.get_list('Member', fields = ['name'], filters = {'discord_id': _object.id})
+        try:
+            doc = self.Frappeclient.get_list('Member', fields = ['name'], filters = {'discord_id': _object.id})
+        except:
+            doc = None
         if doc:
             member = self.Frappeclient.get_doc("Member", doc[0]['name'])
         
@@ -327,7 +330,10 @@ class usercard(Cog):
         # Data.
         if isinstance(_object, (discord.Member)):
             # lidmaatschap
-            doc = self.Frappeclient.get_list('Member', fields = ['name'], filters = {'discord_id': _object.id})
+            try:
+                doc = self.Frappeclient.get_list('Member', fields = ['name'], filters = {'discord_id': _object.id})
+            except:
+                doc = None
             if doc:
                 member = self.Frappeclient.get_doc("Member", doc[0]['name'])
 
