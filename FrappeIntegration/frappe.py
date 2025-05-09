@@ -455,7 +455,7 @@ class Frappe(commands.Cog):
                     if data["events"] == prevamount:
                         description = description + data["icon"] + '<@' + data["member"] + '> ' + '\n'
                     else:
-                            description = description + f'\n{str(data["events"])} event{'s' if data["events"] > 1 else ''}\n{data["icon"]}<@{data["member"]}>\n'
+                            description = description + f'\n{str(data["events"])} event{"s" if data["events"] > 1 else ''}\n{data["icon"]}<@{data["member"]}>\n'
                     prevamount = data["events"]
 
                 embed.title = "Check systeem op eventrollen"
