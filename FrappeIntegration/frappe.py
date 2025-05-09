@@ -487,9 +487,9 @@ class Frappe(commands.Cog):
                     if not deelnemer['payment_status'] == "Cancelled":
                         amount = amount + 1
                         if deelnemer['payment_status'] == "Completed":
-                            data = data + "\n <@" + deelnemer['discord_id'] + "> "
+                            data = data + f"\n <@{deelnemer['discord_id']}>"
                         else: 
-                            data = data + "\n <:min:1137646894827454565> <@" + deelnemer['discord_id'] + "> "
+                            data = data + f"\n <:min:1137646894827454565> <@{deelnemer['discord_id']}>"
                         if deelnemer['pakket1']:
                             data = data + "(BBQ only)"
                         else:
