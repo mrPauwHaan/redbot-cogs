@@ -519,13 +519,13 @@ class Frappe(commands.Cog):
         data = ""
         amount = 0
         if eventcheck:
-            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "discord_id", "dieetwensen", "ideeen", "opmerkingen", "payment_status"], filters = {'event':event}, order_by = 'creation desc')
+            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "discord_id", "dieetwensen_ideeën_voor_tussendoortjes_etc", "ideeën_voor_het_event", "opmerkingen", "payment_status"], filters = {'event':event}, order_by = 'creation desc')
             embed = discord.Embed()
             if deelnemers:
                 for deelnemer in deelnemers:
                     if not deelnemer['payment_status'] == "Cancelled":
-                        eten_part = f'\n **Eten:**{deelnemer["dieetwensen"]}' if deelnemer.get('dieetwensen') else ''
-                        dieet_part = f'\n **Ideeën:**{deelnemer["ideeen"]}' if deelnemer.get('ideeen') else ''
+                        eten_part = f'\n **Eten:**{deelnemer["dieetwensen_ideeën_voor_tussendoortjes_etc"]}' if deelnemer.get('dieetwensen_ideeën_voor_tussendoortjes_etc') else ''
+                        dieet_part = f'\n **Ideeën:**{deelnemer["ideeën_voor_het_event"]}' if deelnemer.get('ideeën_voor_het_event') else ''
                         opmerkingen_part = f'\n **Opmerkingen:**{deelnemer["opmerkingen"]}' if deelnemer.get('opmerkingen') else ''
                         data = data + f"\n\n <@{deelnemer['discord_id']}>  {eten_part}{dieet_part}{opmerkingen_part}"
             else:
