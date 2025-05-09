@@ -505,7 +505,7 @@ class Frappe(commands.Cog):
         else:
             events = self.Frappeclient.get_list('Beheer events', fields = ['event_name'], order_by = 'creation desc')
             for event in events:
-                    data = data + '\n `"' + event['event_name'] + '"`'
+                    data = data + f"\n `{event['event_name']}`" 
             return await ctx.send("Event niet gevonden. Zorg dat je de volledige titel invult tussen aanhalingstekens \n\n __**Alle events:**__ " +str(data))
     
     @events.command()
