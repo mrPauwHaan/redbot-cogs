@@ -488,7 +488,7 @@ class Frappe(commands.Cog):
                             data = data + "(BBQ only)"
                         else:
                             data = data + f"({deelnemer['aankomst']} - {deelnemer['vertrek']})"
-                data = str(amount) + " aanmeldingen \n" + data + "\n\n" + "-# <:min:1137646894827454565> betekent niet betaald"
+                data = str(amount) + " aanmeldingen \n" + data + f"{'\n\n -# <:min:1137646894827454565> betekent niet betaald' if betalingen == 1 else ''}"
             else:
                 data = "Geen deelnemers gevonden"
             embed.description = data
