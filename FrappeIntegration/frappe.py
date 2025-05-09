@@ -519,14 +519,12 @@ class Frappe(commands.Cog):
         data = ""
         amount = 0
         if eventcheck:
-            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "discord_id", "dieetwensen", "ideeen", "opmerkingen"], filters = {'event':event}, order_by = 'creation desc')
+            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "discord_id", "dieetwensen", "ideeen", "opmerkingen", "payment_status"], filters = {'event':event}, order_by = 'creation desc')
             embed = discord.Embed()
             if deelnemers:
                 for deelnemer in deelnemers:
                     if not deelnemer['payment_status'] == "Cancelled":
-                        amount = amount + 1
-                        if deelnemer['payment_status'] == "Completed":
-                            data = data + f"\n\n <@{deelnemer['discord_id']}> \n **Eten:** {deelnemer['dieetwensen']} \n **Ideeën:** {deelnemer['ideeen']} \n **Opmerkingen:** {deelnemer['opmerkingen']}"
+                        data = data + f"\n\n <@{deelnemer['discord_id']}> \n **Eten:** {deelnemer['dieetwensen']} \n **Ideeën:** {deelnemer['ideeen']} \n **Opmerkingen:** {deelnemer['opmerkingen']}"
             else:
                 data = "Geen deelnemers gevonden"
             embed.description = data
