@@ -458,7 +458,7 @@ class Frappe(commands.Cog):
                         if data["events"] == 1:
                             description = description + '\n' + str(data["events"]) + ' event\n' + data["icon"] + '<@' + data["member"] + '> ' + '\n'
                         else:
-                            description = description + '\n' + str(data["events"]) + ' events\n' + data["icon"] + '<@' + data["member"] + '> ' + '\n'
+                            description = description + f"\n{str(data["events"])} events\n{data["icon"]}<@{data["member"]}>\n"
                     prevamount = data["events"]
 
                 embed.title = "Check systeem op eventrollen"
@@ -480,7 +480,7 @@ class Frappe(commands.Cog):
         data = ""
         amount = 0
         if eventcheck:
-            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "payment_status", "discord_id", "pakket1", "vertrek", "aankomst"], filters = {'event':event}, order_by = 'creation desc')
+            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "payment_status", "discord_id", "pakket1", "vertrek", "aankomst"], filters = {'event':event}, order_by = 'creation asc')
             embed = discord.Embed()
             if deelnemers:
                 for deelnemer in deelnemers:
