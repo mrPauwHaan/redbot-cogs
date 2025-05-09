@@ -455,9 +455,6 @@ class Frappe(commands.Cog):
                     if data["events"] == prevamount:
                         description = description + data["icon"] + '<@' + data["member"] + '> ' + '\n'
                     else:
-                        if data["events"] == 1:
-                            description = description + '\n' + str(data["events"]) + ' event\n' + data["icon"] + '<@' + data["member"] + '> ' + '\n' 
-                        else:
                             description = description + f'\n{str(data["events"])} event{'s' if data["events"] > 1 else ''}\n{data["icon"]}<@{data["member"]}>\n'
                     prevamount = data["events"]
 
