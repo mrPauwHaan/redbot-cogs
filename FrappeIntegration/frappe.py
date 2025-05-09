@@ -524,7 +524,10 @@ class Frappe(commands.Cog):
             if deelnemers:
                 for deelnemer in deelnemers:
                     if not deelnemer['payment_status'] == "Cancelled":
-                        data = data + f"\n\n <@{deelnemer['discord_id']}>  {('\n **Eten:**' +deelnemer['dieetwensen']) if deelnemer.get('dieetwensen') is not None else ''}\n **Ideeën:** {deelnemer['ideeen']} \n **Opmerkingen:** {deelnemer['opmerkingen']}"
+                        eten_part = f'\n **Eten:**{deelnemer["dieetwensen"]}' if deelnemer.get('dieetwensen') is not None else ''
+                        dieet_part = f'\n **Ideeën:**{deelnemer["ideeen"]}' if deelnemer.get('ideeen') is not None else ''
+                        opmerkingen_part = f'\n **Opmerkingen:**{deelnemer["opmerkingen"]}' if deelnemer.get('opmerkingen') is not None else ''
+                        data = data + f"\n\n <@{deelnemer['discord_id']}>  {eten_part}{dieet_part}{opmerkingen_part}"
             else:
                 data = "Geen deelnemers gevonden"
             embed.description = data
