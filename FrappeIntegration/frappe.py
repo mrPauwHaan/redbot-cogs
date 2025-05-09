@@ -507,3 +507,35 @@ class Frappe(commands.Cog):
             for event in events:
                     data = data + '\n `"' + event['event_name'] + '"`'
             return await ctx.send("Event niet gevonden. Zorg dat je de volledige titel invult tussen aanhalingstekens \n\n __**Alle events:**__ " +str(data))
+    
+    @events.command()
+    @commands.has_permissions(administrator=True)
+    async def opmerkingen(self, ctx: commands.Context, event: str = None):
+        """Krijg een lijst van de opmerkingen, dieetwensen en ideeën voor een specifiek event"""
+        deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event"], order_by = 'creation desc')
+        if not event:
+            event = deelnemers[0]['event']
+        eventcheck = self.Frappeclient.get_value("Beheer events", "event_name", {"event_name": event})
+        data = ""
+        amount = 0
+        if eventcheck:
+            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "discord_id", "dieetwensen", "ideeen", "opmerkingen"], filters = {'event':event}, order_by = 'creation desc')
+            embed = discord.Embed()
+            if deelnemers:
+                for deelnemer in deelnemers:
+                    if not deelnemer['payment_status'] == "Cancelled":
+                        amount = amount + 1
+                        if deelnemer['payment_status'] == "Completed":
+                            data = data + f"\n\n <@{deelnemer['discord_id']}> \n **Eten:** {deelnemer['dieetwensen']} \n **Ideeën:** {deelnemer['ideeen']} \n **Opmerkingen:** {deelnemer['opmerkingen']}"
+            else:
+                data = "Geen deelnemers gevonden"
+            embed.description = data
+            embed.title = event + " deelnemers:"
+            embed.colour = int("ff0502", 16)
+            embed.set_footer(text="© Shadowzone Gaming")
+            await ctx.send(embed=embed)
+        else:
+            events = self.Frappeclient.get_list('Beheer events', fields = ['event_name'], order_by = 'creation desc')
+            for event in events:
+                    data = data + '\n `"' + event['event_name'] + '"`'
+            return await ctx.send("Event niet gevonden. Zorg dat je de volledige titel invult tussen aanhalingstekens \n\n __**Alle events:**__ " +str(data))
