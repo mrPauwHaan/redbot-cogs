@@ -455,7 +455,7 @@ class Frappe(commands.Cog):
                     if data["events"] == prevamount:
                         description = description + data["icon"] + '<@' + data["member"] + '> ' + '\n'
                     else:
-                            description = description + f'\n{str(data["events"])} event{"s" if data["events"] > 1 else ""}\n{data["icon"]}<@{data["member"]}>\n'
+                        description = description + f'\n{str(data["events"])} event{"s" if data["events"] > 1 else ""}\n{data["icon"]}<@{data["member"]}>\n'
                     prevamount = data["events"]
 
                 embed.title = "Check systeem op eventrollen"
@@ -468,7 +468,7 @@ class Frappe(commands.Cog):
 
     @events.command()
     @commands.has_permissions(administrator=True)
-    async def aanmeldingen(self, ctx: commands.Context, event: str = None):
+    async def aanmeldingen(self, ctx: commands.Context, event: str = None, betalingen: int = 1):
         """Krijg een lijst van de aanmeldingen voor een specifiek event"""
         deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event"], order_by = 'creation desc')
         if not event:
@@ -483,10 +483,7 @@ class Frappe(commands.Cog):
                 for deelnemer in deelnemers:
                     if not deelnemer['payment_status'] == "Cancelled":
                         amount = amount + 1
-                        if deelnemer['payment_status'] == "Completed":
-                            data = data + f"\n <@{deelnemer['discord_id']}>"
-                        else: 
-                            data = data + f"\n <:min:1137646894827454565> <@{deelnemer['discord_id']}>"
+                        data = data + f"\n f'{"<:min:1137646894827454565>" if deelnemer['payment_status'] == "Completed" else ""}' <@{deelnemer['discord_id']}>"
                         if deelnemer['pakket1']:
                             data = data + "(BBQ only)"
                         else:
