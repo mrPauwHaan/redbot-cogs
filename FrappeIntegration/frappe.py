@@ -524,10 +524,11 @@ class Frappe(commands.Cog):
             if deelnemers:
                 for deelnemer in deelnemers:
                     if not deelnemer['payment_status'] == "Cancelled":
-                        eten_part = f'\n **Eten:**{deelnemer["dieetwensen_ideeën_voor_tussendoortjes_etc"]}' if deelnemer.get('dieetwensen_ideeën_voor_tussendoortjes_etc') else ''
-                        dieet_part = f'\n **Ideeën:**{deelnemer["ideeën_voor_het_event"]}' if deelnemer.get('ideeën_voor_het_event') else ''
-                        opmerkingen_part = f'\n **Opmerkingen:**{deelnemer["opmerkingen"]}' if deelnemer.get('opmerkingen') else ''
-                        data = data + f"\n\n <@{deelnemer['discord_id']}>  {eten_part}{dieet_part}{opmerkingen_part}"
+                        eten_part = f'\n **Eten:** {deelnemer["dieetwensen_ideeën_voor_tussendoortjes_etc"]}' if deelnemer.get('dieetwensen_ideeën_voor_tussendoortjes_etc') else ''
+                        dieet_part = f'\n **Ideeën:** {deelnemer["ideeën_voor_het_event"]}' if deelnemer.get('ideeën_voor_het_event') else ''
+                        opmerkingen_part = f'\n **Opmerkingen:** {deelnemer["opmerkingen"]}' if deelnemer.get('opmerkingen') else ''
+                        if eten_part or dieet_part or opmerkingen_part:
+                            data = data + f"\n\n <@{deelnemer['discord_id']}>  {eten_part}{dieet_part}{opmerkingen_part}"
             else:
                 data = "Geen deelnemers gevonden"
             embed.description = data
