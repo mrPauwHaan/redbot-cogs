@@ -69,8 +69,8 @@ class Frappe(commands.Cog):
                 if member['geboortedatum']:
                     geboortedatum = datetime.datetime.strptime(member['geboortedatum'], '%Y-%m-%d').date()
                     if geboortedatum.day == today.day and geboortedatum.month == today.month:
-                        member = ctx.guild.get_member(int(member['discord_id']))
-                        await member.add_roles(role, reason="Vandaag jarig")
+                        discordmember = ctx.guild.get_member(int(member['discord_id']))
+                        await discordmember.add_roles(role, reason="Vandaag jarig")
                         content = {
                             "discord_id": member['discord_id']
                         }
