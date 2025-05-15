@@ -74,16 +74,14 @@ class Frappe(commands.Cog):
             if response['result']:
                 for birthdaymember in role.members:
                     if birthdaymember not in response['result']:
-                        await birthdaymember.remove_roles(role, reason="Birthday is over")
+                        await birthdaymember.remove_roles(role, reason="Verjaardag is voorbij")
                 
                 for birthday in response['result']:
-                    message = await ctx.send(birthday['content'])
-                    await message.add_reaction("🥳")
                     member = ctx.guild.get_member(int(birthday['discord_id']))
-                    await member.add_roles(role, reason="Birthday starts today")
+                    await member.add_roles(role, reason="Vandaag jarig")
             else:
                 for birthdaymember in role.members:
-                    await birthdaymember.remove_roles(role, reason="Birthday is over")
+                    await birthdaymember.remove_roles(role, reason="Verjaardag is voorbij")
             pass
 
         else:
