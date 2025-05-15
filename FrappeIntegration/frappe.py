@@ -80,7 +80,8 @@ class Frappe(commands.Cog):
 
             for birthdaymember in role.members:
                 if birthdaymember not in data:
-                    await birthdaymember.remove_roles(role, reason="Verjaardag is voorbij")
+                    print(data)
+                    await birthdaymember.remove_roles(role, reason="Verjaardag voorbij")
         
     @frappe.command(aliases=["banner"])
     @commands.is_owner()
