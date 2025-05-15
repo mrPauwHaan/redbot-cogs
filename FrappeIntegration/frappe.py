@@ -78,12 +78,8 @@ class Frappe(commands.Cog):
                     elif member['discord_id'] in role.members:
                         await birthdaymember.remove_roles(role, reason="Verjaardag is voorbij")
 
-            if data:
-                for birthdaymember in role.members:
-                    if birthdaymember not in data:
-                        await birthdaymember.remove_roles(role, reason="Verjaardag is voorbij")
-            else:
-                for birthdaymember in role.members:
+            for birthdaymember in role.members:
+                if birthdaymember not in data:
                     await birthdaymember.remove_roles(role, reason="Verjaardag is voorbij")
         
     @frappe.command(aliases=["banner"])
