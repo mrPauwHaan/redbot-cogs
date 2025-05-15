@@ -57,35 +57,34 @@ class Frappe(commands.Cog):
     @frappe.command(aliases=["bd"])
     @commands.has_permissions(manage_channels=True)
     async def birthday(self, ctx: commands.Context):
-        frappe_keys = await self.bot.get_shared_api_tokens("frappe")
         """Get birthdays of today"""
-        if frappe_keys.get("api_key") is None:
-            return await ctx.send("The Frappe API key has not been set. Use `[p]set api` to do this.")
-        api_key =  frappe_keys.get("api_key")
-        api_secret = frappe_keys.get("api_secret")
-        headers = {'Authorization': 'token ' +api_key+ ':' +api_secret}
-        api = requests.get('http://shadowzone.nl/api/method/birthday', headers=headers)
-
-        if api.status_code == 200:
-            response = api.json()
+        members = self.Frappeclient.get_list('Member', fields = ['discord_id', 'geboortedatum', 'custom_status'], filters = {'custom_status':'Actief'})
+        
+        if members:
+            today = datetime.date.today()
             role = ctx.guild.get_role(943779141688381470)
-            
-            
-            if response['result']:
-                for birthdaymember in role.members:
-                    if birthdaymember not in response['result']:
+            data = []
+
+            for member in members:
+                if member['geboortedatum']:
+                    geboortedatum = datetime.datetime.strptime(member['geboortedatum'], '%Y-%m-%d').date()
+                    if geboortedatum.day == today.day and geboortedatum.month == today.month:
+                        member = ctx.guild.get_member(int(member['discord_id']))
+                        await member.add_roles(role, reason="Vandaag jarig")
+                        content = {
+                            "discord_id": member['discord_id']
+                        }
+                        data.append(content)
+                    elif member['discord_id'] in role.members:
                         await birthdaymember.remove_roles(role, reason="Verjaardag is voorbij")
-                
-                for birthday in response['result']:
-                    member = ctx.guild.get_member(int(birthday['discord_id']))
-                    await member.add_roles(role, reason="Vandaag jarig")
+
+            if data:
+                for birthdaymember in role.members:
+                    if birthdaymember not in data:
+                        await birthdaymember.remove_roles(role, reason="Verjaardag is voorbij")
             else:
                 for birthdaymember in role.members:
                     await birthdaymember.remove_roles(role, reason="Verjaardag is voorbij")
-            pass
-
-        else:
-            return await ctx.send("Status code:" +str(api.status_code))
         
     @frappe.command(aliases=["banner"])
     @commands.is_owner()
