@@ -171,7 +171,7 @@ class ChannelChanger(commands.Cog):
         # Get guild config using the channel object
         guild_config = await self.config.guild(channel.guild).get_raw()
         # Use .get() with default, simplified as discussed
-        ignored_statuses = guild_config.get("ignoredStatus", ["Spotify", "Custom Status"])
+        ignored_statuses = guild_config.get("ignoredStatus", ["Spotify", "Custom Status", "Medal"])
 
 
         # Get specific channel config using string ID
