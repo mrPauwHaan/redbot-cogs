@@ -16,7 +16,7 @@ class ChannelChanger(commands.Cog):
         )
         default_guild = {
             "channels": {}, # Channel ID (str) -> {"name": str, "majority": float, "template": str}
-            "ignoredStatus": ["Spotify", "Custom Status"]
+            "ignoredStatus": ["Spotify", "Custom Status", "Medal"]
         }
         self.config.register_guild(**default_guild)
 
