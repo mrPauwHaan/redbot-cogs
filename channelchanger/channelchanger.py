@@ -157,7 +157,7 @@ class ChannelChanger(commands.Cog):
 
 
         # Check if the most played game meets the majority threshold
-        if majority_number / user_count >= majority_percent: # Use >= for threshold
+        if majority_number / user_count > majority_percent:
             return majority_name
         else:
             return None # No game reached the required majority
