@@ -205,7 +205,6 @@ class Frappe(commands.Cog):
         scheduled_events = await ctx.guild.fetch_scheduled_events()
         for event in scheduled_events:
             doc_args = {
-                "event_id": str(scheduled_event.id),
                 "title": scheduled_event.name,
                 "description": scheduled_event.description,
                 "start_time": scheduled_event.start_time,
@@ -216,6 +215,7 @@ class Frappe(commands.Cog):
 
             existing = self.Frappeclient.get_list('Discord events', fields = ['name'], filters = {'event_id': scheduled_event.id}, limit_page_length=float('inf'))
             if existing:
+                doc_args['event_id'] = str(scheduled_event.id)
                 doc = self.Frappeclient.get_doc('Discord events', existing['name'])
                 self.Frappeclient.update(**doc_args)
             else: 
