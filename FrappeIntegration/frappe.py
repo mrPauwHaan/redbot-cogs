@@ -150,9 +150,40 @@ class Frappe(commands.Cog):
                     await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
                     return
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now():
+                    
+                    local_timezone = pytz.timezone('Europe/Amsterdam')
+                    start_time_dt = local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc)
+                    end_time_dt = local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc)
+
+                    event_args = {
+                    "name": event['title'],
+                    "description": event['description'],
+                    "start_time": start_time_dt,
+                    "end_time": end_time_dt,
+                    "privacy_level": discord.PrivacyLevel.guild_only,
+                    }
+
+                    if event['image']:
+                        image = "http://shadowzone.nl/" + event['image']
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(image) as resp:
+                                if resp.status == 200:
+                                    image_data = await resp.read()
+                                    event_args["image"] = image_data
+                                else:
+                                    await ctx.send(f"[{event['title']}] Kan afbeelding niet downloaden")
+                                    return
+
+                    if 'location' in event and event['location']:
+                        event_args["entity_type"] = discord.EntityType.external
+                        event_args["location"] = event['location']
+                    elif 'channel' in event and event['channel']:
+                        event_args["channel"] = ctx.guild.get_channel(int(event['channel']))
+                    
                     if event['event_id']:
                         try:
                             scheduled_event = await ctx.guild.fetch_scheduled_event(int(event['event_id']))
+                            scheduled_event.edit(**event_args)
                         except discord.errors.NotFound:
                             doc = self.Frappeclient.get_doc('Discord events', event['name'])
                             doc['event_id'] = None
@@ -162,42 +193,8 @@ class Frappe(commands.Cog):
                             return
 
                     if not event['event_id']:
-                        local_timezone = pytz.timezone('Europe/Amsterdam')
-                        
-                        start_parsed_dt_aware = local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S"))
-                        start_time_dt = start_parsed_dt_aware.astimezone(datetime.timezone.utc)
-
-                        end_parsed_dt_aware = local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S"))
-                        end_time_dt = end_parsed_dt_aware.astimezone(datetime.timezone.utc)
-
-                        event_args = {
-                        "name": event['title'],
-                        "description": event['description'],
-                        "start_time": start_time_dt,
-                        "end_time": end_time_dt,
-                        "privacy_level": discord.PrivacyLevel.guild_only,
-                        }
-                        
-
-                        if event['image']:
-                            image = "http://shadowzone.nl/" + event['image']
-                            async with aiohttp.ClientSession() as session:
-                                async with session.get(image) as resp:
-                                    if resp.status == 200:
-                                        image_data = await resp.read()
-                                        event_args["image"] = image_data
-                                    else:
-                                        await ctx.send(f"[{event['title']}] Kan afbeelding niet downloaden")
-                                        return
-
-                        if 'location' in event and event['location']:
-                            event_args["entity_type"] = discord.EntityType.external
-                            event_args["location"] = event['location']
-                        elif 'channel' in event and event['channel']:
-                            event_args["channel"] = ctx.guild.get_channel(int(event['channel']))
-
                         scheduled_event = await ctx.guild.create_scheduled_event(**event_args)
-                        
+                    
                         doc = self.Frappeclient.get_doc('Discord events', event['name'])
                         doc['event_id'] = str(scheduled_event.id)
                         self.Frappeclient.update(doc)
