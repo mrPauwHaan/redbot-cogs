@@ -62,7 +62,7 @@ class Frappe(commands.Cog):
         Adds role to members whose birthday is today and removes role
         from members who have the role but their birthday is not today.
         """
-        frappe_members = self.Frappeclient.get_list('Member', fields=['discord_id', 'geboortedatum', 'custom_status'], filters={'custom_status': 'Actief'})
+        frappe_members = self.Frappeclient.get_list('Member', fields=['discord_id', 'geboortedatum', 'custom_status'], filters={'custom_status': 'Actief'}, limit_page_length=float('inf'))
         role = ctx.guild.get_role(943779141688381470)
         today = datetime.date.today()
 
@@ -95,7 +95,7 @@ class Frappe(commands.Cog):
     @commands.is_owner()
     async def serverbanner(self, ctx: commands.Context):
         """Update server banner based on database"""
-        response = self.Frappeclient.get_list('Discord server banners', fields = ['name', 'banner'], filters = {'datum':str(datetime.date.today())})
+        response = self.Frappeclient.get_list('Discord server banners', fields = ['name', 'banner'], filters = {'datum':str(datetime.date.today())}, limit_page_length=float('inf'))
         if response:
             banner_url = "http://shadowzone.nl/" + response[0]['banner']
             async with aiohttp.ClientSession() as session:
@@ -118,7 +118,7 @@ class Frappe(commands.Cog):
     @commands.is_owner()
     async def steljezelfvoor(self, ctx: commands.Context):
         """Send stel jezelf voor berichten"""
-        response = self.Frappeclient.get_list('Stel jezelf voor planner', filters = {'concept': 0}, fields = ['concept', 'name', 'dag', 'titel', 'url', 'text', 'url_ai'])
+        response = self.Frappeclient.get_list('Stel jezelf voor planner', filters = {'concept': 0}, fields = ['concept', 'name', 'dag', 'titel', 'url', 'text', 'url_ai'], limit_page_length=float('inf'))
         
         channel = ctx.guild.get_channel(1053344324487761980)
         if response:
@@ -142,7 +142,7 @@ class Frappe(commands.Cog):
     async def contributie(self, ctx: commands.Context, jaar: int):
         """Check of contributie betaald is"""
         if jaar > 2018:
-            data = self.Frappeclient.get_list('Member', fields = ['name', 'membership_type','member_name', 'custom_achternaam', 'custom_status', 'custom_startdatum_donateur', 'custom_einddatum_donateur', 'custom_begin_datum', 'custom_start_lidmaatschap', 'custom_einde_datum'], order_by = 'member_name asc', filters=None, limit_start=0, limit_page_length=float('inf'),)
+            data = self.Frappeclient.get_list('Member', fields = ['name', 'membership_type','member_name', 'custom_achternaam', 'custom_status', 'custom_startdatum_donateur', 'custom_einddatum_donateur', 'custom_begin_datum', 'custom_start_lidmaatschap', 'custom_einde_datum'], order_by = 'member_name asc', filters=None, limit_start=0, limit_page_length=float('inf'))
             if data:
                 message = ""
                 aantal = 0
@@ -472,14 +472,14 @@ class Frappe(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def aanmeldingen(self, ctx: commands.Context, event: str = None, betalingen: int = 1):
         """Krijg een lijst van de aanmeldingen voor een specifiek event"""
-        deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event"], order_by = 'creation desc')
+        deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event"], order_by = 'creation desc', limit_page_length=float('inf'))
         if not event:
             event = deelnemers[0]['event']
         eventcheck = self.Frappeclient.get_value("Beheer events", "event_name", {"event_name": event})
         data = ""
         amount = 0
         if eventcheck:
-            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "payment_status", "discord_id", "pakket1", "vertrek", "aankomst"], filters = {'event':event}, order_by = 'creation asc')
+            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "payment_status", "discord_id", "pakket1", "vertrek", "aankomst"], filters = {'event':event}, order_by = 'creation asc', limit_page_length=float('inf'))
             embed = discord.Embed()
             if deelnemers:
                 for deelnemer in deelnemers:
@@ -499,7 +499,7 @@ class Frappe(commands.Cog):
             embed.set_footer(text="© Shadowzone Gaming")
             await ctx.send(embed=embed)
         else:
-            events = self.Frappeclient.get_list('Beheer events', fields = ['event_name'], order_by = 'creation desc')
+            events = self.Frappeclient.get_list('Beheer events', fields = ['event_name'], order_by = 'creation desc', limit_page_length=float('inf'))
             for event in events:
                     data = data + f"\n `{event['event_name']}`" 
             return await ctx.send("Event niet gevonden. Zorg dat je de volledige titel invult tussen aanhalingstekens \n\n __**Alle events:**__ " +str(data))
@@ -508,14 +508,14 @@ class Frappe(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def opmerkingen(self, ctx: commands.Context, event: str = None):
         """Krijg een lijst van de opmerkingen, dieetwensen en ideeën voor een specifiek event"""
-        deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event"], order_by = 'creation desc')
+        deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event"], order_by = 'creation desc', limit_page_length=float('inf'))
         if not event:
             event = deelnemers[0]['event']
         eventcheck = self.Frappeclient.get_value("Beheer events", "event_name", {"event_name": event})
         data = ""
         amount = 0
         if eventcheck:
-            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "discord_id", "dieetwensen_ideeën_voor_tussendoortjes_etc", "ideeën_voor_het_event", "opmerkingen", "payment_status"], filters = {'event':event}, order_by = 'creation desc')
+            deelnemers = self.Frappeclient.get_list('Event deelnemers', fields = ["event", "discord_id", "dieetwensen_ideeën_voor_tussendoortjes_etc", "ideeën_voor_het_event", "opmerkingen", "payment_status"], filters = {'event':event}, order_by = 'creation desc', limit_page_length=float('inf'))
             embed = discord.Embed()
             if deelnemers:
                 for deelnemer in deelnemers:
@@ -533,7 +533,7 @@ class Frappe(commands.Cog):
             embed.set_footer(text="© Shadowzone Gaming")
             await ctx.send(embed=embed)
         else:
-            events = self.Frappeclient.get_list('Beheer events', fields = ['event_name'], order_by = 'creation desc')
+            events = self.Frappeclient.get_list('Beheer events', fields = ['event_name'], order_by = 'creation desc', limit_page_length=float('inf'))
             for event in events:
                     data = data + '\n `"' + event['event_name'] + '"`'
             return await ctx.send("Event niet gevonden. Zorg dat je de volledige titel invult tussen aanhalingstekens \n\n __**Alle events:**__ " +str(data))
