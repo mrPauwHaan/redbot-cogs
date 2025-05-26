@@ -183,7 +183,7 @@ class Frappe(commands.Cog):
                     if event['event_id']:
                         try:
                             scheduled_event = await ctx.guild.fetch_scheduled_event(int(event['event_id']))
-                            scheduled_event.edit(**event_args)
+                            await scheduled_event.edit(**event_args)
                         except discord.errors.NotFound:
                             doc = self.Frappeclient.get_doc('Discord events', event['name'])
                             doc['event_id'] = None
