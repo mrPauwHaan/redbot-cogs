@@ -8,7 +8,6 @@ import aiohttp
 import io
 from frappeclient import FrappeClient
 import pytz
-from discord.errors import NotFound, HTTPException
 
 
 class Frappe(commands.Cog):
@@ -154,11 +153,11 @@ class Frappe(commands.Cog):
                     if event['event_id']:
                         try:
                             scheduled_event = await ctx.guild.fetch_scheduled_event(int(event['event_id']))
-                        except NotFound:
+                        except discord.errors.NotFound:
                             doc = self.Frappeclient.get_doc('Discord events', event['name'])
                             doc['event_id'] = None
                             self.Frappeclient.update(doc)
-                        except HTTPException:
+                        except discord.errors.HTTPException:
                             await ctx.send(f"[{event['title']}] Niet gelukt event op te halen")
                             return
 
