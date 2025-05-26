@@ -175,7 +175,7 @@ class Frappe(commands.Cog):
                                     image_data = await resp.read()
                                     event_args["image"] = image_data
                                 else:
-                                    await ctx.send(f'[{event['title']}] Kan afbeelding niet downloaden')
+                                    await ctx.send(f"[{event['title']}] Kan afbeelding niet downloaden")
                                     return
 
                     if 'location' in event and event['location']:
