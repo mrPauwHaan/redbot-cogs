@@ -220,7 +220,7 @@ class Frappe(commands.Cog):
                 self.Frappeclient.update(**doc_args)
             else: 
                 doc_args['doctype'] = 'Discord events'
-                self.Frappeclient.insert(**doc_args)
+                self.Frappeclient.insert(doc_args)
 
 
     @frappe.command()
