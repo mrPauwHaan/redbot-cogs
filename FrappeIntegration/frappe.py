@@ -216,8 +216,8 @@ class Frappe(commands.Cog):
 
             existing = self.Frappeclient.get_list('Discord events', fields=['name'], filters={'event_id': event.id}, limit_page_length=float('inf'))
             if existing:
-                doc_name_to_update = existing[0]['name']
-                self.Frappeclient.update('Discord events', doc_name_to_update, doc_args)
+                doc = self.Frappeclient.get_doc('Discord events', event['name'])
+                self.Frappeclient.update(doc_args)
             else:
                 doc_args['doctype'] = 'Discord events'
                 self.Frappeclient.insert(doc_args)
