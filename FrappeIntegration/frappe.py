@@ -157,7 +157,6 @@ class Frappe(commands.Cog):
                 event_args = {
                 "name": event['title'],
                 "description": event['description'],
-                "channel": event['channel'],
                 "start_time": start_time_dt,
                 "end_time": end_time_dt,
                 "privacy_level": discord.PrivacyLevel.guild_only,
