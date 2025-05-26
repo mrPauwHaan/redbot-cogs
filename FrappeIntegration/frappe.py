@@ -146,7 +146,7 @@ class Frappe(commands.Cog):
         if response:
             image_data = None
             for event in response:
-                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d').date() >= datetime.date.today():
+                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S').date() >= datetime.date.today():
                     local_timezone = pytz.timezone('Europe/Amsterdam')
                     
                     start_parsed_dt_aware = local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S"))
