@@ -174,7 +174,7 @@ class Frappe(commands.Cog):
                                     continue
 
                     if 'location' in event and event['location']:
-                        if ctx.guild.get_channel(int(event['location']))
+                        if ctx.guild.get_channel(int(event['location'])):
                             event_args["channel"] = ctx.guild.get_channel(int(event['location']))
                         else:
                             event_args["entity_type"] = discord.EntityType.external
