@@ -148,9 +148,8 @@ class Frappe(commands.Cog):
             for event in response:
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S'):
                     await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
-                    return
+                    continue
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now():
-                    
                     local_timezone = pytz.timezone('Europe/Amsterdam')
                     start_time_dt = local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc)
                     end_time_dt = local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc)
@@ -172,7 +171,7 @@ class Frappe(commands.Cog):
                                     event_args["image"] = image_data
                                 else:
                                     await ctx.send(f"[{event['title']}] Kan afbeelding niet downloaden")
-                                    return
+                                    continue
 
                     if 'location' in event and event['location']:
                         event_args["entity_type"] = discord.EntityType.external
@@ -183,17 +182,16 @@ class Frappe(commands.Cog):
                     if event['event_id']:
                         try:
                             scheduled_event = await ctx.guild.fetch_scheduled_event(int(event['event_id']))
-                            await scheduled_event.edit(**event_args)
+                            if event['override_check'] == 1:
+                                await scheduled_event.edit(**event_args)
                         except discord.errors.NotFound:
-                            doc = self.Frappeclient.get_doc('Discord events', event['name'])
-                            doc['event_id'] = None
-                            self.Frappeclient.update(doc)
+                            self.Frappeclient.delete('Discord events', event['name'])
+                            continue
                         except discord.errors.HTTPException:
                             await ctx.send(f"[{event['title']}] Niet gelukt event op te halen")
                         except:
                             await ctx.send(f"[{event['title']}] Bijwerken mislukt")
-
-                    if not event['event_id']:
+                    else:
                         scheduled_event = await ctx.guild.create_scheduled_event(**event_args)
                     
                         doc = self.Frappeclient.get_doc('Discord events', event['name'])
@@ -214,8 +212,8 @@ class Frappe(commands.Cog):
                 "event_id": str(event.id)
             }
 
-            existing = self.Frappeclient.get_list('Discord events', fields=['name'], filters={'event_id': event.id}, limit_page_length=float('inf'))
-            if existing:
+            existing = self.Frappeclient.get_list('Discord events', fields=['name', 'override_check'], filters={'event_id': event.id}, limit_page_length=float('inf'))
+            if existing and existing[0]['override_check'] == 0:
                 doc_to_update = self.Frappeclient.get_doc('Discord events', existing[0]['name'])
                 for key, value in doc_args.items():
                     doc_to_update[key] = value
@@ -223,6 +221,12 @@ class Frappe(commands.Cog):
             else:
                 doc_args['doctype'] = 'Discord events'
                 self.Frappeclient.insert(doc_args)
+        
+        all_discord_events = self.Frappeclient.get_list('Discord events', filters = {'override_check': 1}, fields=['name', 'override_check'], limit_page_length=float('inf'))
+        for event_doc in all_discord_events:
+            doc = self.Frappeclient.get_doc('Discord events', event_doc['name'])
+            doc['override_check'] = 0
+            self.Frappeclient.update(doc)
 
 
     @frappe.command()
