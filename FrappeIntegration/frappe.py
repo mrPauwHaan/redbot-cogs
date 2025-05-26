@@ -8,6 +8,7 @@ import aiohttp
 import io
 from frappeclient import FrappeClient
 import pytz
+from discord.errors import NotFound, HTTPException
 
 
 class Frappe(commands.Cog):
