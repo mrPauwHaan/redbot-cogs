@@ -169,11 +169,12 @@ class Frappe(commands.Cog):
                 await ctx.guild.create_scheduled_event(
                 name = event['title'],
                 description = event['description'],
+                channel = event['channel'],
                 start_time = start_time_dt,
                 end_time = end_time_dt,
                 privacy_level = discord.PrivacyLevel.guild_only,
-                channel = event['channel'],
-                location = event['location']
+        #        image = image_data,
+        #        location = event['location']
                 )
 
 
