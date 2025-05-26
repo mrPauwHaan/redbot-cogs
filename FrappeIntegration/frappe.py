@@ -137,7 +137,7 @@ class Frappe(commands.Cog):
                         await channel.create_thread(name = aankondiging['titel'], content = aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
                         self.Frappeclient.delete('Stel jezelf voor planner', aankondiging['name'])
     
-    @frappe.command(aliases=["banner"])
+    @frappe.command()
     @commands.is_owner()
     async def serverevent(self, ctx: commands.Context):
         """Update server events op basis van database"""
