@@ -144,13 +144,14 @@ class Frappe(commands.Cog):
         response = self.Frappeclient.get_list('Discord events', fields = ['*'], filters = {'concept': 0}, limit_page_length=float('inf'))
         if response:
             for event in response:
-                image = "http://shadowzone.nl/" + event['image']
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(image) as resp:
-                        if resp.status == 200:
-                            image_data = await resp.read()
-                        else:
-                            await ctx.send("Failed to download the banner image")
+                if event['image']:
+                    image = "http://shadowzone.nl/" + event['image']
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(image) as resp:
+                            if resp.status == 200:
+                                image_data = await resp.read()
+                            else:
+                                await ctx.send("Failed to download the banner image")
 
                 await ctx.guild.create_scheduled_event(
                 name = event['title'],
