@@ -146,10 +146,10 @@ class Frappe(commands.Cog):
         if response:
             image_data = None
             for event in response:
-                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S').date() > datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S').date():
+                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S'):
                     await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
                     return
-                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S').date() >= datetime.date.today():
+                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.date.now():
                     local_timezone = pytz.timezone('Europe/Amsterdam')
                     
                     start_parsed_dt_aware = local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S"))
@@ -184,7 +184,13 @@ class Frappe(commands.Cog):
                     elif 'channel' in event and event['channel']:
                         event_args["channel"] = ctx.guild.get_channel(int(event['channel']))
 
-                    await ctx.guild.create_scheduled_event(**event_args)
+                    scheduled_event = await ctx.guild.create_scheduled_event(**event_args)
+                    
+                    doc = self.Frappeclient.get_doc('Discord server banners', event['name'])
+                    doc['event_id'] = str(scheduled_event.id)
+                    self.Frappeclient.update(doc)
+                else:
+                    self.Frappeclient.delete('Stel jezelf voor planner', event['name'])
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
