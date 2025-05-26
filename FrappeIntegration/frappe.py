@@ -147,7 +147,7 @@ class Frappe(commands.Cog):
             image_data = None
             for event in response:
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S').date() > datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S').date():
-                    await ctx.send(f'[{event['title']}] Starttijd moet voor eindtijd zijn')
+                    await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
                     return
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S').date() >= datetime.date.today():
                     local_timezone = pytz.timezone('Europe/Amsterdam')
