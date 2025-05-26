@@ -149,7 +149,7 @@ class Frappe(commands.Cog):
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S'):
                     await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
                     return
-                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.date.now():
+                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now():
                     local_timezone = pytz.timezone('Europe/Amsterdam')
                     
                     start_parsed_dt_aware = local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S"))
