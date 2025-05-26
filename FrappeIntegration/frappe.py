@@ -190,7 +190,8 @@ class Frappe(commands.Cog):
                             self.Frappeclient.update(doc)
                         except discord.errors.HTTPException:
                             await ctx.send(f"[{event['title']}] Niet gelukt event op te halen")
-                            return
+                        except:
+                            await ctx.send(f"[{event['title']}] Bijwerken mislukt")
 
                     if not event['event_id']:
                         scheduled_event = await ctx.guild.create_scheduled_event(**event_args)
