@@ -143,6 +143,7 @@ class Frappe(commands.Cog):
         """Update server events op basis van database"""
         response = self.Frappeclient.get_list('Discord events', fields = ['*'], filters = {'concept': 0}, limit_page_length=float('inf'))
         if response:
+            image_data = None
             for event in response:
                 if event['image']:
                     image = "http://shadowzone.nl/" + event['image']
