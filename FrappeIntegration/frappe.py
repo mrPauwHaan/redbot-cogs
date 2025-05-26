@@ -177,10 +177,8 @@ class Frappe(commands.Cog):
 
                 if 'location' in event and event['location']:
                     event_args["location"] = event['location']
-                    event_args["entity_type"] = discord.EntityType.external
                 elif 'channel' in event and event['channel']:
                     event_args["channel"] = ctx.guild.get_channel(int(event['channel']))
-                    event_args["entity_type"] = discord.EntityType.voice
 
                 await ctx.guild.create_scheduled_event(**event_args)
 
