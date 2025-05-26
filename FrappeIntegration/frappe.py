@@ -186,11 +186,11 @@ class Frappe(commands.Cog):
 
                     scheduled_event = await ctx.guild.create_scheduled_event(**event_args)
                     
-                    doc = self.Frappeclient.get_doc('Discord server banners', event['name'])
+                    doc = self.Frappeclient.get_doc('Discord events', event['name'])
                     doc['event_id'] = str(scheduled_event.id)
                     self.Frappeclient.update(doc)
-                else:
-                    self.Frappeclient.delete('Stel jezelf voor planner', event['name'])
+    #            else:
+    #                self.Frappeclient.delete('Discord events', event['name'])
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
