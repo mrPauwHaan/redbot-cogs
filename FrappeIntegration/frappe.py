@@ -154,12 +154,23 @@ class Frappe(commands.Cog):
                                 image_data = await resp.read()
                             else:
                                 await ctx.send("Failed to download the banner image")
-                await ctx.send(event['start_time'])
+
+                local_timezone = pytz.timezone('Europe/Amsterdam')
+                
+                start_parsed_dt_naive = datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")
+                parsed_dt_aware_local = local_timezone.localize(start_parsed_dt_naive)
+                start_time_dt = parsed_dt_aware_local.astimezone(datetime.timezone.utc)
+
+                end_parsed_dt_naive = datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")
+                parsed_dt_aware_local = local_timezone.localize(end_parsed_dt_naive)
+                end_time_dt = parsed_dt_aware_local.astimezone(datetime.timezone.utc)
+
+
                 await ctx.guild.create_scheduled_event(
                 name = event['title'],
                 description = event['description'],
-                start_time = event['start_time'],
-                end_time = event['end_time'],
+                start_time = start_time_dt,
+                end_time = end_time_dt,
                 privacy_level = discord.PrivacyLevel.guild_only,
                 image = image_data,
                 channel = event['channel'],
