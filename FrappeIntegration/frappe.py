@@ -146,41 +146,42 @@ class Frappe(commands.Cog):
         if response:
             image_data = None
             for event in response:
-                local_timezone = pytz.timezone('Europe/Amsterdam')
-                
-                start_parsed_dt_aware = local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S"))
-                start_time_dt = start_parsed_dt_aware.astimezone(datetime.timezone.utc)
+                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d').date() >= datetime.date.today():
+                    local_timezone = pytz.timezone('Europe/Amsterdam')
+                    
+                    start_parsed_dt_aware = local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S"))
+                    start_time_dt = start_parsed_dt_aware.astimezone(datetime.timezone.utc)
 
-                end_parsed_dt_aware = local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S"))
-                end_time_dt = end_parsed_dt_aware.astimezone(datetime.timezone.utc)
+                    end_parsed_dt_aware = local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S"))
+                    end_time_dt = end_parsed_dt_aware.astimezone(datetime.timezone.utc)
 
-                event_args = {
-                "name": event['title'],
-                "description": event['description'],
-                "start_time": start_time_dt,
-                "end_time": end_time_dt,
-                "privacy_level": discord.PrivacyLevel.guild_only,
-                }
-                
+                    event_args = {
+                    "name": event['title'],
+                    "description": event['description'],
+                    "start_time": start_time_dt,
+                    "end_time": end_time_dt,
+                    "privacy_level": discord.PrivacyLevel.guild_only,
+                    }
+                    
 
-                if event['image']:
-                    image = "http://shadowzone.nl/" + event['image']
-                    async with aiohttp.ClientSession() as session:
-                        async with session.get(image) as resp:
-                            if resp.status == 200:
-                                image_data = await resp.read()
-                                event_args["image"] = image_data
-                            else:
-                                await ctx.send("Failed to download the banner image")
-                                return
+                    if event['image']:
+                        image = "http://shadowzone.nl/" + event['image']
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(image) as resp:
+                                if resp.status == 200:
+                                    image_data = await resp.read()
+                                    event_args["image"] = image_data
+                                else:
+                                    await ctx.send("Failed to download the banner image")
+                                    return
 
-                if 'location' in event and event['location']:
-                    event_args["entity_type"] = discord.EntityType.external
-                    event_args["location"] = event['location']
-                elif 'channel' in event and event['channel']:
-                    event_args["channel"] = ctx.guild.get_channel(int(event['channel']))
+                    if 'location' in event and event['location']:
+                        event_args["entity_type"] = discord.EntityType.external
+                        event_args["location"] = event['location']
+                    elif 'channel' in event and event['channel']:
+                        event_args["channel"] = ctx.guild.get_channel(int(event['channel']))
 
-                await ctx.guild.create_scheduled_event(**event_args)
+                    await ctx.guild.create_scheduled_event(**event_args)
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
