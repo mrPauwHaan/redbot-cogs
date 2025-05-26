@@ -233,7 +233,7 @@ class Frappe(commands.Cog):
                 doc_args['doctype'] = 'Discord events'
                 try:
                     self.Frappeclient.insert(doc_args)
-                except:
+                except Exception as e:
                     await ctx.send(f"[{event.name}] Onverwachte fout bij invoegen nieuw event in Frappe: {e}. Data: {doc_args}")
 
 
