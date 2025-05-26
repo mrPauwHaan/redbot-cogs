@@ -174,10 +174,11 @@ class Frappe(commands.Cog):
                                     continue
 
                     if 'location' in event and event['location']:
-                        event_args["entity_type"] = discord.EntityType.external
-                        event_args["location"] = event['location']
-                    elif 'channel' in event and event['channel']:
-                        event_args["channel"] = ctx.guild.get_channel(int(event['channel']))
+                        if ctx.guild.get_channel(int(event['location']))
+                            event_args["channel"] = ctx.guild.get_channel(int(event['location']))
+                        else:
+                            event_args["entity_type"] = discord.EntityType.external
+                            event_args["location"] = event['location']
                     
                     if event['event_id']:
                         try:
@@ -207,8 +208,7 @@ class Frappe(commands.Cog):
                 "description": event.description,
                 "start_time": event.start_time.astimezone(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
                 "end_time": event.end_time.astimezone(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S') if event.end_time else None,
-                "channel": event.channel.id if event.channel else None,
-                "location": event.location,
+                "location": event.channel.id if event.channel else event.location,
                 "event_id": str(event.id)
             }
 
