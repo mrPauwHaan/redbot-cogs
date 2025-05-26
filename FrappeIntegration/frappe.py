@@ -146,6 +146,9 @@ class Frappe(commands.Cog):
         if response:
             image_data = None
             for event in response:
+                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S').date() > datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S').date():
+                    await ctx.send(f'[{event['title']}] Starttijd moet voor eindtijd zijn')
+                    return
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S').date() >= datetime.date.today():
                     local_timezone = pytz.timezone('Europe/Amsterdam')
                     
@@ -172,7 +175,7 @@ class Frappe(commands.Cog):
                                     image_data = await resp.read()
                                     event_args["image"] = image_data
                                 else:
-                                    await ctx.send("Failed to download the banner image")
+                                    await ctx.send(f'[{event['title']}] Kan afbeelding niet downloaden')
                                     return
 
                     if 'location' in event and event['location']:
