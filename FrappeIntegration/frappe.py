@@ -201,6 +201,19 @@ class Frappe(commands.Cog):
                         self.Frappeclient.update(doc)
                 else:
                     self.Frappeclient.delete('Discord events', event['name'])
+        
+        scheduled_events = await ctx.guild.fetch_scheduled_events()
+        for event in scheduled_events:
+            doc = self.Frappeclient.get_doc('Discord events', event['name'])
+
+            doc['event_id'] = str(scheduled_event.id)
+            doc['title'] = scheduled_event.name
+            doc['start_time'] = scheduled_event.start_time
+            doc['end_time'] = scheduled_event.end_time
+            doc['channel'] = scheduled_event.channel
+            doc['location'] = scheduled_event.location
+            doc['description'] = scheduled_event.description
+            self.Frappeclient.update(doc)
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
