@@ -217,10 +217,10 @@ class Frappe(commands.Cog):
                 doc_to_update = self.Frappeclient.get_doc('Discord events', existing[0]['name'])
                 if existing[0]['override_check'] == 0:
                     for key, value in doc_args.items():
-                        doc_to_update['override_check'] = 0
+                        doc_to_update[key] = value
                     self.Frappeclient.update(doc_to_update)
                 else:
-                    doc_to_update[key] = value
+                    doc_to_update['override_check'] = 0
                     self.Frappeclient.update(doc_to_update)
 
             else:
