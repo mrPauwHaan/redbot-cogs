@@ -7,6 +7,7 @@ from dateutil.relativedelta import relativedelta
 import aiohttp
 import io
 from frappeclient import FrappeClient
+import pytz
 
 
 class Frappe(commands.Cog):
@@ -153,12 +154,21 @@ class Frappe(commands.Cog):
                                 image_data = await resp.read()
                             else:
                                 await ctx.send("Failed to download the banner image")
+                try:
+                    start_time = datetime.fromisoformat(event['start_time'])
+                    if start_time.tzinfo is None:
+                        start_time = start_time.replace(tzinfo=pytz.UTC)
+                    end_time = datetime.fromisoformat(event['end_time'])
+                    if end_time.tzinfo is None:
+                        end_time = end_time.replace(tzinfo=pytz.UTC)
+                except ValueError:
+                    pass
 
                 await ctx.guild.create_scheduled_event(
                 name = event['title'],
                 description = event['description'],
-                start_time = event['start_time'],
-                end_time = event['end_time'],
+                start_time = start_time,
+                end_time = end_time,
                 privacy_level = discord.PrivacyLevel.guild_only,
                 image = image_data,
                 channel = event['channel'],
