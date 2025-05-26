@@ -172,7 +172,6 @@ class Frappe(commands.Cog):
                 start_time = start_time_dt,
                 end_time = end_time_dt,
                 privacy_level = discord.PrivacyLevel.guild_only,
-                image = image_data,
                 channel = event['channel'],
                 location = event['location']
                 )
