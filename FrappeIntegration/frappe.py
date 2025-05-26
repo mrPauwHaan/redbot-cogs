@@ -207,8 +207,8 @@ class Frappe(commands.Cog):
             doc_args = {
                 "title": event.name,
                 "description": event.description,
-                "start_time": event.start_time.isoformat(),
-                "end_time": event.end_time.isoformat() if event.end_time else None,
+                "start_time": event.start_time.astimezone(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+                "end_time": event.end_time.astimezone(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S') if event.end_time else None,
                 "channel": event.channel.id if event.channel else None,
                 "location": event.location,
                 "event_id": str(event.id)
