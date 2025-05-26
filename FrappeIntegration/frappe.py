@@ -213,20 +213,19 @@ class Frappe(commands.Cog):
             }
 
             existing = self.Frappeclient.get_list('Discord events', fields=['name', 'override_check'], filters={'event_id': event.id}, limit_page_length=float('inf'))
-            if existing and existing[0]['override_check'] == 0:
+            if existing:
                 doc_to_update = self.Frappeclient.get_doc('Discord events', existing[0]['name'])
-                for key, value in doc_args.items():
+                if existing[0]['override_check'] == 0:
+                    for key, value in doc_args.items():
+                        doc_to_update['override_check'] = 0
+                    self.Frappeclient.update(doc_to_update)
+                else:
                     doc_to_update[key] = value
-                self.Frappeclient.update(doc_to_update)
+                    self.Frappeclient.update(doc_to_update)
+
             else:
                 doc_args['doctype'] = 'Discord events'
                 self.Frappeclient.insert(doc_args)
-        
-        all_discord_events = self.Frappeclient.get_list('Discord events', filters = {'override_check': 1}, fields=['name', 'override_check'], limit_page_length=float('inf'))
-        for event_doc in all_discord_events:
-            doc = self.Frappeclient.get_doc('Discord events', event_doc['name'])
-            doc['override_check'] = 0
-            self.Frappeclient.update(doc)
 
 
     @frappe.command()
