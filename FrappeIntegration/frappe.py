@@ -155,7 +155,7 @@ class Frappe(commands.Cog):
                             scheduled_event = ctx.guild.fetch_scheduled_event(int(event['event_id']))
                         except NotFound:
                             doc = self.Frappeclient.get_doc('Discord events', event['name'])
-                            doc['event_id'] = None
+                            doc['event_id'] = ""
                             self.Frappeclient.update(doc)
                         except HTTPException:
                             await ctx.send(f"[{event['title']}] Niet gelukt event op te halen")
