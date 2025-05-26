@@ -136,6 +136,33 @@ class Frappe(commands.Cog):
                     else:
                         await channel.create_thread(name = aankondiging['titel'], content = aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
                         self.Frappeclient.delete('Stel jezelf voor planner', aankondiging['name'])
+    
+    @frappe.command(aliases=["banner"])
+    @commands.is_owner()
+    async def serverevent(self, ctx: commands.Context):
+        """Update server events op basis van database"""
+        response = self.Frappeclient.get_list('Discord events', fields = ['*'], filters = {'concept': 0}, limit_page_length=float('inf'))
+        if response:
+            for event in response:
+                image = "http://shadowzone.nl/" + event['image']
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(image) as resp:
+                        if resp.status == 200:
+                            image_data = await resp.read()
+                        else:
+                            await ctx.send("Failed to download the banner image")
+
+                await ctx.guild.create_scheduled_event(
+                name = event['title'],
+                description = event['description'],
+                start_time = event['start_time'],
+                end_time = event['end_time'],
+                privacy_level = discord.PrivacyLevel.guild_only,
+                image = image_data,
+                channel = event['channel'],
+                location = event['location']
+                )
+
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
