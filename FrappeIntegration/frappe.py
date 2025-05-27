@@ -183,9 +183,10 @@ class Frappe(commands.Cog):
                             event_args["entity_type"] = discord.EntityType.external
                             event_args["location"] = event['location']
 
-                    if event_args["entity_type"] == discord.EntityType.external:
+                    if event_args["entity_type"] and event_args["entity_type"] == discord.EntityType.external:
                         if not event_args["end_time"]:
                             event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
+                            await ctx.send(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
                     
                     if event['event_id']:
                         try:
