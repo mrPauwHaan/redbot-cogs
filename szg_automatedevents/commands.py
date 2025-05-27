@@ -156,6 +156,7 @@ class automatedevents(commands.Cog):
         """Maak server events gepland via de database"""
         response = self.Frappeclient.get_list('Discord events', fields = ['*'], filters = {'concept': 0}, limit_page_length=float('inf'))
         if response:
+            guild = self.bot.get_guild(self.target_guild_id)
             image_data = None
             for event in response:
                 if event['end_time'] and datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S'):
@@ -197,8 +198,8 @@ class automatedevents(commands.Cog):
                     if 'location' in event and event['location']:
                         try:
                             int(event['location'])
-                            if ctx.guild.get_channel(int(event['location'])):
-                                event_args["channel"] = ctx.guild.get_channel(int(event['location']))
+                            if guild.get_channel(int(event['location'])):
+                                event_args["channel"] = guild.get_channel(int(event['location']))
                             else:
                                 event_args["entity_type"] = discord.EntityType.external
                                 event_args["location"] = event['location']
@@ -211,5 +212,5 @@ class automatedevents(commands.Cog):
                             event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
                             self.log.error(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
 
-                    await ctx.guild.create_scheduled_event(**event_args)
+                    await guild.create_scheduled_event(**event_args)
                     self.Frappeclient.delete('Discord events', event['name'])
