@@ -67,11 +67,12 @@ class Frappe(commands.Cog):
         response = self.Frappeclient.get_list('Discord server banners', fields = ['name', 'banner'], filters = {'datum':str(datetime.date.today())}, limit_page_length=float('inf'))
         if response:
             banner_url = "http://shadowzone.nl/" + response[0]['banner']
+            guild = self.bot.get_guild(self.target_guild_id)
             async with aiohttp.ClientSession() as session:
                 async with session.get(banner_url) as resp:
                     if resp.status == 200:
                         image_data = await resp.read()
-                        await ctx.guild.edit(
+                        await guild.edit(
                             banner=image_data,
                             reason=f"De server banner is veranderd naar: {response[0]['name']}",
                         )
