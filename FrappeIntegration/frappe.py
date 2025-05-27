@@ -211,15 +211,11 @@ class Frappe(commands.Cog):
         
         scheduled_events = await ctx.guild.fetch_scheduled_events()
         for event in scheduled_events:
-            await ctx.send(event.start_time)
-            api_params = {'utc_timestamp': event.start_time}
-            test = self.Frappeclient.get_api('frappe.utils.convert_utc_to_system_timezone', params=api_params)
-            await ctx.send(test)
             doc_args = {
                 "title": event.name,
                 "description": event.description,
-                "start_time": event.start_time.astimezone(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
-                "end_time": event.end_time.astimezone(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S') if event.end_time else None,
+                "start_time": event.start_time.astimezone(local_timezone).strftime('%Y-%m-%d %H:%M:%S'),
+                "end_time": event.end_time.astimezone(local_timezone).strftime('%Y-%m-%d %H:%M:%S') if event.end_time else None,
                 "location": event.channel.id if event.channel else event.location,
                 "event_id": str(event.id)
             }
