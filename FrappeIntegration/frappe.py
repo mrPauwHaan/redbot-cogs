@@ -59,6 +59,24 @@ class Frappe(commands.Cog):
         await self._serverbanner(ctx)
         await ctx.send("Update completed")
 
+    @commands.command(aliases=["banner"])
+    @commands.is_owner()
+    async def serverbanner(self, ctx: commands.Context):
+        """Update server banner based on database"""
+        await self._serverbanner(ctx)
+        await ctx.send("Update completed")
+    
+    @commands.command(aliases=["bd"])
+    @commands.has_permissions(manage_channels=True)
+    async def birthday(self, ctx: commands.Context):
+        """
+        Updates birthday roles based on Frappe data.
+        Adds role to members whose birthday is today and removes role
+        from members who have the role but their birthday is not today.
+        """
+        await self._birthday(ctx)
+        await ctx.send("Update completed")
+
     async def _serverbanner(self, ctx: commands.Context = None):
         """Update server banner based on database"""
         if not self.Frappeclient:
@@ -148,42 +166,6 @@ class Frappe(commands.Cog):
     async def frappe(self, ctx: commands.Context) -> None:
         """Commando's voor interactie met website"""
         pass
-    
-    @frappe.command(aliases=["bd"])
-    @commands.has_permissions(manage_channels=True)
-    async def birthday(self, ctx: commands.Context):
-        """
-        Updates birthday roles based on Frappe data.
-        Adds role to members whose birthday is today and removes role
-        from members who have the role but their birthday is not today.
-        """
-        frappe_members = self.Frappeclient.get_list('Member', fields=['discord_id', 'geboortedatum', 'custom_status'], filters={'custom_status': 'Actief'}, limit_page_length=float('inf'))
-        role = ctx.guild.get_role(943779141688381470)
-        today = datetime.date.today()
-
-        # Build a set of Discord IDs for members whose birthday is today according to Frappe
-        today_birthdays_discord_ids = set()
-        if frappe_members:
-            for member_data in frappe_members:
-                # Ensure 'geboortedatum' and 'discord_id' exist and are not None
-                if member_data.get('geboortedatum') and member_data.get('discord_id'):
-
-                    geboortedatum = datetime.datetime.strptime(member_data['geboortedatum'], '%Y-%m-%d').date()
-
-                    if geboortedatum.day == today.day and geboortedatum.month == today.month:
-                        # Add the discord_id (as a string) to the set
-                        today_birthdays_discord_ids.add(member_data['discord_id'])
-
-                        # Get the discord.Member object and add the role
-                        discordmember = ctx.guild.get_member(int(member_data['discord_id']))
-                        if discordmember and role not in discordmember.roles:
-                            await discordmember.add_roles(role, reason="Vandaag jarig")
-
-        # Remove the role if their ID is NOT in the set of today's birthdays
-        for birthdaymember in role.members:
-            # Check if the member's ID (as a string) is in our set of today's birthdays
-            if str(birthdaymember.id) not in today_birthdays_discord_ids:
-                await birthdaymember.remove_roles(role, reason="Verjaardag voorbij")
 
     @frappe.command()
     @commands.is_owner()
