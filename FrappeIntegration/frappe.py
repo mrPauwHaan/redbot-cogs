@@ -150,15 +150,13 @@ class Frappe(commands.Cog):
                     await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
                     continue
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now():
-                    local_timezone = pytz.timezone('Europe/Amsterdam')
-                    start_time_dt = local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc)
-                    end_time_dt = local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None
+                    local_timezone = pytz.timezone('Europe/Amsterdam')    
 
                     event_args = {
                     "name": event['title'],
                     "description": event['description'],
-                    "start_time": start_time_dt,
-                    "end_time": end_time_dt,
+                    "start_time": local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc),
+                    "end_time": local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None,
                     "privacy_level": discord.PrivacyLevel.guild_only,
                     }
 
@@ -185,6 +183,9 @@ class Frappe(commands.Cog):
                             event_args["entity_type"] = discord.EntityType.external
                             event_args["location"] = event['location']
 
+                    if event_args["entity_type"] == discord.EntityType.external:
+                        if not event_args["end_time"]:
+                            event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
                     
                     if event['event_id']:
                         try:
