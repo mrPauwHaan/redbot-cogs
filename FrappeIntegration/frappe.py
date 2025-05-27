@@ -151,8 +151,6 @@ class Frappe(commands.Cog):
                     await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
                     continue
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now():
-                    doc = self.Frappeclient.get_doc('Discord events', event['name'])
-
                     event_args = {
                     "name": event['title'],
                     "description": event['description'],
@@ -203,6 +201,7 @@ class Frappe(commands.Cog):
                             await ctx.send(f"[{event['title']}] Bijwerken mislukt")
                     else:
                         scheduled_event = await ctx.guild.create_scheduled_event(**event_args)  
+                        doc = self.Frappeclient.get_doc('Discord events', event['name'])
                         doc['event_id'] = str(scheduled_event.id)
                         self.Frappeclient.update(doc)
                 else:
@@ -216,7 +215,8 @@ class Frappe(commands.Cog):
                 "start_time": event.start_time.astimezone(local_timezone).strftime('%Y-%m-%d %H:%M:%S'),
                 "end_time": event.end_time.astimezone(local_timezone).strftime('%Y-%m-%d %H:%M:%S') if event.end_time else None,
                 "location": event.channel.id if event.channel else event.location,
-                "event_id": str(event.id)
+                "event_id": str(event.id),
+                "concept": 0
             }
 
             existing = self.Frappeclient.get_list('Discord events', fields=['name', 'override_check'], filters={'event_id': event.id}, limit_page_length=float('inf'))
@@ -229,7 +229,6 @@ class Frappe(commands.Cog):
                 else:
                     doc_to_update['override_check'] = 0
                     self.Frappeclient.update(doc_to_update)
-
             else:
                 doc_args['doctype'] = 'Discord events'
                 try:
