@@ -212,7 +212,8 @@ class Frappe(commands.Cog):
         scheduled_events = await ctx.guild.fetch_scheduled_events()
         for event in scheduled_events:
             await ctx.send(event.start_time)
-            test = self.Frappeclient.get_api('convert_utc_to_system_timezone', params=event.start_time)
+            api_params = {'utc_timestamp': event.start_time}
+            test = self.Frappeclient.get_api('convert_utc_to_system_timezone', params=api_params)
             await ctx.send(test)
             doc_args = {
                 "title": event.name,
