@@ -187,7 +187,6 @@ class Frappe(commands.Cog):
                     if 'entity_type' in event_args and event_args["entity_type"] == discord.EntityType.external:
                         if not event_args["end_time"] and event['override_check'] == 1: 
                             event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
-                            doc['end_time'] = event_args["end_time"]
                             await ctx.send(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
                     
                     if event['event_id']:
@@ -204,6 +203,7 @@ class Frappe(commands.Cog):
                             await ctx.send(f"[{event['title']}] Bijwerken mislukt")
                     else:
                         scheduled_event = await ctx.guild.create_scheduled_event(**event_args)
+                        doc['end_time'] = event_args["end_time"]
                         doc['event_id'] = str(scheduled_event.id)
                         self.Frappeclient.update(doc)
                 else:
