@@ -10,8 +10,6 @@ import aiohttp
 import io
 from frappeclient import FrappeClient
 import pytz
-import asyncio
-
 
 class Frappe(commands.Cog):
     def __init__(self, bot: Red) -> None:
@@ -32,7 +30,7 @@ class Frappe(commands.Cog):
             self.Frappeclient = FrappeClient("https://shadowzone.nl")
             self.Frappeclient.login(api_key, api_secret)
         else:
-            print("API keys for Frappe are missing.")
+            self.log.error("API keys for Frappe are missing.")
         
         self.daily_loop.change_interval(time=self.daily_loop_utc)
         self.daily_loop.start() # Start the background task when the cog loads
@@ -46,18 +44,19 @@ class Frappe(commands.Cog):
         This task will run daily at the specified time.
         """
         self.log.info("Automated daily loop triggered.")
-        await self._serverbanner() 
+        await self._serverbanner()
+        await self._birthday()
 
     @daily_loop.before_loop
     async def before_daily_loop(self):
         await self.bot.wait_until_ready()
         self.log.info("Daily loop is ready to start.")
 
-    @commands.command()
-    @commands.is_owner() # Only bot owner can run this command
-    async def syncfrappe(self, ctx: commands.Context):
-        """Manually trigger a full synchronization with Frappe."""
-        await self._serverbanner(ctx) # Call the shared logic, pass ctx for user feedback
+    @commands.command(aliases=["banner"])
+    @commands.is_owner()
+    async def serverbanner(self, ctx: commands.Context):
+        """Update server banner based on database"""
+        await self._serverbanner(ctx)
         await ctx.send("Update completed")
 
     async def _serverbanner(self, ctx: commands.Context = None):
@@ -84,6 +83,41 @@ class Frappe(commands.Cog):
                         self.Frappeclient.update(doc)
                     else:
                         self.log.error(f"Failed to download banner image from {banner_url}. Status: {resp.status}")
+    
+    async def _birthday(self, ctx: commands.Context = None):
+        """
+        Updates birthday roles based on Frappe data.
+        Adds role to members whose birthday is today and removes role
+        from members who have the role but their birthday is not today.
+        """
+        frappe_members = self.Frappeclient.get_list('Member', fields=['discord_id', 'geboortedatum', 'custom_status'], filters={'custom_status': 'Actief'}, limit_page_length=float('inf'))
+        guild = self.bot.get_guild(self.target_guild_id)
+        role = guild.get_role(943779141688381470)
+        today = datetime.date.today()
+
+        # Build a set of Discord IDs for members whose birthday is today according to Frappe
+        today_birthdays_discord_ids = set()
+        if frappe_members:
+            for member_data in frappe_members:
+                # Ensure 'geboortedatum' and 'discord_id' exist and are not None
+                if member_data.get('geboortedatum') and member_data.get('discord_id'):
+
+                    geboortedatum = datetime.datetime.strptime(member_data['geboortedatum'], '%Y-%m-%d').date()
+
+                    if geboortedatum.day == today.day and geboortedatum.month == today.month:
+                        # Add the discord_id (as a string) to the set
+                        today_birthdays_discord_ids.add(member_data['discord_id'])
+
+                        # Get the discord.Member object and add the role
+                        discordmember = guild.get_member(int(member_data['discord_id']))
+                        if discordmember and role not in discordmember.roles:
+                            await discordmember.add_roles(role, reason="Vandaag jarig")
+
+        # Remove the role if their ID is NOT in the set of today's birthdays
+        for birthdaymember in role.members:
+            # Check if the member's ID (as a string) is in our set of today's birthdays
+            if str(birthdaymember.id) not in today_birthdays_discord_ids:
+                await birthdaymember.remove_roles(role, reason="Verjaardag voorbij")
 
     @commands.guild_only()
     @commands.hybrid_command(name="sponsorkliks", description="Zie de Sponsorkliks status")
@@ -150,30 +184,6 @@ class Frappe(commands.Cog):
             # Check if the member's ID (as a string) is in our set of today's birthdays
             if str(birthdaymember.id) not in today_birthdays_discord_ids:
                 await birthdaymember.remove_roles(role, reason="Verjaardag voorbij")
-
-        
-    @frappe.command(aliases=["banner"])
-    @commands.is_owner()
-    async def serverbanner(self, ctx: commands.Context):
-        """Update server banner based on database"""
-        response = self.Frappeclient.get_list('Discord server banners', fields = ['name', 'banner'], filters = {'datum':str(datetime.date.today())}, limit_page_length=float('inf'))
-        if response:
-            banner_url = "http://shadowzone.nl/" + response[0]['banner']
-            async with aiohttp.ClientSession() as session:
-                async with session.get(banner_url) as resp:
-                    if resp.status == 200:
-                        image_data = await resp.read()
-                        await ctx.guild.edit(
-                            banner=image_data,
-                            reason=f"De server banner is veranderd naar: {response[0]['name']}",
-                        )
-                        doc = self.Frappeclient.get_doc('Discord server banners', response[0]['name'])
-                        date = datetime.datetime.strptime(doc['datum'], '%Y-%m-%d').date()
-                        newDate = date + relativedelta(years=1)
-                        doc['datum'] = str(newDate)
-                        self.Frappeclient.update(doc)
-                    else:
-                        await ctx.send("Failed to download the banner image")
 
     @frappe.command()
     @commands.is_owner()
