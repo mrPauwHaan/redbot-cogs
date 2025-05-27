@@ -33,10 +33,12 @@ class Frappe(commands.Cog):
             self.log.error("API keys for Frappe are missing.")
         
         self.daily_loop.change_interval(time=self.daily_loop_utc)
-        self.daily_loop.start() # Start the background task when the cog loads
+        self.daily_loop.start()
+        self.hourly_loop.start()
 
     async def cog_unload(self):
         self.daily_loop.cancel()
+        self.hourly_loop.cancel()
 
     @tasks.loop()
     async def daily_loop(self):
@@ -52,12 +54,20 @@ class Frappe(commands.Cog):
         await self.bot.wait_until_ready()
         self.log.info("Daily loop is ready to start.")
 
-    @commands.command(aliases=["banner"])
-    @commands.is_owner()
-    async def serverbanner(self, ctx: commands.Context):
-        """Update server banner based on database"""
-        await self._serverbanner(ctx)
-        await ctx.send("Update completed")
+    @tasks.loop(minutes=60)
+    async def hourly_loop(self):
+        """
+        This task will run every hour.
+        """
+        self.log.info("Automated hourly loop triggered.")
+        await self._serverbanner()
+        await self._birthday()
+        await self._serverevents()
+
+    @hourly_loop.before_loop
+    async def before_hourly_loop(self):
+        await self.bot.wait_until_ready()
+        self.log.info("Hourly loop is ready to start.")
 
     @commands.command(aliases=["banner"])
     @commands.is_owner()
@@ -137,62 +147,7 @@ class Frappe(commands.Cog):
             if str(birthdaymember.id) not in today_birthdays_discord_ids:
                 await birthdaymember.remove_roles(role, reason="Verjaardag voorbij")
 
-    @commands.guild_only()
-    @commands.hybrid_command(name="sponsorkliks", description="Zie de Sponsorkliks status")
-    async def sponsorkliks(self, ctx):
-        """Zie de Sponsorkliks status"""
-        response = requests.get("https://www.sponsorkliks.com/api/?club=11592&call=commissions_total", headers={'User-Agent': 'My User Agent 1.0'})
-        json_object = response.json()
-        pending = float(json_object['commissions_total']['pending'])
-        accepted = float(json_object['commissions_total']['accepted'])
-        ontvangen = float(json_object['commissions_total']['sponsorkliks'])
-        qualified = float(json_object['commissions_total']['qualified'])
-        total = float(json_object['commissions_total']['transferred'])
-
-        description = "P: € " +str(round(pending, 2))+ " \n A: € " +str(round(accepted, 2))+ " \n S: € " +str(round(ontvangen, 2))+ " \n Q: € " +str(round(qualified, 2))+ " \n\n T: € " +str(round(total, 2))
-        
-        embed = discord.Embed()
-        embed.set_footer(text="© Shadowzone Gaming")
-        embed.title = "Sponsorkliks"
-        embed.colour = int("ff0502", 16)
-        embed.add_field(name="\u200B", value=description, inline=False)
-        embed.add_field(name="\u200B", value="-# P: In behandeling • A: Geaccepteerd • S: Ontvangen door Sponsorkliks • Q: Onderweg naar Shadowzone • T: Totaal overgemaakt", inline=False)
-        await ctx.send(embed=embed)
-
-    @commands.guild_only()
-    @commands.has_permissions(administrator=True)
-    @commands.bot_has_permissions(embed_links=True)
-    @commands.hybrid_group()
-    async def frappe(self, ctx: commands.Context) -> None:
-        """Commando's voor interactie met website"""
-        pass
-
-    @frappe.command()
-    @commands.is_owner()
-    async def steljezelfvoor(self, ctx: commands.Context):
-        """Send stel jezelf voor berichten"""
-        response = self.Frappeclient.get_list('Stel jezelf voor planner', filters = {'concept': 0}, fields = ['concept', 'name', 'dag', 'titel', 'url', 'text', 'url_ai'], limit_page_length=float('inf'))
-        
-        channel = ctx.guild.get_channel(1053344324487761980)
-        if response:
-            for aankondiging in response:
-                if datetime.datetime.strptime(aankondiging['dag'], '%Y-%m-%d').date() <= datetime.date.today():
-                    if aankondiging['url_ai']:
-                        url = aankondiging['url_ai']
-                        async with aiohttp.ClientSession() as session:
-                                async with session.get(url) as resp:
-                                    if resp.status == 200:
-                                        image_data = await resp.read()
-                                        with io.BytesIO(image_data) as file:
-                                            await channel.create_thread(name = aankondiging['titel'], content = aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ') \n\n Of luister naar een door AI gegenereerde podcast over deze persoon:', file=discord.File(file, aankondiging['titel'] + ".wav"))
-                                            self.Frappeclient.delete('Stel jezelf voor planner', aankondiging['name'])
-                    else:
-                        await channel.create_thread(name = aankondiging['titel'], content = aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
-                        self.Frappeclient.delete('Stel jezelf voor planner', aankondiging['name'])           
-
-    @frappe.command()
-    @commands.is_owner()
-    async def serverevent(self, ctx: commands.Context):
+    async def _serverevents(self, ctx: commands.Context = None):
         """Maak server events gepland via de database"""
         response = self.Frappeclient.get_list('Discord events', fields = ['*'], filters = {'concept': 0}, limit_page_length=float('inf'))
         if response:
@@ -253,6 +208,59 @@ class Frappe(commands.Cog):
 
                     await ctx.guild.create_scheduled_event(**event_args)
                     self.Frappeclient.delete('Discord events', event['name'])
+
+    @commands.guild_only()
+    @commands.hybrid_command(name="sponsorkliks", description="Zie de Sponsorkliks status")
+    async def sponsorkliks(self, ctx):
+        """Zie de Sponsorkliks status"""
+        response = requests.get("https://www.sponsorkliks.com/api/?club=11592&call=commissions_total", headers={'User-Agent': 'My User Agent 1.0'})
+        json_object = response.json()
+        pending = float(json_object['commissions_total']['pending'])
+        accepted = float(json_object['commissions_total']['accepted'])
+        ontvangen = float(json_object['commissions_total']['sponsorkliks'])
+        qualified = float(json_object['commissions_total']['qualified'])
+        total = float(json_object['commissions_total']['transferred'])
+
+        description = "P: € " +str(round(pending, 2))+ " \n A: € " +str(round(accepted, 2))+ " \n S: € " +str(round(ontvangen, 2))+ " \n Q: € " +str(round(qualified, 2))+ " \n\n T: € " +str(round(total, 2))
+        
+        embed = discord.Embed()
+        embed.set_footer(text="© Shadowzone Gaming")
+        embed.title = "Sponsorkliks"
+        embed.colour = int("ff0502", 16)
+        embed.add_field(name="\u200B", value=description, inline=False)
+        embed.add_field(name="\u200B", value="-# P: In behandeling • A: Geaccepteerd • S: Ontvangen door Sponsorkliks • Q: Onderweg naar Shadowzone • T: Totaal overgemaakt", inline=False)
+        await ctx.send(embed=embed)
+
+    @commands.guild_only()
+    @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(embed_links=True)
+    @commands.hybrid_group()
+    async def frappe(self, ctx: commands.Context) -> None:
+        """Commando's voor interactie met website"""
+        pass
+
+    @frappe.command()
+    @commands.is_owner()
+    async def steljezelfvoor(self, ctx: commands.Context):
+        """Send stel jezelf voor berichten"""
+        response = self.Frappeclient.get_list('Stel jezelf voor planner', filters = {'concept': 0}, fields = ['concept', 'name', 'dag', 'titel', 'url', 'text', 'url_ai'], limit_page_length=float('inf'))
+        
+        channel = ctx.guild.get_channel(1053344324487761980)
+        if response:
+            for aankondiging in response:
+                if datetime.datetime.strptime(aankondiging['dag'], '%Y-%m-%d').date() <= datetime.date.today():
+                    if aankondiging['url_ai']:
+                        url = aankondiging['url_ai']
+                        async with aiohttp.ClientSession() as session:
+                                async with session.get(url) as resp:
+                                    if resp.status == 200:
+                                        image_data = await resp.read()
+                                        with io.BytesIO(image_data) as file:
+                                            await channel.create_thread(name = aankondiging['titel'], content = aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ') \n\n Of luister naar een door AI gegenereerde podcast over deze persoon:', file=discord.File(file, aankondiging['titel'] + ".wav"))
+                                            self.Frappeclient.delete('Stel jezelf voor planner', aankondiging['name'])
+                    else:
+                        await channel.create_thread(name = aankondiging['titel'], content = aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
+                        self.Frappeclient.delete('Stel jezelf voor planner', aankondiging['name'])           
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
