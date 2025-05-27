@@ -146,7 +146,7 @@ class Frappe(commands.Cog):
         if response:
             image_data = None
             for event in response:
-                if event['start_time'] and datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S'):
+                if event['end_time'] and datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S'):
                     await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
                     continue
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now():
