@@ -143,6 +143,7 @@ class Frappe(commands.Cog):
     async def serverevent(self, ctx: commands.Context):
         """Update server events op basis van database"""
         response = self.Frappeclient.get_list('Discord events', fields = ['*'], filters = {'concept': 0}, limit_page_length=float('inf'))
+        local_timezone = pytz.timezone('Europe/Amsterdam')
         if response:
             image_data = None
             for event in response:
@@ -150,7 +151,6 @@ class Frappe(commands.Cog):
                     await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
                     continue
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now():
-                    local_timezone = pytz.timezone('Europe/Amsterdam')    
                     doc = self.Frappeclient.get_doc('Discord events', event['name'])
 
                     event_args = {
@@ -211,6 +211,9 @@ class Frappe(commands.Cog):
         
         scheduled_events = await ctx.guild.fetch_scheduled_events()
         for event in scheduled_events:
+            await ctx.send(event.start_time)
+            test = self.Frappeclient.get_api('convert_utc_to_system_timezone', event.start_time)
+            await ctx.send(test)
             doc_args = {
                 "title": event.name,
                 "description": event.description,
