@@ -1,6 +1,6 @@
 {
     "author": ["mrPauwHaan"],
-    "install_msg": "Thank you for installing my Frappe cog",
+    "install_msg": "Thank you for installing my cog",
     "name": "Frappe",
     "short": "Custom Frappe integration with Redbot",
     "description": "Custom Frappe integration with Redbot",
