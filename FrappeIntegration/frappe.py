@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands, tasks
 from redbot.core.bot import Red
 from redbot.core import commands
 import requests
@@ -15,6 +16,8 @@ class Frappe(commands.Cog):
     def __init__(self, bot: Red) -> None:
         self.bot = bot
         self.Frappeclient = None
+        self.local_timezone = pytz.timezone('Europe/Amsterdam')
+
 
     async def cog_load(self):
         frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
@@ -144,12 +147,12 @@ class Frappe(commands.Cog):
     async def serverevent(self, ctx: commands.Context):
         """Maak server events gepland via de database"""
         response = self.Frappeclient.get_list('Discord events', fields = ['*'], filters = {'concept': 0}, limit_page_length=float('inf'))
-        local_timezone = pytz.timezone('Europe/Amsterdam')
         if response:
             image_data = None
             for event in response:
                 if event['end_time'] and datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S'):
                     await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
+                    self.bot.logger.error(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
                     doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
                     doc_to_update['status'] = 'Starttijd moet voor eindtijd zijn'
                     self.Frappeclient.update(doc_to_update)
@@ -165,8 +168,8 @@ class Frappe(commands.Cog):
                     event_args = {
                     "name": event['title'],
                     "description": event['description'],
-                    "start_time": local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc),
-                    "end_time": local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None,
+                    "start_time": self.local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc),
+                    "end_time": self.local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None,
                     "privacy_level": discord.PrivacyLevel.guild_only,
                     }
                     
