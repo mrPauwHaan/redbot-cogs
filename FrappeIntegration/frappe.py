@@ -87,6 +87,13 @@ class Frappe(commands.Cog):
         await self._birthday(ctx)
         await ctx.send("Update completed")
 
+    @commands.command()
+    @commands.has_permissions(manage_channels=True)
+    async def serverevents(self, ctx: commands.Context):
+        """Add server events based on database"""
+        await self._serverevents(ctx)
+        await ctx.send("Update completed")
+
     async def _serverbanner(self, ctx: commands.Context = None):
         """Update server banner based on database"""
         if not self.Frappeclient:
