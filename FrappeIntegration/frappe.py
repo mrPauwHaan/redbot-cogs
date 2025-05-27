@@ -179,6 +179,9 @@ class Frappe(commands.Cog):
                                     event_args["image"] = image_data
                                 else:
                                     await ctx.send(f"[{event['title']}] Kan afbeelding niet downloaden")
+                                    doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
+                                    doc_to_update['status'] = 'Kan afbeelding niet downloaden'
+                                    self.Frappeclient.update(doc_to_update)
                                     continue
 
                     if 'location' in event and event['location']:
