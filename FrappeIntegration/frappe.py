@@ -152,7 +152,7 @@ class Frappe(commands.Cog):
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now():
                     local_timezone = pytz.timezone('Europe/Amsterdam')
                     start_time_dt = local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc)
-                    end_time_dt = local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc)
+                    end_time_dt = local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None
 
                     event_args = {
                     "name": event['title'],
