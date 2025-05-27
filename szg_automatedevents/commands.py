@@ -58,8 +58,6 @@ class automatedevents(commands.Cog):
         This task will run every hour.
         """
         self.log.info("Automated hourly loop triggered.")
-        await self._serverbanner()
-        await self._birthday()
         await self._serverevents()
 
     @hourly_loop.before_loop
