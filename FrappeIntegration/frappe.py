@@ -152,7 +152,7 @@ class Frappe(commands.Cog):
             for event in response:
                 if event['end_time'] and datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S'):
                     await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
-                    self.bot.logger.error(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
+                    self.bot.log.error(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
                     doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
                     doc_to_update['status'] = 'Starttijd moet voor eindtijd zijn'
                     self.Frappeclient.update(doc_to_update)
