@@ -1,4 +1,5 @@
 import discord
+import logging
 from discord.ext import commands, tasks
 from redbot.core.bot import Red
 from redbot.core import commands
@@ -17,6 +18,7 @@ class Frappe(commands.Cog):
         self.bot = bot
         self.Frappeclient = None
         self.local_timezone = pytz.timezone('Europe/Amsterdam')
+        self.log = logging.getLogger(__name__)
 
 
     async def cog_load(self):
