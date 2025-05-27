@@ -1,4 +1,4 @@
-import 
+import discord
 from discord.ext import tasks
 import logging
 from redbot.core.bot import Red
