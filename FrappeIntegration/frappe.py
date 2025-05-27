@@ -8,6 +8,7 @@ import aiohttp
 import io
 from frappeclient import FrappeClient
 import pytz
+import asyncio
 
 
 class Frappe(commands.Cog):
@@ -136,12 +137,12 @@ class Frappe(commands.Cog):
                                             self.Frappeclient.delete('Stel jezelf voor planner', aankondiging['name'])
                     else:
                         await channel.create_thread(name = aankondiging['titel'], content = aankondiging['text'] + '\n\n [Lees verder...](' + aankondiging['url'] + ')')
-                        self.Frappeclient.delete('Stel jezelf voor planner', aankondiging['name'])
-    
+                        self.Frappeclient.delete('Stel jezelf voor planner', aankondiging['name'])           
+
     @frappe.command()
     @commands.is_owner()
     async def serverevent(self, ctx: commands.Context):
-        """Update server events op basis van database"""
+        """Maak server events gepland via de database"""
         response = self.Frappeclient.get_list('Discord events', fields = ['*'], filters = {'concept': 0}, limit_page_length=float('inf'))
         local_timezone = pytz.timezone('Europe/Amsterdam')
         if response:
@@ -149,95 +150,56 @@ class Frappe(commands.Cog):
             for event in response:
                 if event['end_time'] and datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S'):
                     await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
+                    doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
+                    doc_to_update['status'] = 'Starttijd moet voor eindtijd zijn'
+                    self.Frappeclient.update(doc_to_update)
                     continue
-
-                event_args = {
-                "name": event['title'],
-                "description": event['description'],
-                "start_time": local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc),
-                "end_time": local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None,
-                "privacy_level": discord.PrivacyLevel.guild_only,
-                }
+                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') <= datetime.datetime.now():
+                    doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
+                    doc_to_update['status'] = 'Starttijd moet in de toekomst zijn'
+                    self.Frappeclient.update(doc_to_update)
+                    await ctx.send(f"[{event['title']}] Starttijd van nieuwe events kan niet in het verleden liggen")
+                    continue
                 
-                if event['image']:
-                    image = "http://shadowzone.nl/" + event['image']
-                    async with aiohttp.ClientSession() as session:
-                        async with session.get(image) as resp:
-                            if resp.status == 200:
-                                image_data = await resp.read()
-                                event_args["image"] = image_data
-                            else:
-                                await ctx.send(f"[{event['title']}] Kan afbeelding niet downloaden")
-                                continue
+                if datetime.datetime.strptime(event['date_create'], '%Y-%m-%d %H:%M:%S') <= datetime.datetime.now():
+                    event_args = {
+                    "name": event['title'],
+                    "description": event['description'],
+                    "start_time": local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc),
+                    "end_time": local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None,
+                    "privacy_level": discord.PrivacyLevel.guild_only,
+                    }
+                    
+                    if event['image']:
+                        image = "http://shadowzone.nl/" + event['image']
+                        async with aiohttp.ClientSession() as session:
+                            async with session.get(image) as resp:
+                                if resp.status == 200:
+                                    image_data = await resp.read()
+                                    event_args["image"] = image_data
+                                else:
+                                    await ctx.send(f"[{event['title']}] Kan afbeelding niet downloaden")
+                                    continue
 
-                if 'location' in event and event['location']:
-                    try:
-                        int(event['location'])
-                        if ctx.guild.get_channel(int(event['location'])):
-                            event_args["channel"] = ctx.guild.get_channel(int(event['location']))
-                        else:
+                    if 'location' in event and event['location']:
+                        try:
+                            int(event['location'])
+                            if ctx.guild.get_channel(int(event['location'])):
+                                event_args["channel"] = ctx.guild.get_channel(int(event['location']))
+                            else:
+                                event_args["entity_type"] = discord.EntityType.external
+                                event_args["location"] = event['location']
+                        except ValueError:
                             event_args["entity_type"] = discord.EntityType.external
                             event_args["location"] = event['location']
-                    except ValueError:
-                        event_args["entity_type"] = discord.EntityType.external
-                        event_args["location"] = event['location']
 
-                if 'entity_type' in event_args and event_args["entity_type"] == discord.EntityType.external:
-                    if not event_args["end_time"] and event['override_check'] == 1: 
-                        event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
-                        await ctx.send(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
-                
-                if event['event_id']:
-                    try:
-                        scheduled_event = await ctx.guild.fetch_scheduled_event(int(event['event_id']))
-                        if event['override_check'] == 1:
-                            await scheduled_event.edit(**event_args)
-                    except discord.errors.NotFound:
-                        self.Frappeclient.delete('Discord events', event['name'])
-                        continue
-                    except discord.errors.HTTPException:
-                        await ctx.send(f"[{event['title']}] Niet gelukt event op te halen")
-                    except:
-                        await ctx.send(f"[{event['title']}] Bijwerken mislukt")
-                else:
-                    doc = self.Frappeclient.get_doc('Discord events', event['name'])
-                    if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now():
-                        scheduled_event = await ctx.guild.create_scheduled_event(**event_args)  
-                        doc['event_id'] = str(scheduled_event.id)
-                    else:
-                        await ctx.send(f"[{event['title']}] Starttijd van nieuwe events kan niet in het verleden liggen: conceptmodus ingeschakeld")
-                        doc['concept'] = 1
-                    self.Frappeclient.update(doc)
-        
-        scheduled_events = await ctx.guild.fetch_scheduled_events()
-        for event in scheduled_events:
-            doc_args = {
-                "title": event.name,
-                "description": event.description,
-                "start_time": event.start_time.astimezone(local_timezone).strftime('%Y-%m-%d %H:%M:%S'),
-                "end_time": event.end_time.astimezone(local_timezone).strftime('%Y-%m-%d %H:%M:%S') if event.end_time else None,
-                "location": event.channel.id if event.channel else event.location,
-                "event_id": str(event.id),
-                "concept": 0
-            }
+                    if 'entity_type' in event_args and event_args["entity_type"] == discord.EntityType.external:
+                        if not event_args["end_time"] and event['override_check'] == 1: 
+                            event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
+                            await ctx.send(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
 
-            existing = self.Frappeclient.get_list('Discord events', fields=['name', 'override_check'], filters={'event_id': event.id}, limit_page_length=float('inf'))
-            if existing:
-                doc_to_update = self.Frappeclient.get_doc('Discord events', existing[0]['name'])
-                if existing[0]['override_check'] == 0:
-                    for key, value in doc_args.items():
-                        doc_to_update[key] = value
-                    self.Frappeclient.update(doc_to_update)
-                else:
-                    doc_to_update['override_check'] = 0
-                    self.Frappeclient.update(doc_to_update)
-            else:
-                doc_args['doctype'] = 'Discord events'
-                try:
-                    self.Frappeclient.insert(doc_args)
-                except Exception as e:
-                    await ctx.send(f"[{event.name}] Onverwachte fout bij invoegen nieuw event in Frappe: {e}. Data: {doc_args}")
-
+                    await ctx.guild.create_scheduled_event(**event_args)
+                    self.Frappeclient.delete('Discord events', event['name'])
 
     @frappe.command()
     @commands.has_permissions(administrator=True)
