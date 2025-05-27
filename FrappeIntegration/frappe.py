@@ -151,6 +151,7 @@ class Frappe(commands.Cog):
                     continue
                 if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now():
                     local_timezone = pytz.timezone('Europe/Amsterdam')    
+                    doc = self.Frappeclient.get_doc('Discord events', event['name'])
 
                     event_args = {
                     "name": event['title'],
@@ -159,7 +160,7 @@ class Frappe(commands.Cog):
                     "end_time": local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None,
                     "privacy_level": discord.PrivacyLevel.guild_only,
                     }
-
+                    
                     if event['image']:
                         image = "http://shadowzone.nl/" + event['image']
                         async with aiohttp.ClientSession() as session:
@@ -184,9 +185,11 @@ class Frappe(commands.Cog):
                             event_args["location"] = event['location']
 
                     if 'entity_type' in event_args and event_args["entity_type"] == discord.EntityType.external:
-                        if not event_args["end_time"]:
-                            event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
-                            await ctx.send(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
+                        if not event_args["end_time"]: 
+                            if event['override_check'] == 1:
+                                event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
+                                doc['end_time'] = event_args["end_time"].astimezone(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+                                await ctx.send(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
                     
                     if event['event_id']:
                         try:
@@ -202,8 +205,6 @@ class Frappe(commands.Cog):
                             await ctx.send(f"[{event['title']}] Bijwerken mislukt")
                     else:
                         scheduled_event = await ctx.guild.create_scheduled_event(**event_args)
-                    
-                        doc = self.Frappeclient.get_doc('Discord events', event['name'])
                         doc['event_id'] = str(scheduled_event.id)
                         self.Frappeclient.update(doc)
                 else:
