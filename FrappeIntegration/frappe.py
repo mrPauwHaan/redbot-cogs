@@ -187,7 +187,7 @@ class Frappe(commands.Cog):
                     if 'entity_type' in event_args and event_args["entity_type"] == discord.EntityType.external:
                         if not event_args["end_time"] and event['override_check'] == 1: 
                             event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
-                            doc['end_time'] = event_args["end_time"]
+                            doc['end_time'] = (event['start_time'] + datetime.timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
                             self.Frappeclient.update(doc)
                             await ctx.send(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
                     
