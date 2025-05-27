@@ -150,62 +150,64 @@ class Frappe(commands.Cog):
                 if event['end_time'] and datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S'):
                     await ctx.send(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
                     continue
-                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now() or datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now():
-                    event_args = {
-                    "name": event['title'],
-                    "description": event['description'],
-                    "start_time": local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc),
-                    "end_time": local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None,
-                    "privacy_level": discord.PrivacyLevel.guild_only,
-                    }
-                    
-                    if event['image']:
-                        image = "http://shadowzone.nl/" + event['image']
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(image) as resp:
-                                if resp.status == 200:
-                                    image_data = await resp.read()
-                                    event_args["image"] = image_data
-                                else:
-                                    await ctx.send(f"[{event['title']}] Kan afbeelding niet downloaden")
-                                    continue
 
-                    if 'location' in event and event['location']:
-                        try:
-                            int(event['location'])
-                            if ctx.guild.get_channel(int(event['location'])):
-                                event_args["channel"] = ctx.guild.get_channel(int(event['location']))
+                event_args = {
+                "name": event['title'],
+                "description": event['description'],
+                "start_time": local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc),
+                "end_time": local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None,
+                "privacy_level": discord.PrivacyLevel.guild_only,
+                }
+                
+                if event['image']:
+                    image = "http://shadowzone.nl/" + event['image']
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(image) as resp:
+                            if resp.status == 200:
+                                image_data = await resp.read()
+                                event_args["image"] = image_data
                             else:
-                                event_args["entity_type"] = discord.EntityType.external
-                                event_args["location"] = event['location']
-                        except ValueError:
+                                await ctx.send(f"[{event['title']}] Kan afbeelding niet downloaden")
+                                continue
+
+                if 'location' in event and event['location']:
+                    try:
+                        int(event['location'])
+                        if ctx.guild.get_channel(int(event['location'])):
+                            event_args["channel"] = ctx.guild.get_channel(int(event['location']))
+                        else:
                             event_args["entity_type"] = discord.EntityType.external
                             event_args["location"] = event['location']
+                    except ValueError:
+                        event_args["entity_type"] = discord.EntityType.external
+                        event_args["location"] = event['location']
 
-                    if 'entity_type' in event_args and event_args["entity_type"] == discord.EntityType.external:
-                        if not event_args["end_time"] and event['override_check'] == 1: 
-                            event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
-                            await ctx.send(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
-                    
-                    if event['event_id']:
-                        try:
-                            scheduled_event = await ctx.guild.fetch_scheduled_event(int(event['event_id']))
-                            if event['override_check'] == 1:
-                                await scheduled_event.edit(**event_args)
-                        except discord.errors.NotFound:
-                            self.Frappeclient.delete('Discord events', event['name'])
-                            continue
-                        except discord.errors.HTTPException:
-                            await ctx.send(f"[{event['title']}] Niet gelukt event op te halen")
-                        except:
-                            await ctx.send(f"[{event['title']}] Bijwerken mislukt")
-                    else:
-                        scheduled_event = await ctx.guild.create_scheduled_event(**event_args)  
-                        doc = self.Frappeclient.get_doc('Discord events', event['name'])
-                        doc['event_id'] = str(scheduled_event.id)
-                        self.Frappeclient.update(doc)
+                if 'entity_type' in event_args and event_args["entity_type"] == discord.EntityType.external:
+                    if not event_args["end_time"] and event['override_check'] == 1: 
+                        event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
+                        await ctx.send(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
+                
+                if event['event_id']:
+                    try:
+                        scheduled_event = await ctx.guild.fetch_scheduled_event(int(event['event_id']))
+                        if event['override_check'] == 1:
+                            await scheduled_event.edit(**event_args)
+                    except discord.errors.NotFound:
+                        self.Frappeclient.delete('Discord events', event['name'])
+                        continue
+                    except discord.errors.HTTPException:
+                        await ctx.send(f"[{event['title']}] Niet gelukt event op te halen")
+                    except:
+                        await ctx.send(f"[{event['title']}] Bijwerken mislukt")
                 else:
-                    self.Frappeclient.delete('Discord events', event['name'])
+                    doc = self.Frappeclient.get_doc('Discord events', event['name'])
+                    if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.now():
+                        scheduled_event = await ctx.guild.create_scheduled_event(**event_args)  
+                        doc['event_id'] = str(scheduled_event.id)
+                    else:
+                        await ctx.send(f"[{event['title']}] Starttijd van nieuwe events kan niet in het verleden liggen: conceptmodus ingeschakeld")
+                        doc['concept'] = 1
+                    self.Frappeclient.update(doc)
         
         scheduled_events = await ctx.guild.fetch_scheduled_events()
         for event in scheduled_events:
