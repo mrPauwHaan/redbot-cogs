@@ -234,7 +234,7 @@ class Frappe(commands.Cog):
                                     image_data = await resp.read()
                                     event_args["image"] = image_data
                                 else:
-                                    self.log.error(f"[{event['title']}] Kan afbeelding niet downloaden"))
+                                    self.log.error(f"[{event['title']}] Kan afbeelding niet downloaden")
                                     doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
                                     doc_to_update['status'] = 'Kan afbeelding niet downloaden'
                                     self.Frappeclient.update(doc_to_update)
