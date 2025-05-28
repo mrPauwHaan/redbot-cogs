@@ -43,7 +43,6 @@ class automatedevents(commands.Cog):
         """
         This task will run daily at the specified time.
         """
-        self.log.info("Automated daily loop triggered.")
         await self._serverbanner()
         await self._birthday()
 
@@ -57,7 +56,6 @@ class automatedevents(commands.Cog):
         """
         This task will run every hour.
         """
-        self.log.info("Automated hourly loop triggered.")
         await self._serverevents()
 
     @hourly_loop.before_loop
