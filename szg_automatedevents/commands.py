@@ -93,7 +93,7 @@ class automatedevents(commands.Cog):
         if not self.Frappeclient:
             self.log.error("FrappeClient is not available. Cannot update banner.")
             return
-        response = self.Frappeclient.get_list('Discord server banners', fields = ['name', 'banner'], filters = {'datum':str(datetime.date.today())}, limit_page_length=float('inf'))
+        response = self.Frappeclient.get_list('Discord server banners', fields = ['*'], filters = {'datum':str(datetime.date.today())}, limit_page_length=float('inf'))
         if response:
             banner_url = "http://shadowzone.nl/" + response[0]['banner']
             guild = self.bot.get_guild(self.target_guild_id)
@@ -105,11 +105,14 @@ class automatedevents(commands.Cog):
                             banner=image_data,
                             reason=f"De server banner is veranderd naar: {response[0]['name']}",
                         )
-                        doc = self.Frappeclient.get_doc('Discord server banners', response[0]['name'])
-                        date = datetime.datetime.strptime(doc['datum'], '%Y-%m-%d').date()
-                        newDate = date + relativedelta(years=1)
-                        doc['datum'] = str(newDate)
-                        self.Frappeclient.update(doc)
+                        if response[0]['eenmalig'] == 1:
+                            self.Frappeclient.delete('Discord server banners', response[0]['name'])
+                        else:
+                            doc = self.Frappeclient.get_doc('Discord server banners', response[0]['name'])
+                            date = datetime.datetime.strptime(doc['datum'], '%Y-%m-%d').date()
+                            newDate = date + relativedelta(years=1)
+                            doc['datum'] = str(newDate)
+                            self.Frappeclient.update(doc)
                     else:
                         self.log.error(f"Failed to download banner image from {banner_url}. Status: {resp.status}")
     
