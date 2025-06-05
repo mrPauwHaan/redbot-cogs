@@ -228,7 +228,7 @@ class ChannelChanger(commands.Cog):
                 # Discord has a rate limit for name changes (usually 2 changes per 10 minutes per channel)
                 # Rapid changes might hit this. Consider adding cooldowns if needed.
                 # (Not implemented here, but be aware)
-                await channel.edit(name=new_title) # *** CHANGE IS HERE ***
+                # await channel.edit(name=new_title) # *** CHANGE IS HERE ***
                 await channel.edit(status=game_title)
                 print(f"Changed channel `{channel.name}` (ID: {channel.id}) name to `{new_title}`")
             except discord.Forbidden:
