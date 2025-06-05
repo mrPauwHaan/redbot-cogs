@@ -229,7 +229,7 @@ class ChannelChanger(commands.Cog):
                 # Rapid changes might hit this. Consider adding cooldowns if needed.
                 # (Not implemented here, but be aware)
                 await channel.edit(name=new_title) # *** CHANGE IS HERE ***
-                await channel.edit(status=new_title)
+                await channel.edit(status=game_title)
                 print(f"Changed channel `{channel.name}` (ID: {channel.id}) name to `{new_title}`")
             except discord.Forbidden:
                 # This should ideally be caught by the permission check above, but included as a fallback
