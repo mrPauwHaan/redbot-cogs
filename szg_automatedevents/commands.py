@@ -164,7 +164,8 @@ class automatedevents(commands.Cog):
                     doc_to_update['status'] = 'Starttijd moet voor eindtijd zijn'
                     self.Frappeclient.update(doc_to_update)
                     continue
-                if datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') <= datetime.datetime.now():
+                start_time_local = self.local_timezone.localize(datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S'))
+                if start_time_local <= datetime.datetime.now(self.local_timezone):
                     doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
                     doc_to_update['status'] = 'Starttijd moet in de toekomst zijn'
                     self.Frappeclient.update(doc_to_update)

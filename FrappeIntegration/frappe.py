@@ -66,7 +66,7 @@ class Frappe(commands.Cog):
         channel = ctx.guild.get_channel(1053344324487761980)
         if response:
             for aankondiging in response:
-                if datetime.datetime.strptime(aankondiging['dag'], '%Y-%m-%d').date() <= datetime.date.today():
+                if datetime.datetime.strptime(aankondiging['dag'], '%Y-%m-%d').date() <= datetime.datetime.now(self.local_timezone).date():
                     if aankondiging['url_ai']:
                         url = aankondiging['url_ai']
                         async with aiohttp.ClientSession() as session:
