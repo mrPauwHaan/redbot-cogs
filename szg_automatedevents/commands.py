@@ -17,8 +17,8 @@ class automatedevents(commands.Cog):
         self.target_guild_id = 331058477541621774
         self.log = logging.getLogger(__name__)
 
-        # --- Set UTC times for the loops ---
-        self.daily_loop_utc = self.local_timezone.localize(datetime.datetime.combine(datetime.date.today(), datetime.time(0, 0, 0))).astimezone(datetime.timezone.utc).time()
+        # Set local time for loop
+        self.daily_loop_local_time = datetime.time(0, 0, 0, tzinfo=self.local_timezone)
 
     async def cog_load(self):
         frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
@@ -30,7 +30,7 @@ class automatedevents(commands.Cog):
         else:
             self.log.error("API keys for Frappe are missing.")
         
-        self.daily_loop.change_interval(time=self.daily_loop_utc)
+        self.daily_loop.change_interval(time=self.daily_loop_local_time)
         self.daily_loop.start()
         self.hourly_loop.start()
 
@@ -93,7 +93,7 @@ class automatedevents(commands.Cog):
         if not self.Frappeclient:
             self.log.error("FrappeClient is not available. Cannot update banner.")
             return
-        response = self.Frappeclient.get_list('Discord server banners', fields = ['*'], filters = {'datum':str(datetime.date.today())}, limit_page_length=float('inf'))
+        response = self.Frappeclient.get_list('Discord server banners', fields = ['*'], filters = {'datum':str(datetime.datetime.now(self.local_timezone).date())}, limit_page_length=float('inf'))
         if response:
             banner_url = "http://shadowzone.nl/" + response[0]['banner']
             guild = self.bot.get_guild(self.target_guild_id)
@@ -125,7 +125,7 @@ class automatedevents(commands.Cog):
         frappe_members = self.Frappeclient.get_list('Member', fields=['discord_id', 'geboortedatum', 'custom_status'], filters={'custom_status': 'Actief'}, limit_page_length=float('inf'))
         guild = self.bot.get_guild(self.target_guild_id)
         role = guild.get_role(943779141688381470)
-        today = datetime.date.today()
+        today = datetime.datetime.now(self.local_timezone).date()
 
         # Build a set of Discord IDs for members whose birthday is today according to Frappe
         today_birthdays_discord_ids = set()
