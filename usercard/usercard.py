@@ -151,7 +151,8 @@ class usercard(Cog):
 
         try:
             doc = self.Frappeclient.get_list('Member', fields = ['name'], filters = {'discord_id': _object.id})
-        except:
+        except Exception as e:
+            print(f"[UserCard Error] Fout bij ophalen lid: {e}")
             doc = None
         if doc:
             member = self.Frappeclient.get_doc("Member", doc[0]['name'])
