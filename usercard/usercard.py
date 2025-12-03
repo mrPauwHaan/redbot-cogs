@@ -24,6 +24,8 @@ class usercard(Cog):
     def __init__(self, bot: Red) -> None:
         super().__init__(bot=bot)
         self.Frappeclient = None
+        self.api_key = None
+        self.api_secret = None
 
         self.font_path: Path = bundled_data_path(self) / "arial.ttf"
         self.bold_font_path: Path = bundled_data_path(self) / "arial_bold.ttf"
@@ -48,17 +50,42 @@ class usercard(Cog):
     async def cog_load(self):
         await super().cog_load()
         frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
-        api_key =  frappe_keys.get("username")
-        api_secret = frappe_keys.get("password")
-        if api_key and api_secret:
+        # Sla keys op in self zodat we ze later kunnen hergebruiken
+        self.api_key = frappe_keys.get("username")
+        self.api_secret = frappe_keys.get("password")
+        
+        if self.api_key and self.api_secret:
             self.Frappeclient = FrappeClient("https://shadowzone.nl")
-            self.Frappeclient.login(api_key, api_secret)
+            self.Frappeclient.login(self.api_key, self.api_secret)
         else:
             print("API keys for Frappe are missing.")
 
     async def cog_unload(self) -> None:
         self.font_to_remove_unprintable_characters.close()
         await super().cog_unload() 
+
+    def get_frappe_member_data(self, discord_id):
+        """Haalt member data op en logt automatisch opnieuw in als de sessie verlopen is."""
+        if not self.Frappeclient:
+            return None
+
+        try:
+            docs = self.Frappeclient.get_list('Member', fields=['name'], filters={'discord_id': str(discord_id)})
+            if docs:
+                return self.Frappeclient.get_doc("Member", docs[0]['name'])
+        except Exception as e:
+            print(f"[UserCard] Fout bij ophalen data: {e}. Probeer opnieuw in te loggen...")
+            try:
+                if self.api_key and self.api_secret:
+                    self.Frappeclient.login(self.api_key, self.api_secret)
+                    # Opnieuw proberen na login
+                    docs = self.Frappeclient.get_list('Member', fields=['name'], filters={'discord_id': str(discord_id)})
+                    if docs:
+                        return self.Frappeclient.get_doc("Member", docs[0]['name'])
+            except Exception as e2:
+                print(f"[UserCard] Herstel mislukt: {e2}")
+        
+        return None
 
     def align_text_center(
         self,
@@ -147,14 +174,10 @@ class usercard(Cog):
         )
         align_text_center = functools.partial(self.align_text_center, draw)
 
-        try:
-            doc = self.Frappeclient.get_list('Member', fields = ['name'], filters = {'discord_id': _object.id})
-        except Exception as e:
-            print(f"[UserCard Error] Fout bij ophalen lid: {e}")
-            doc = None
-        if doc:
-            member = self.Frappeclient.get_doc("Member", doc[0]['name'])
+        # FIX: Gebruik de nieuwe slimme functie
+        member = self.get_frappe_member_data(_object.id)
         
+        if member:
             # Member name & Member avatar.
             image = Image.open(io.BytesIO(_object_display))
             image = image.resize((140, 140))
@@ -165,7 +188,6 @@ class usercard(Cog):
                 radius=20,
                 fill=255,
             )
-            # d.ellipse((0, 0, image.width, image.height), fill=255)
             try:
                 img.paste(
                     image, (30, 478, 170, 618), mask=ImageChops.multiply(mask, image.split()[3])
@@ -328,14 +350,10 @@ class usercard(Cog):
 
         # Data.
         if isinstance(_object, (discord.Member)):
-            # lidmaatschap
-            try:
-                doc = self.Frappeclient.get_list('Member', fields = ['name'], filters = {'discord_id': _object.id})
-            except:
-                doc = None
-            if doc:
-                member = self.Frappeclient.get_doc("Member", doc[0]['name'])
+            # FIX: Gebruik de nieuwe slimme functie
+            member = self.get_frappe_member_data(_object.id)
 
+            if member:
                 draw.rounded_rectangle((1306 - 125, 204, 1912, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1325 - 125, 214, 1325 - 125, 284),
@@ -378,16 +396,18 @@ class usercard(Cog):
                 # Events
                 events = 0
                 highest_event_value = 0
-                for item in member.get("custom_events"):
-                    if item['event_bezocht'] not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
-                        events += 1
-                        try:
-                            event_value = int(item["event_bezocht"].split()[1].strip(":"))
-                            if event_value > highest_event_value:
-                                highest_event = item['event_bezocht']
-                                highest_event_value = event_value
-                        except (IndexError, ValueError):
-                            continue
+                # Veiligheidscheck: custom_events kan soms leeg zijn
+                if member.get("custom_events"):
+                    for item in member.get("custom_events"):
+                        if item['event_bezocht'] not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
+                            events += 1
+                            try:
+                                event_value = int(item["event_bezocht"].split()[1].strip(":"))
+                                if event_value > highest_event_value:
+                                    highest_event = item['event_bezocht']
+                                    highest_event_value = event_value
+                            except (IndexError, ValueError):
+                                continue
 
                 draw.rounded_rectangle((1306 - 125, 615, 1912, 996), radius=15, fill=(47, 49, 54))
                 align_text_center(
