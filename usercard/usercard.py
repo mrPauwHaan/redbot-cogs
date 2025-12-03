@@ -58,8 +58,6 @@ class usercard(Cog):
 
     async def cog_unload(self) -> None:
         self.font_to_remove_unprintable_characters.close()
-        for icon in self.icons.values():
-            icon.close()
         await super().cog_unload() 
 
     def align_text_center(
