@@ -566,13 +566,20 @@ class usercard(Cog):
         else: 
             await ctx.send('Niet mogelijk voor bot')
     
-    @commands.command()
-    async def wrapped(self, ctx: commands.Context, member: discord.Member = None):
-        """Show your Wrapped stats"""
-        if not member:
-            member = ctx.author
-            
-        await WrappedView(
-            cog=self,
-            _object=member,
-        ).start(ctx)
+    @commands.guild_only()
+    @commands.bot_has_permissions(attach_files=True)
+    @commands.hybrid_command(name="wrapped", description="Jouw stats van afgelopen jaar")
+    async def wrapped(
+        self,
+        ctx: commands.Context,
+        *,
+        member: discord.Member = commands.Author,
+    ) -> None:
+        """Jouw stats van afgelopen jaar"""
+        if not member.bot:
+            await WrappedView(
+                cog=self,
+                _object=member,
+            ).start(ctx)
+        else: 
+            await ctx.send('Niet mogelijk voor bot')
