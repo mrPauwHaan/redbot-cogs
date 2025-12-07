@@ -168,29 +168,34 @@ class usercard(Cog):
     ) -> typing.Union[Image.Image, discord.File]:
         img: Image.Image = Image.new("RGBA", size, (0, 0, 0, 0))
 
+        # --- NEW BACKGROUND LOGIC START ---
         try:
-            # Open the background image from the icons dictionary
-            image = Image.open(self.icons["background"])
-            image = image.convert("RGBA").resize(size)
+            # 1. Load the background image from your icons list
+            bg_image = Image.open(self.icons["background"]).convert("RGBA")
             
-            # Create a mask for rounded corners (radius 50)
+            # 2. Resize it to fit the card (usually 1942x1096)
+            bg_image = bg_image.resize(size)
+            
+            # 3. Create a mask to give it rounded corners
             mask = Image.new("L", size, 0)
-            d = ImageDraw.Draw(mask)
-            d.rounded_rectangle((0, 0, size[0], size[1]), radius=50, fill=255)
+            mask_draw = ImageDraw.Draw(mask)
+            mask_draw.rounded_rectangle((0, 0, size[0], size[1]), radius=50, fill=255)
             
-            # Paste the background image using the mask
-            img.paste(image, (0, 0), mask=mask)
+            # 4. Paste the background using the mask
+            img.paste(bg_image, (0, 0), mask=mask)
+
         except Exception as e:
-            # Fallback to dark gray if background.png is missing or fails
-            print(f"Failed to load background: {e}")
+            # Fallback: If image fails, use the old gray rectangle
+            print(f"[UserCard] Could not load background: {e}")
             draw_bg = ImageDraw.Draw(img)
             draw_bg.rounded_rectangle(
                 (0, 0, img.width, img.height),
                 radius=50,
                 fill=(32, 34, 37),
             )
+        # --- NEW BACKGROUND LOGIC END ---
 
-        # Initialize the draw object for the text that follows
+        # Initialize 'draw' for the rest of the text/icons
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
         align_text_center = functools.partial(self.align_text_center, draw)
 
