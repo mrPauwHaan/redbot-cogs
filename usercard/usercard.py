@@ -44,6 +44,7 @@ class usercard(Cog):
                 "logo",
                 "person",
                 "game",
+                "background",
             )
         }
 
@@ -166,15 +167,33 @@ class usercard(Cog):
         _object_display: typing.Optional[bytes],
     ) -> typing.Union[Image.Image, discord.File]:
         img: Image.Image = Image.new("RGBA", size, (0, 0, 0, 0))
+
+        try:
+            # Open the background image from the icons dictionary
+            image = Image.open(self.icons["background"])
+            image = image.convert("RGBA").resize(size)
+            
+            # Create a mask for rounded corners (radius 50)
+            mask = Image.new("L", size, 0)
+            d = ImageDraw.Draw(mask)
+            d.rounded_rectangle((0, 0, size[0], size[1]), radius=50, fill=255)
+            
+            # Paste the background image using the mask
+            img.paste(image, (0, 0), mask=mask)
+        except Exception as e:
+            # Fallback to dark gray if background.png is missing or fails
+            print(f"Failed to load background: {e}")
+            draw_bg = ImageDraw.Draw(img)
+            draw_bg.rounded_rectangle(
+                (0, 0, img.width, img.height),
+                radius=50,
+                fill=(32, 34, 37),
+            )
+
+        # Initialize the draw object for the text that follows
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
-        draw.rounded_rectangle(
-            (0, 0, img.width, img.height),
-            radius=50,
-            fill=(32, 34, 37),
-        )
         align_text_center = functools.partial(self.align_text_center, draw)
 
-        # FIX: Gebruik de nieuwe slimme functie
         member = self.get_frappe_member_data(_object.id)
         
         if member:
