@@ -508,8 +508,8 @@ class usercard(Cog):
         draw.text((50, 120), _object.display_name, fill=(255, 255, 255), font=self.bold_font[50])
 
         # Example stat placeholders
-        draw.text((50, 250), "Messages: 1,234", fill=(200, 200, 200), font=self.font[36])
-        draw.text((50, 300), "Voice Hours: 42", fill=(200, 200, 200), font=self.font[36])
+        draw.text((50, 250), "Messages: -", fill=(200, 200, 200), font=self.font[36])
+        draw.text((50, 300), "Voice Hours: -", fill=(200, 200, 200), font=self.font[36])
 
         # 4. Avatar (Circular)
         avatar_asset = _object.display_avatar.with_size(128)
