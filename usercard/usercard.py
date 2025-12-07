@@ -166,7 +166,6 @@ class usercard(Cog):
         to_file: bool,
         _object_display: typing.Optional[bytes],
     ) -> typing.Union[Image.Image, discord.File]:
-        print("DEBUG: Generating image with new background logic...")
         img: Image.Image = Image.new("RGBA", size, (0, 0, 0, 0))
 
         try:
