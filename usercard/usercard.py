@@ -15,7 +15,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFont
 from redbot.core.data_manager import bundled_data_path
 from frappeclient import FrappeClient
 
-from .view import usercardView
+from .view import usercardView, WrappedView
 
 
 class usercard(Cog):
@@ -51,7 +51,6 @@ class usercard(Cog):
     async def cog_load(self):
         await super().cog_load()
         frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
-        # Sla keys op in self zodat we ze later kunnen hergebruiken
         self.api_key = frappe_keys.get("username")
         self.api_secret = frappe_keys.get("password")
         
@@ -79,7 +78,6 @@ class usercard(Cog):
             try:
                 if self.api_key and self.api_secret:
                     self.Frappeclient.login(self.api_key, self.api_secret)
-                    # Opnieuw proberen na login
                     docs = self.Frappeclient.get_list('Member', fields=['name'], filters={'discord_id': str(discord_id)})
                     if docs:
                         return self.Frappeclient.get_doc("Member", docs[0]['name'])
@@ -167,7 +165,6 @@ class usercard(Cog):
         _object_display: typing.Optional[bytes],
     ) -> typing.Union[Image.Image, discord.File]:
         img: Image.Image = Image.new("RGBA", size, (0, 0, 0, 0))
-
         try:
             # Open the background image from the icons dictionary
             image = Image.open(self.icons["background"])
@@ -490,6 +487,49 @@ class usercard(Cog):
             img=img,
         )
 
+    # --- WRAPPED IMAGE GENERATOR ---
+    async def generate_wrapped_image(
+        self,
+        _object: discord.Member,
+        to_file: bool = True,
+    ) -> typing.Union[Image.Image, discord.File]:
+        
+        # 1. Canvas
+        size = (1000, 500) 
+        img = Image.new("RGBA", size, (0, 0, 0, 0))
+        
+        # 2. Background
+        # You can eventually use self.icons["wrapped_background"] here
+        draw = ImageDraw.Draw(img)
+        draw.rounded_rectangle((0, 0, size[0], size[1]), radius=20, fill=(25, 20, 20)) # Darker background
+
+        # 3. Text & Stats
+        draw.text((50, 50), "Shadowzone Wrapped", fill=(255, 255, 255), font=self.bold_font[40])
+        draw.text((50, 120), _object.display_name, fill=(255, 255, 255), font=self.bold_font[50])
+
+        # Example stat placeholders
+        draw.text((50, 250), "Messages: 1,234", fill=(200, 200, 200), font=self.font[36])
+        draw.text((50, 300), "Voice Hours: 42", fill=(200, 200, 200), font=self.font[36])
+
+        # 4. Avatar (Circular)
+        avatar_asset = _object.display_avatar.with_size(128)
+        avatar_data = await avatar_asset.read()
+        avatar_img = Image.open(io.BytesIO(avatar_data)).resize((150, 150))
+        
+        mask = Image.new("L", (150, 150), 0)
+        draw_mask = ImageDraw.Draw(mask)
+        draw_mask.ellipse((0, 0, 150, 150), fill=255)
+        
+        img.paste(avatar_img, (800, 50), mask=mask)
+
+        # 5. Return
+        if not to_file:
+            return img
+        buffer = io.BytesIO()
+        img.save(buffer, format="png", optimize=True)
+        buffer.seek(0)
+        return discord.File(buffer, filename="wrapped.png")
+
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
     @commands.hybrid_command(name="lid", description="Krijg profiel van gebruiker")
@@ -525,3 +565,14 @@ class usercard(Cog):
             ).start(ctx, command='id')
         else: 
             await ctx.send('Niet mogelijk voor bot')
+    
+    @commands.command()
+    async def wrapped(self, ctx: commands.Context, member: discord.Member = None):
+        """Show your Wrapped stats"""
+        if not member:
+            member = ctx.author
+            
+        await WrappedView(
+            cog=self,
+            _object=member,
+        ).start(ctx)

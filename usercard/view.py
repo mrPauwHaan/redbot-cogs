@@ -100,3 +100,47 @@ class usercardView(discord.ui.View):
             return False
         else:
             return True
+
+class WrappedView(discord.ui.View):
+    def __init__(
+        self,
+        cog: commands.Cog,
+        _object: discord.Member,
+    ) -> None:
+        super().__init__(timeout=60 * 60)
+        self.cog = cog
+        self.ctx: commands.Context = None
+        self._object: discord.Member = _object
+        self._message: discord.Message = None
+
+    async def start(self, ctx: commands.Context) -> discord.Message:
+        self.ctx = ctx
+        # Calls the renamed generator function
+        file: discord.File = await self.cog.generate_wrapped_image(
+            self._object,
+            to_file=True,
+        )
+        self._message = await self.ctx.send(file=file, view=self)
+        return self._message
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id not in [self.ctx.author.id] + list(self.ctx.bot.owner_ids):
+            await interaction.response.send_message(
+                "You are not allowed to use this.", ephemeral=True
+            )
+            return False
+        return True
+
+    @discord.ui.button(emoji="🔄", style=discord.ButtonStyle.primary)
+    async def reload_wrapped(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        file: discord.File = await self.cog.generate_wrapped_image(
+            self._object,
+            to_file=True,
+        )
+        await self._message.edit(attachments=[file])
+
+    @discord.ui.button(emoji="✖️", style=discord.ButtonStyle.danger)
+    async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.message.delete()
+        self.stop()
