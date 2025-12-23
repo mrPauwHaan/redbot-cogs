@@ -2,9 +2,8 @@ import discord
 from discord.ext import commands
 import asyncio
 from redbot.core.bot import Red
-from redbot.core import commands # Redundant import, already imported above
+from redbot.core import commands
 from redbot.core import Config
-
 
 class ChannelChanger(commands.Cog):
     def __init__(self, bot: Red) -> None:
@@ -16,264 +15,192 @@ class ChannelChanger(commands.Cog):
         )
         default_guild = {
             "channels": {}, # Channel ID (str) -> {"name": str, "majority": float, "template": str}
-            "ignoredStatus": ["Spotify", "Custom Status", "Medal"]
+            "ignoredStatus": ["Spotify", "Custom Status", "Medal"],
+            "global_mode": False,   # Nieuw: Schakelaar om alles te scannen
+            "blacklist": []         # Nieuw: Lijst met genegeerde Channel ID's
         }
         self.config.register_guild(**default_guild)
+
+    # --- Commands ---
+
+    @commands.group()
+    @commands.has_permissions(manage_channels=True)
+    async def ccset(self, ctx: commands.Context):
+        """Beheer instellingen voor ChannelChanger."""
+        pass
+
+    @ccset.command(name="global")
+    async def ccset_global(self, ctx: commands.Context):
+        """Wissel tussen alleen specifieke kanalen of ALLE kanalen scannen."""
+        current_mode = await self.config.guild(ctx.guild).global_mode()
+        new_mode = not current_mode
+        await self.config.guild(ctx.guild).global_mode.set(new_mode)
+        
+        status = "AAN (Scan alle kanalen)" if new_mode else "UIT (Scan alleen toegevoegde kanalen)"
+        await ctx.send(f"Global Mode staat nu **{status}**.")
+
+    @ccset.command(name="ignore")
+    async def ccset_ignore(self, ctx: commands.Context, channel: discord.VoiceChannel):
+        """Voeg een kanaal toe aan de uitzonderingen (wordt niet aangepast)."""
+        async with self.config.guild(ctx.guild).blacklist() as blacklist:
+            if channel.id in blacklist:
+                await ctx.send(f"`{channel.name}` staat al op de negeerlijst.")
+            else:
+                blacklist.append(channel.id)
+                await ctx.send(f"`{channel.name}` wordt nu genegeerd.")
+
+    @ccset.command(name="unignore")
+    async def ccset_unignore(self, ctx: commands.Context, channel: discord.VoiceChannel):
+        """Verwijder een kanaal van de uitzonderingen."""
+        async with self.config.guild(ctx.guild).blacklist() as blacklist:
+            if channel.id in blacklist:
+                blacklist.remove(channel.id)
+                await ctx.send(f"`{channel.name}` wordt weer meegenomen in de scans.")
+            else:
+                await ctx.send(f"`{channel.name}` stond niet op de negeerlijst.")
 
     @commands.command()
     @commands.has_permissions(manage_channels=True)
     async def addvc(self, ctx: commands.Context, channel: discord.VoiceChannel = None, majority: float = 0.5):
-        """Adds a voice channel to the watchlist.
-        Optionally provide a channel ID/mention. Defaults to your current VC.
-        Optional: add a number between 0 and 1 for amount of people needed to play the game (only if providing channel ID/mention).
-        """
-        target_channel = channel # Start with the provided channel
-
-        # If no channel argument was provided, try using the author's current VC
-        if target_channel is None:
-            if ctx.author.voice and ctx.author.voice.channel:
-                target_channel = ctx.author.voice.channel
-            else:
-                await ctx.send("You must be in a voice channel or provide a channel ID/mention.")
-                return
-
-        # Ensure the resolved target is actually a voice channel
-        if not isinstance(target_channel, discord.VoiceChannel):
-            await ctx.send("The provided ID/mention does not point to a valid voice channel in this guild.")
+        """Voeg specifieke instellingen toe voor een kanaal (overschrijft global defaults)."""
+        target_channel = channel or ctx.author.voice.channel if ctx.author.voice else None
+        
+        if not target_channel or not isinstance(target_channel, discord.VoiceChannel):
+            await ctx.send("Geef een geldig spraakkanaal op of ga in een kanaal zitten.")
             return
             
-        # Ensure the bot can see the channel (discord.py converter usually handles this, but double check)
         if target_channel.guild != ctx.guild:
-             await ctx.send("That channel is not in this guild.")
+             await ctx.send("Dat kanaal is niet in deze server.")
              return
 
         if not 0 <= majority <= 1:
-            await ctx.send("You must enter a number between 0 and 1 for the majority threshold.")
+            await ctx.send("Kies een nummer tussen 0 en 1.")
             return
 
-        channel_id_str = str(target_channel.id) # Use string ID
-
-        # Get existing channel data
         existing_channels = await self.config.guild(ctx.guild).channels()
-
-        if channel_id_str in existing_channels:
-             await ctx.send(f"`{target_channel.name}` is already being watched. Updating settings.")
-
-        # Add/Update the channel data with string ID
-        existing_channels[channel_id_str] = {
-            "name": target_channel.name, # Store original name
+        existing_channels[str(target_channel.id)] = {
+            "name": target_channel.name,
             "majority": majority,
-            "template": "X - Y" # Default template
+            "template": "X - Y"
         }
-
-        # Save updated channel data
+        
         await self.config.guild(ctx.guild).channels.set(existing_channels)
-        await ctx.send(f"Successfully added `{target_channel.name}` to my list with majority threshold {majority:.0%}.")
+        await ctx.send(f"`{target_channel.name}` succesvol ingesteld met drempelwaarde {majority:.0%}.")
 
     @commands.command()
     @commands.has_permissions(manage_channels=True)
     async def removevc(self, ctx: commands.Context, channelid: str = None):
-        """Removes a voice channel from the watchlist based on provided ID.
-        """
+        """Verwijder specifieke instellingen voor een kanaal."""
+        if channelid is None and ctx.author.voice:
+             channelid = str(ctx.author.voice.channel.id)
 
-        # If no channel argument was provided, try using the author's current VC
-        if channelid is None:
-            if ctx.author.voice and ctx.author.voice.channel:
-                channelid = str(ctx.author.voice.channel.id)
-            else:
-                await ctx.send("You must be in a voice channel or provide a channel ID/mention.")
-                return
-
-        # Get existing channel data
         existing_channels = await self.config.guild(ctx.guild).channels()
 
-
         if channelid in existing_channels:
-            del existing_channels[channelid] # Remove the channel
-            await self.config.guild(ctx.guild).channels.set(existing_channels) # Save changes
-            await ctx.send(f"Successfully removed `{channelid}` from my list.")
+            del existing_channels[channelid]
+            await self.config.guild(ctx.guild).channels.set(existing_channels)
+            await ctx.send(f"Specifieke instellingen voor `{channelid}` verwijderd.")
         else:
-            await ctx.send(f"`{channelid}` is not currently being watched.")
+            await ctx.send(f"`{channelid}` had geen specifieke instellingen.")
 
-    # --- Command to View Watched Channels ---
+    # --- Logic ---
 
-    @commands.command()
-    @commands.has_permissions(manage_channels=True)
-    async def changingchannels(self, ctx: commands.Context):
-        """See all channels that change based on activity."""
-        channel_configs = await self.config.guild(ctx.guild).channels()
-        if not channel_configs:
-            await ctx.send("No voice channels are currently being watched in this guild.")
-            return
-
-        message = "Watching the following voice channels:\n"
-        for channel_id, config in channel_configs.items():
-            # Attempt to fetch the channel by ID in case it was deleted
-            channel = ctx.guild.get_channel(int(channel_id))
-            channel_name = channel.name if channel else f"Unknown Channel (ID: {channel_id})"
-            message += f"- `{channel_name}` (Majority: {config.get('majority', 0.5):.0%}, Template: `{config.get('template', 'X - Y')}`)\n"
-
-        # Split message if too long
-        if len(message) > 2000:
-            await ctx.send("Too many channels to list. Check console or ask bot owner.") # Or paginate
-        else:
-            await ctx.send(message)
-
-
-    # --- Helper function to determine majority game ---
-    async def get_majority_game(self, channel: discord.VoiceChannel, majority_percent: float, ignored_statuses: list): # Renamed function
-        """Determines the majority game being played in a voice channel."""
+    async def get_majority_game(self, channel: discord.VoiceChannel, majority_percent: float, ignored_statuses: list):
+        """Bepaalt de meerderheidsgame."""
         games = {}
-        user_count = 0
-        
-        # Filter members who are not bots and might have activities
         active_members = [m for m in channel.members if not m.bot]
         user_count = len(active_members)
 
         if user_count == 0:
-            return None # No users, no game
+            return None
 
         for member in active_members:
-            # Iterate through all activities
             for activity in member.activities:
-                # Check if it's a game activity and not in the ignored list
                 if isinstance(activity, discord.Activity) and activity.type == discord.ActivityType.playing and activity.name not in ignored_statuses:
-                    game_name = activity.name
-                    games[game_name] = games.get(game_name, 0) + 1 # Tally the game
-                    # Once a valid game is found for this member, move to the next member
-                    break # Stop checking activities for this member once one game is found
+                    games[activity.name] = games.get(activity.name, 0) + 1
+                    break 
 
         if not games:
-             return None # No games being played by anyone
+             return None
 
-        # Find the game with the highest count
-        majority_name = ""
-        majority_number = 0
-        for game, count in games.items():
-            if count > majority_number:
-                majority_number = count
-                majority_name = game
-            # If counts are equal, the first one encountered keeps the majority (arbitrary but consistent)
+        majority_name = max(games, key=games.get)
+        count = games[majority_name]
 
-
-        # Check if the most played game meets the majority threshold
-        if majority_number / user_count > majority_percent:
+        if count / user_count > majority_percent:
             return majority_name
-        else:
-            return None # No game reached the required majority
+        return None
 
-
-   # --- Helper function to scan and update a single channel ---
-    # Reverted docstring as we are changing the name
-    async def scan_one(self, channel: discord.VoiceChannel, channel_configs: dict):
-        """Scans a single voice channel and updates its name if needed."""
-
-        # Get guild config using the channel object
+    async def scan_one(self, channel: discord.VoiceChannel):
+        """Scant één kanaal en update de status."""
         guild_config = await self.config.guild(channel.guild).get_raw()
-        # Use .get() with default, simplified as discussed
+        
+        # 1. Check Configuraties
+        global_mode = guild_config.get("global_mode", False)
+        blacklist = guild_config.get("blacklist", [])
+        specific_channels = guild_config.get("channels", {})
         ignored_statuses = guild_config.get("ignoredStatus", ["Spotify", "Custom Status", "Medal"])
 
-
-        # Get specific channel config using string ID
         channel_id_str = str(channel.id)
-        channel_config = channel_configs.get(channel_id_str)
+        
+        # Bepaal of we dit kanaal moeten scannen
+        channel_config = specific_channels.get(channel_id_str)
+        
+        should_scan = False
+        if channel_config:
+            should_scan = True # Altijd scannen als hij specifiek is toegevoegd
+        elif global_mode:
+            if channel.id not in blacklist:
+                should_scan = True # Scannen als global aanstaat en niet op blacklist
+        
+        if not should_scan:
+            return
 
-        if not channel_config:
-             print(f"Scan requested for channel {channel.id} but not found in config.")
-             return
+        # 2. Bepaal instellingen (Specifiek of Default)
+        if channel_config:
+            majority_threshold = channel_config.get("majority", 0.5)
+        else:
+            majority_threshold = 0.5 # Default voor global mode
 
+        # 3. Logica uitvoeren
+        game_title = await self.get_majority_game(channel, majority_threshold, ignored_statuses)
 
-        # Use stored name (needed for template X) or current if missing
-        original_name = channel_config.get("name", channel.name)
-        majority_threshold = channel_config.get("majority", 0.5)
-        template = channel_config.get("template", "X - Y")
+        # LET OP: Jouw originele code gebruikte channel.edit(status=...)
+        # Dit werkt alleen als je Discord library/versie dit ondersteunt (Voice Status)
+        
+        try:
+            # Check permissions
+            if not channel.permissions_for(channel.guild.me).manage_channels:
+                return
 
-
-        members_amount = len(channel.members)
-
-        # Determine the new name string
-        # Default title is the original name
-        new_title = original_name # Reverted variable name and default
-
-
-        if members_amount > 0:
-            # Get the majority game, filtering ignored statuses
-            game_title = await self.get_majority_game(channel, majority_threshold, ignored_statuses)
-
-            if game_title: # If a game met the majority threshold and was not ignored
-                 # Construct the new title string using the template
-                 template_to_use = channel_config.get("template", "X - Y")
-                 # Replace X with original name, Y with game title
-                 new_title = template_to_use.replace("X", original_name).replace("Y", game_title)
-            # If no majority game is found, new_title remains the original_name, which is the desired fallback.
-
-
-        # Check against Discord's channel name limit (usually 100 characters)
-        if len(new_title) > 100:
-            new_title = new_title[:97] + "..." # Truncate and add ellipsis
-
-
-        # Update the channel name only if it's different and bot has permission
-        # Check against channel.name
-        if channel.name != new_title:
-            # Check bot's permissions for this specific channel
-            bot_member = channel.guild.me
-            # Changing name requires manage_channels permission
-            if not channel.permissions_for(bot_member).manage_channels:
-                print(f"Bot lacks manage_channels permission for channel {channel.name} in guild {channel.guild.name}. Cannot change name.")
-                # Consider adding a way to inform the guild owner about this missing permission.
-                return # Exit scan_one if no permission
-
-            try:
-                # Discord has a rate limit for name changes (usually 2 changes per 10 minutes per channel)
-                # Rapid changes might hit this. Consider adding cooldowns if needed.
-                # (Not implemented here, but be aware)
-                # await channel.edit(name=new_title) # *** CHANGE IS HERE ***
+            # Als er een game is, zet status. Zo niet, clear status (of doe niets)
+            if game_title:
                 await channel.edit(status=game_title)
-                print(f"Changed channel `{channel.name}` (ID: {channel.id}) name to `{new_title}`")
-            except discord.Forbidden:
-                # This should ideally be caught by the permission check above, but included as a fallback
-                print(f"Bot lacks permissions to change name for channel {channel.name} in guild {channel.guild.name}.")
-            except discord.HTTPException as e:
-                # This might catch rate limits or other API errors
-                print(f"Failed to change channel name for {channel.name} (ID: {channel.id}): {e}")
-            except Exception as e:
-                # Catch any other unexpected errors
-                print(f"An unexpected error occurred changing name for channel {channel.name} (ID: {channel.id}): {e}")
+                # print(f"Changed status for {channel.name} to {game_title}")
+            else:
+                # Optioneel: Status verwijderen als er geen game meer is?
+                # await channel.edit(status="") 
+                pass 
+
+        except discord.Forbidden:
+            print(f"Bot lacks permissions for {channel.name}")
+        except Exception as e:
+            # Vang fouten af, bijv. als channel.edit(status) niet bestaat
+            print(f"Error updating channel {channel.id}: {e}")
 
     # --- Listeners ---
 
     @commands.Cog.listener(name='on_voice_state_update')
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
-        """Handles users joining, leaving, or moving voice channels."""
-        guild = member.guild
-        if not guild: # Should not happen but good practice
-             return
-
-        channel_configs = await self.config.guild(guild).channels()
-
-        # User joined a channel or moved to a channel
-        if after.channel and str(after.channel.id) in channel_configs:
-            # Trigger scan for the channel they joined/moved to
-            await self.scan_one(after.channel, channel_configs)
-
-        # User left a channel or moved from a channel
-        if before.channel and str(before.channel.id) in channel_configs and before.channel != after.channel:
-            # Trigger scan for the channel they left
-            await self.scan_one(before.channel, channel_configs)
-
+        if not member.guild: return
+        
+        # Als iemand een kanaal joint of verlaat, scan dat kanaal
+        if after.channel:
+            await self.scan_one(after.channel)
+        if before.channel and before.channel != after.channel:
+            await self.scan_one(before.channel)
 
     @commands.Cog.listener(name='on_presence_update')
     async def on_presence_update(self, before: discord.Member, after: discord.Member):
-        """Handles users changing their activity (playing a game)."""
-        guild = after.guild
-        if not guild or not after.voice or not after.voice.channel:
-            # Member is not in a voice channel we care about
+        if not after.guild or not after.voice or not after.voice.channel:
             return
-
-        channel = after.voice.channel
-        channel_configs = await self.config.guild(guild).channels()
-
-        if str(channel.id) in channel_configs:
-            # Trigger scan for the channel the member is in
-            await self.scan_one(channel, channel_configs)
+        await self.scan_one(after.voice.channel)
