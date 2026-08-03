@@ -154,12 +154,7 @@ class memberapplications(commands.Cog):
     # ------------------------------------------------------------------
     def build_v2_container_payload(self, user_id: int, username: str, created_at: str, form_responses: list, rejection_votes: int = 0, status_banner: str = None) -> list:
         """
-        Bouwt de officiële Discord Components V2 Container JSON-structuur op.
-        Type 17 = Container
-        Type 10 = Text Display
-        Type 14 = Separator
-        Type 1  = Action Row
-        Type 2  = Button
+        Bouwt de officiële Discord Components V2 Container JSON-structuur op voor de beoordeling.
         """
         header_text = f"## Aanvraag server joinen\n**Gebruiker:** <@{user_id}> (`{username}`)\n**Aangemaakt:** {created_at or 'Zojuist'}"
         if status_banner:
@@ -177,7 +172,7 @@ class memberapplications(commands.Cog):
             }
         ]
 
-        # Vragen en antwoorden toevoegen (zonder vraagteken emoji)
+        # In het reviewkanaal tonen we ALTIJD alle vragen (inclusief rules check)
         for item in form_responses:
             label = item.get("label", "Vraag")
             response = item.get("response", "Geen antwoord")
@@ -200,7 +195,7 @@ class memberapplications(commands.Cog):
             "content": f"-# User ID: `{user_id}`"
         })
 
-        # V2 Container (Type 17) zonder accent_color (neutrale/standaard look)
+        # V2 Container (Type 17) zonder accent_color
         components_payload = [
             {
                 "type": 17,  # Container Component
@@ -233,7 +228,7 @@ class memberapplications(commands.Cog):
         return components_payload
 
     # ------------------------------------------------------------------
-    # FORUM POSTING VIA V2 CONTAINERS
+    # FORUM POSTING VIA V2 CONTAINERS (MET GEFILTERDE VRAGEN)
     # ------------------------------------------------------------------
     async def post_to_intro_forum_v2(self, guild: discord.Guild, user_id: int, req_data: dict):
         """Plaatst een voorstel-thread in het forumkanaal met een V2 Container."""
@@ -254,28 +249,45 @@ class memberapplications(commands.Cog):
 
             form_responses = req_data.get("form_responses", [])
 
+            # =========================================================
+            # VUL HIER DE EXACTE LABEL-NAMEN IN DIE JE WILT UITSLEUTEN
+            # =========================================================
+            EXCLUDED_QUESTIONS = [
+                "Read and agree to the server rules",
+                "Lees en ga akkoord met de serverregels"
+            ]
+
             forum_container_children = [
                 {
                     "type": 10,  # Text Display
                     "content": f"## 👋 Welkom in Shadowzone, <@{user_id}>!\nStel je gerust verder voor of klets gezellig mee in deze thread. 🎉"
-                },
-                {
-                    "type": 14,  # Separator Component
-                    "divider": True,
-                    "spacing": 1
                 }
             ]
 
-            for item in form_responses:
-                label = item.get("label", "Vraag")
-                response = item.get("response", "Geen antwoord")
-                if isinstance(response, list):
-                    response = ", ".join(response)
+            # Haal de vragen op die NIET op de uitsluitlijst staan
+            valid_responses = [
+                item for item in form_responses 
+                if item.get("label") not in EXCLUDED_QUESTIONS
+            ]
 
+            # Voeg alleen een scheidingslijn en vragen toe als er geldige vragen overblijven
+            if valid_responses:
                 forum_container_children.append({
-                    "type": 10,  # Text Display
-                    "content": f"**{label}**\n▸ {response or '—'}"
+                    "type": 14,  # Separator Component
+                    "divider": True,
+                    "spacing": 1
                 })
+
+                for item in valid_responses:
+                    label = item.get("label", "Vraag")
+                    response = item.get("response", "Geen antwoord")
+                    if isinstance(response, list):
+                        response = ", ".join(response)
+
+                    forum_container_children.append({
+                        "type": 10,  # Text Display
+                        "content": f"**{label}**\n▸ {response or '—'}"
+                    })
 
             payload = {
                 "name": thread_title,
