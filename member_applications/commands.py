@@ -71,6 +71,24 @@ class memberapplications(commands.Cog):
         self.applications_loop.cancel()
 
     # ------------------------------------------------------------------
+    # AUTOMATISCHE TASKS.LOOP (ELKE 1 MINUUT)
+    # ------------------------------------------------------------------
+    @tasks.loop(minutes=1)
+    async def applications_loop(self):
+        """Controleert elke minuut automatisch op nieuwe lidmaatschapsaanvragen via tasks.loop."""
+        self.log.info("⏰ [Timer] Gestart met automatische minuut-check via tasks.loop...")
+        count = await self._check_applications()
+        self.log.info(f"🏁 [Timer] Minuut-check voltooid. {count} nieuwe verzoeken verwerkt.")
+
+    @applications_loop.before_loop
+    async def before_applications_loop(self):
+        await self.bot.wait_until_ready()
+
+    @applications_loop.error
+    async def applications_loop_error(self, error):
+        self.log.exception(f"❌ [Timer] Fout in applications_loop:", exc_info=error)
+
+    # ------------------------------------------------------------------
     # DISCORD REST API ENDPOINTS
     # ------------------------------------------------------------------
     async def fetch_join_requests(self, guild_id: int, limit: int = 25):
@@ -81,8 +99,6 @@ class memberapplications(commands.Cog):
         route = discord.http.Route("GET", f"/guilds/{guild_id}/requests?status=SUBMITTED&limit={limit}")
         try:
             response = await self.bot.http.request(route)
-            
-            # Vang zowel Lijst als Dict op (voorkomt AttributeError)
             if isinstance(response, list):
                 return response
             elif isinstance(response, dict):
@@ -113,26 +129,6 @@ class memberapplications(commands.Cog):
         except Exception as e:
             self.log.exception(f"Onverwachte fout bij patch_join_request voor user {user_id}: {e}")
             return False
-
-    # ------------------------------------------------------------------
-    # AUTOMATISCHE CHECK LOOP (ELKE 1 MINUUT)
-    # ------------------------------------------------------------------
-    @tasks.loop(minutes=1)
-    async def applications_loop(self):
-        """Controleert elke minuut automatisch op nieuwe lidmaatschapsaanvragen."""
-        try:
-            await self._check_applications()
-        except Exception as e:
-            self.log.exception(f"Fout tijdens de automatische minuut-check loop: {e}")
-
-    @applications_loop.before_loop
-    async def before_applications_loop(self):
-        await self.bot.wait_until_ready()
-
-    @applications_loop.error
-    async def applications_loop_error(self, error):
-        """Vangt eventuele onbehandelde exceptions op zodat de loop niet sterft."""
-        self.log.exception(f"Kritieke fout in applications_loop timer:", exc_info=error)
 
     # ------------------------------------------------------------------
     # COMMANDS
@@ -194,10 +190,14 @@ class memberapplications(commands.Cog):
                 self.log.warning("Geen review_channel_id ingesteld. Gebruik [prefix]appset channel.")
                 return False
 
+            # Haal kanaal op uit geheugen of doe een actieve API fetch
             channel = guild.get_channel(review_channel_id)
             if not channel:
-                self.log.error(f"Kanaal met ID {review_channel_id} kon niet gevonden worden in de guild.")
-                return False
+                try:
+                    channel = await guild.fetch_channel(review_channel_id)
+                except Exception as e:
+                    self.log.error(f"Kanaal met ID {review_channel_id} kon niet worden opgehaald: {e}")
+                    return False
 
             user_data = req.get("user", {})
             username = user_data.get("username", "Onbekend")
@@ -237,8 +237,14 @@ class memberapplications(commands.Cog):
         try:
             if not guild:
                 guild = self.bot.get_guild(self.target_guild_id)
+            
+            # Fallback als get_guild None teruggeeft
             if not guild:
-                return 0
+                try:
+                    guild = await self.bot.fetch_guild(self.target_guild_id)
+                except Exception as e:
+                    self.log.error(f"Kan server {self.target_guild_id} niet ophalen: {e}")
+                    return 0
 
             requests = await self.fetch_join_requests(guild.id)
             new_count = 0
