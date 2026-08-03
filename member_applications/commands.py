@@ -157,7 +157,7 @@ class memberapplications(commands.Cog):
         Bouwt de officiële Discord Components V2 Container JSON-structuur op.
         Type 17 = Container
         Type 10 = Text Display
-        Type 13 = Separator
+        Type 14 = Separator
         Type 1  = Action Row
         Type 2  = Button
         """
@@ -171,7 +171,7 @@ class memberapplications(commands.Cog):
                 "content": header_text
             },
             {
-                "type": 13,  # Separator
+                "type": 14,  # Separator Component (Gecorrigeerd naar 14!)
                 "divider": True,
                 "spacing": 1
             }
@@ -190,7 +190,7 @@ class memberapplications(commands.Cog):
             })
 
         container_children.append({
-            "type": 13,  # Separator
+            "type": 14,  # Separator Component (Gecorrigeerd naar 14!)
             "divider": True,
             "spacing": 1
         })
@@ -261,7 +261,7 @@ class memberapplications(commands.Cog):
                     "content": f"## 👋 Welkom in Shadowzone, <@{user_id}>!\nStel je gerust verder voor of klets gezellig mee in deze thread. 🎉"
                 },
                 {
-                    "type": 13,  # Separator
+                    "type": 14,  # Separator Component (Gecorrigeerd naar 14!)
                     "divider": True,
                     "spacing": 1
                 }
