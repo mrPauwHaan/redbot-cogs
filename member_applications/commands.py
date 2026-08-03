@@ -52,7 +52,6 @@ class memberapplications(commands.Cog):
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
-        self.target_guild_id = 331058477541621774
         self.log = logging.getLogger("red.memberapplications")
 
         # Redbot Config voor instellingen
@@ -64,10 +63,12 @@ class memberapplications(commands.Cog):
         self.config.register_guild(**default_guild)
 
     async def cog_load(self):
+        self.log.info("🚀 [MemberApps] Cog geladen! Timer wordt gestart...")
         if not self.applications_loop.is_running():
             self.applications_loop.start()
 
     async def cog_unload(self):
+        self.log.info("🛑 [MemberApps] Cog unloaded. Timer wordt gestopt.")
         self.applications_loop.cancel()
 
     # ------------------------------------------------------------------
@@ -76,17 +77,21 @@ class memberapplications(commands.Cog):
     @tasks.loop(minutes=1)
     async def applications_loop(self):
         """Controleert elke minuut automatisch op nieuwe lidmaatschapsaanvragen via tasks.loop."""
-        self.log.info("⏰ [Timer] Gestart met automatische minuut-check via tasks.loop...")
+        self.log.info("⏰ [Timer Tik] Bezig met automatische minuut-check voor aanvragen...")
         count = await self._check_applications()
-        self.log.info(f"🏁 [Timer] Minuut-check voltooid. {count} nieuwe verzoeken verwerkt.")
+        self.log.info(f"🏁 [Timer Tik] Minuut-check voltooid. {count} nieuwe verzoeken verwerkt.")
 
     @applications_loop.before_loop
     async def before_applications_loop(self):
-        await self.bot.wait_until_ready()
+        # Voorkom dat de loop blijft hangen als de bot al online is bij een reload!
+        if not self.bot.is_ready():
+            self.log.info("⏳ [Timer] Wachten tot de bot ready is...")
+            await self.bot.wait_until_ready()
+        self.log.info("✅ [Timer] Bot is ready, lus start nu officieel!")
 
     @applications_loop.error
     async def applications_loop_error(self, error):
-        self.log.exception(f"❌ [Timer] Fout in applications_loop:", exc_info=error)
+        self.log.exception(f"❌ [Timer Fout] Kritieke fout in applications_loop:", exc_info=error)
 
     # ------------------------------------------------------------------
     # DISCORD REST API ENDPOINTS
@@ -187,7 +192,6 @@ class memberapplications(commands.Cog):
 
             review_channel_id = await self.config.guild(guild).review_channel_id()
             if not review_channel_id:
-                self.log.warning("Geen review_channel_id ingesteld. Gebruik [prefix]appset channel.")
                 return False
 
             # Haal kanaal op uit geheugen of doe een actieve API fetch
@@ -233,26 +237,22 @@ class memberapplications(commands.Cog):
             return False
 
     async def _check_applications(self, guild: discord.Guild = None):
-        """Controleert op verzoeken via de REST API."""
+        """Controleert op verzoeken via de REST API voor alle relevante guilds."""
         try:
-            if not guild:
-                guild = self.bot.get_guild(self.target_guild_id)
-            
-            # Fallback als get_guild None teruggeeft
-            if not guild:
-                try:
-                    guild = await self.bot.fetch_guild(self.target_guild_id)
-                except Exception as e:
-                    self.log.error(f"Kan server {self.target_guild_id} niet ophalen: {e}")
-                    return 0
+            guilds_to_check = [guild] if guild else self.bot.guilds
+            total_new = 0
 
-            requests = await self.fetch_join_requests(guild.id)
-            new_count = 0
-            for req in requests:
-                if await self._process_single_request(req, guild):
-                    new_count += 1
+            for g in guilds_to_check:
+                review_channel_id = await self.config.guild(g).review_channel_id()
+                if not review_channel_id:
+                    continue
 
-            return new_count
+                requests = await self.fetch_join_requests(g.id)
+                for req in requests:
+                    if await self._process_single_request(req, g):
+                        total_new += 1
+
+            return total_new
         except Exception as e:
             self.log.exception(f"Fout tijdens _check_applications: {e}")
             return 0
