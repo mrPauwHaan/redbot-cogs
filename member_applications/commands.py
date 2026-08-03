@@ -71,13 +71,13 @@ class memberapplications(commands.Cog):
         self.applications_loop.cancel()
 
     # ------------------------------------------------------------------
-    # RAW WEBSOCKET LISTENER (REALTIME)
+    # RAW WEBSOCKET LISTENER (REALTIME & ROBUUST)
     # ------------------------------------------------------------------
     @commands.Cog.listener()
     async def on_socket_raw_receive(self, msg):
         """
         Luistert live naar het ruwe WebSocket-verkeer van Discord.
-        Vangt 'GUILD_JOIN_REQUEST_CREATE' op voor directe verwerking!
+        Vangt 'GUILD_JOIN_REQUEST_CREATE' en 'UPDATE' op met flexibele payload parsing.
         """
         if isinstance(msg, bytes):
             return  # Sla audio/voice pakketjes over voor performance
@@ -88,16 +88,24 @@ class memberapplications(commands.Cog):
             
             if event_type in ("GUILD_JOIN_REQUEST_CREATE", "GUILD_JOIN_REQUEST_UPDATE"):
                 payload = data.get("d", {})
-                guild_id = int(payload.get("guild_id", 0))
+                req_data = payload.get("request", payload)
+                
+                # Haal guild_id op uit root payload óf uit het request object
+                guild_id_raw = payload.get("guild_id") or req_data.get("guild_id", 0)
+                guild_id = int(guild_id_raw)
                 
                 if guild_id == self.target_guild_id:
-                    self.log.info("📥 Realtime Join Request ontvangen via WebSocket!")
+                    self.log.info(f"📥 Realtime Join Request ontvangen via WebSocket ({event_type})!")
                     guild = self.bot.get_guild(self.target_guild_id)
                     if guild:
-                        req_data = payload.get("request", payload)
-                        await self._process_single_request(req_data, guild)
-        except Exception:
-            pass  # Negeer parse errors van ongerelateerd netwerkverkeer
+                        # Probeer het verzoek direct vanuit het pakket te verwerken
+                        success = await self._process_single_request(req_data, guild)
+                        
+                        # Fallback: Als het pakket een afwijkende opbouw had, voer direct de REST check uit
+                        if not success:
+                            await self._check_applications(guild)
+        except Exception as e:
+            self.log.debug(f"Fout bij verwerken van WebSocket event: {e}")
 
     # ------------------------------------------------------------------
     # DISCORD REST API ENDPOINTS
