@@ -1,4 +1,3 @@
-import json
 import logging
 import discord
 from discord.ext import tasks
@@ -71,38 +70,6 @@ class memberapplications(commands.Cog):
         self.applications_loop.cancel()
 
     # ------------------------------------------------------------------
-    # RAW WEBSOCKET LISTENER (REALTIME & STRIKT)
-    # ------------------------------------------------------------------
-    @commands.Cog.listener()
-    async def on_socket_raw_receive(self, msg):
-        """
-        Luistert live naar het ruwe WebSocket-verkeer van Discord.
-        Vangt 'GUILD_JOIN_REQUEST_CREATE' en 'UPDATE' op.
-        """
-        if isinstance(msg, bytes):
-            return  # Sla audio/voice pakketjes over voor performance
-
-        try:
-            data = json.loads(msg)
-            event_type = data.get("t")
-            
-            if event_type in ("GUILD_JOIN_REQUEST_CREATE", "GUILD_JOIN_REQUEST_UPDATE"):
-                payload = data.get("d", {})
-                req_data = payload.get("request", payload)
-                
-                # Haal guild_id op uit root payload óf uit het request object
-                guild_id_raw = payload.get("guild_id") or req_data.get("guild_id", 0)
-                guild_id = int(guild_id_raw)
-                
-                if guild_id == self.target_guild_id:
-                    guild = self.bot.get_guild(self.target_guild_id)
-                    if guild:
-                        # Verwerkt het verzoek direct vanuit het pakket
-                        await self._process_single_request(req_data, guild)
-        except Exception as e:
-            self.log.debug(f"Fout bij verwerken van WebSocket event: {e}")
-
-    # ------------------------------------------------------------------
     # DISCORD REST API ENDPOINTS
     # ------------------------------------------------------------------
     async def fetch_join_requests(self, guild_id: int, limit: int = 25):
@@ -135,11 +102,11 @@ class memberapplications(commands.Cog):
             return False
 
     # ------------------------------------------------------------------
-    # BACKUP LOOP
+    # AUTOMATISCHE CHECK LOOP (ELKE 1 MINUUT)
     # ------------------------------------------------------------------
-    @tasks.loop(minutes=15)
+    @tasks.loop(minutes=1)
     async def applications_loop(self):
-        """Achtergrond-back-up die elke 15 minuten controleert voor het geval een WebSocket event gemist is."""
+        """Controleert elke minuut automatisch op nieuwe lidmaatschapsaanvragen."""
         await self._check_applications()
 
     @applications_loop.before_loop
@@ -170,7 +137,7 @@ class memberapplications(commands.Cog):
     @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def checkapps(self, ctx: commands.Context):
-        """Handmatig controleren op nieuwe lidmaatschapsaanvragen."""
+        """Handmatig direct controleren op nieuwe lidmaatschapsaanvragen."""
         count = await self._check_applications(ctx.guild)
         await ctx.send(f"Verwerking voltooid. {count} nieuwe aanvraag/aanvragen verwerkt.")
 
@@ -179,7 +146,6 @@ class memberapplications(commands.Cog):
     # ------------------------------------------------------------------
     async def _process_single_request(self, req: dict, guild: discord.Guild) -> bool:
         """Verwerkt één en enkel openstaand (SUBMITTED) verzoek."""
-        # 1. Negeer verzoeken die niet de status 'SUBMITTED' hebben (voorkomt verwerking van APPROVED/REJECTED updates)
         status = req.get("status")
         if status and status != "SUBMITTED":
             return False
@@ -188,7 +154,7 @@ class memberapplications(commands.Cog):
         if not user_id:
             return False
 
-        # 2. Unieke sleutel per SPECIFIEKE INZENDING (combineert request_id met de aanmaaktijd)
+        # Unieke sleutel per SPECIFIEKE INZENDING
         raw_req_id = req.get("id") or req.get("request_id") or str(user_id)
         created_at = req.get("created_at", "")
         request_key = f"{raw_req_id}_{created_at}"
@@ -209,7 +175,7 @@ class memberapplications(commands.Cog):
         username = user_data.get("username", "Onbekend")
         form_responses = req.get("form_responses", [])
 
-        # 3. Bouw de embed op
+        # Bouw de embed op
         embed = discord.Embed(
             title="📥 Nieuwe Lidmaatschapsaanvraag",
             description=f"**Gebruiker:** <@{user_id}> (`{username}`)\n**Aangemaakt:** {created_at or 'Zojuist'}",
@@ -226,7 +192,7 @@ class memberapplications(commands.Cog):
         view = JoinRequestView(cog=self, guild_id=guild.id, user_id=user_id)
         await channel.send(embed=embed, view=view)
 
-        # 4. Sla op in geheugen (maximaal 100 items bewaren)
+        # Sla op in geheugen (maximaal 100 items bewaren)
         async with self.config.guild(guild).processed_requests() as proc_list:
             proc_list.append(request_key)
             if len(proc_list) > 100:
@@ -236,7 +202,7 @@ class memberapplications(commands.Cog):
         return True
 
     async def _check_applications(self, guild: discord.Guild = None):
-        """Controleert op verzoeken via de REST API (back-up)."""
+        """Controleert op verzoeken via de REST API."""
         if not guild:
             guild = self.bot.get_guild(self.target_guild_id)
         if not guild:
