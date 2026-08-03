@@ -171,13 +171,13 @@ class memberapplications(commands.Cog):
                 "content": header_text
             },
             {
-                "type": 14,  # Separator Component (Gecorrigeerd naar 14!)
+                "type": 14,  # Separator Component
                 "divider": True,
                 "spacing": 1
             }
         ]
 
-        # Vragen en antwoorden toevoegen
+        # Vragen en antwoorden toevoegen (zonder vraagteken emoji)
         for item in form_responses:
             label = item.get("label", "Vraag")
             response = item.get("response", "Geen antwoord")
@@ -186,11 +186,11 @@ class memberapplications(commands.Cog):
 
             container_children.append({
                 "type": 10,  # Text Display
-                "content": f"❓ **{label}**\n▸ {response or '—'}"
+                "content": f"**{label}**\n▸ {response or '—'}"
             })
 
         container_children.append({
-            "type": 14,  # Separator Component (Gecorrigeerd naar 14!)
+            "type": 14,  # Separator Component
             "divider": True,
             "spacing": 1
         })
@@ -200,11 +200,10 @@ class memberapplications(commands.Cog):
             "content": f"-# User ID: `{user_id}`"
         })
 
-        # V2 Container (Type 17) met accent kleur #ff0502 (16712962)
+        # V2 Container (Type 17) zonder accent_color (neutrale/standaard look)
         components_payload = [
             {
                 "type": 17,  # Container Component
-                "accent_color": 16712962,  # #ff0502 in integer
                 "components": container_children
             }
         ]
@@ -261,7 +260,7 @@ class memberapplications(commands.Cog):
                     "content": f"## 👋 Welkom in Shadowzone, <@{user_id}>!\nStel je gerust verder voor of klets gezellig mee in deze thread. 🎉"
                 },
                 {
-                    "type": 14,  # Separator Component (Gecorrigeerd naar 14!)
+                    "type": 14,  # Separator Component
                     "divider": True,
                     "spacing": 1
                 }
@@ -275,7 +274,7 @@ class memberapplications(commands.Cog):
 
                 forum_container_children.append({
                     "type": 10,  # Text Display
-                    "content": f"❓ **{label}**\n▸ {response or '—'}"
+                    "content": f"**{label}**\n▸ {response or '—'}"
                 })
 
             payload = {
@@ -286,7 +285,6 @@ class memberapplications(commands.Cog):
                     "components": [
                         {
                             "type": 17,  # Container Component
-                            "accent_color": 16712962,  # #ff0502
                             "components": forum_container_children
                         }
                     ]
