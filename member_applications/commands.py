@@ -234,7 +234,7 @@ class memberapplications(commands.Cog):
         try:
             forum_channel_id = await self.config.guild(guild).forum_channel_id()
             if not forum_channel_id:
-                forum_channel_id = 1533910453183316159
+                forum_channel_id = 1053344324487761980
 
             member = guild.get_member(user_id)
             if not member:
