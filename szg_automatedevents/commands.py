@@ -67,36 +67,39 @@ class memberapplications(commands.Cog):
         self.config.register_guild(**default_guild)
 
     async def cog_load(self):
-        """Start de achtergrond-task op dezelfde manier als automatedevents."""
-        self.applications_loop.start()
+        """Start de achtergrond-task zodra de cog wordt ingeladen."""
+        self.log.info("▶️ [MemberApps] cog_load gestart. Timer wordt geactiveerd...")
+        if not self.applications_loop.is_running():
+            self.applications_loop.start()
 
     async def cog_unload(self):
-        """Stop de achtergrond-task bij unload op dezelfde manier als automatedevents."""
+        """Stop de achtergrond-task bij het unloaden/reloaden."""
+        self.log.info("⏹️ [MemberApps] cog_unload gestart. Timer wordt stopgezet...")
         self.applications_loop.cancel()
 
     # ------------------------------------------------------------------
-    # TASKS LOOP (STRUCTUUR IDENTIEK AAN AUTOMATEDEVENTS)
+    # TASKS LOOP (MET EXPLICIETE LOGS ELKE MINUUT)
     # ------------------------------------------------------------------
     @tasks.loop(minutes=1)
     async def applications_loop(self):
-        """
-        This task will run every minute to check for member join requests.
-        """
-        await self._check_applications()
+        """Draait elke minuut automatisch op de achtergrond."""
+        self.log.info("⏰ [Timer Tik] Automatische minuut-controle gestart...")
+        try:
+            count = await self._check_applications()
+            self.log.info(f"🏁 [Timer Tik] Minuut-controle voltooid ({count} nieuwe verzoeken verwerkt).")
+        except Exception as e:
+            self.log.exception(f"❌ [Timer Fout] Fout tijdens uitvoeren van minuut-loop: {e}")
 
     @applications_loop.before_loop
     async def before_applications_loop(self):
+        self.log.info("⏳ [Timer Setup] Wachten tot de bot gereed is (wait_until_ready)...")
         await self.bot.wait_until_ready()
-        self.log.info("Applications loop is ready to start.")
+        self.log.info("🟢 [Timer Setup] Bot is gereed! De minuut-timer loopt nu actief.")
 
     # ------------------------------------------------------------------
     # DISCORD REST API ENDPOINTS
     # ------------------------------------------------------------------
     async def fetch_join_requests(self, guild_id: int, limit: int = 25):
-        """
-        Haalt openstaande join requests op via het REST endpoint.
-        Status query `status=SUBMITTED` voorkomt Discord 500 errors.
-        """
         route = discord.http.Route("GET", f"/guilds/{guild_id}/requests?status=SUBMITTED&limit={limit}")
         try:
             response = await self.bot.http.request(route)
@@ -114,11 +117,6 @@ class memberapplications(commands.Cog):
             return []
 
     async def patch_join_request(self, guild_id: int, user_id: int, action: str):
-        """
-        Keurt een request goed of wijst af via:
-        PATCH /guilds/{guild_id}/requests/{user_id}
-        action kan 'APPROVED' of 'REJECTED' zijn.
-        """
         route = discord.http.Route("PATCH", f"/guilds/{guild_id}/requests/{user_id}")
         payload = {"action": action}
         try:
@@ -132,12 +130,12 @@ class memberapplications(commands.Cog):
             return False
 
     async def remove_processed_request(self, guild_id: int, request_key: str):
-        """Verwijder een verwerkte sleutel uit de config zodra deze is afgehandeld."""
         guild = self.bot.get_guild(guild_id)
         if guild:
             async with self.config.guild(guild).processed_requests() as proc_list:
                 if request_key in proc_list:
                     proc_list.remove(request_key)
+                    self.log.info(f"🧹 Sleutel {request_key} verwijderd uit cache na afhandeling.")
 
     # ------------------------------------------------------------------
     # COMMANDS
@@ -175,7 +173,6 @@ class memberapplications(commands.Cog):
     # CORE LOGIC FOR APPLICATIONS
     # ------------------------------------------------------------------
     async def _process_single_request(self, req: dict, guild: discord.Guild) -> bool:
-        """Verwerkt één en enkel openstaand (SUBMITTED) verzoek."""
         try:
             status = req.get("status")
             if status and status != "SUBMITTED":
@@ -191,11 +188,12 @@ class memberapplications(commands.Cog):
 
             processed = await self.config.guild(guild).processed_requests()
             if request_key in processed:
+                self.log.info(f"ℹ️ Verzoek {request_key} (user {user_id}) overgeslagen: staat al in cache.")
                 return False
 
             review_channel_id = await self.config.guild(guild).review_channel_id()
             if not review_channel_id:
-                self.log.warning("Geen review_channel_id ingesteld in config. Gebruik [prefix]appset channel.")
+                self.log.warning(f"⚠️ Geen review_channel_id ingesteld voor guild {guild.id}. Gebruik [prefix]appset channel.")
                 return False
 
             channel = guild.get_channel(review_channel_id)
@@ -203,7 +201,7 @@ class memberapplications(commands.Cog):
                 try:
                     channel = await guild.fetch_channel(review_channel_id)
                 except Exception as e:
-                    self.log.error(f"Kanaal met ID {review_channel_id} kon niet worden opgehaald: {e}")
+                    self.log.error(f"❌ Kanaal met ID {review_channel_id} kon niet worden opgehaald: {e}")
                     return False
 
             user_data = req.get("user", {})
@@ -240,7 +238,6 @@ class memberapplications(commands.Cog):
             return False
 
     async def _check_applications(self, guild: discord.Guild = None):
-        """Controleert op verzoeken via de REST API."""
         try:
             if not guild:
                 guild = self.bot.get_guild(self.target_guild_id)
@@ -253,6 +250,8 @@ class memberapplications(commands.Cog):
                     return 0
 
             requests = await self.fetch_join_requests(guild.id)
+            self.log.info(f"🔍 [REST API] {len(requests)} openstaande verzoek(en) (SUBMITTED) opgehaald bij Discord.")
+
             new_count = 0
             for req in requests:
                 if await self._process_single_request(req, guild):
