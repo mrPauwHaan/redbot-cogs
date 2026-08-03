@@ -17,7 +17,7 @@ class JoinRequestView(discord.ui.View):
         self.request_key = request_key
         self.rejections = set()  # Slaat user_ids op van leden die voor afwijzen stemmen
 
-    @discord.ui.button(label="Goedkeuren", style=discord.ButtonStyle.green, custom_id="btn_approve_join")
+    @discord.ui.button(label="Goedkeuren", style=discord.ButtonStyle.green, emoji="✅", custom_id="btn_approve_join")
     async def approve_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
         success = await self.cog.patch_join_request(self.guild_id, self.user_id, action="APPROVED")
@@ -28,20 +28,20 @@ class JoinRequestView(discord.ui.View):
             
             embed = interaction.message.embeds[0] if (interaction.message and interaction.message.embeds) else None
             
-            # Haal guild op en maak automatisch de voorstel-thread in het forum aan
+            # Maak automatisch de voorstel-thread in het forum aan
             guild = interaction.guild or self.cog.bot.get_guild(self.guild_id)
             if guild:
                 await self.cog.post_to_intro_forum(guild, self.user_id, embed)
 
             await interaction.edit_original_response(
-                content=f"✅ **Aanvraag goedgekeurd door {interaction.user.mention}!**",
+                content=f"🎉 **Aanvraag goedgekeurd door {interaction.user.mention}!**",
                 embed=embed,
                 view=None
             )
         else:
             await interaction.followup.send("⚠️ Er is iets misgegaan bij het goedkeuren via de Discord API.", ephemeral=True)
 
-    @discord.ui.button(label="Afwijzen (0/3)", style=discord.ButtonStyle.red, custom_id="btn_reject_join")
+    @discord.ui.button(label="Afwijzen (0/3)", style=discord.ButtonStyle.red, emoji="❌", custom_id="btn_reject_join")
     async def reject_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         # Voorkom dat een gebruiker meerdere keren stemt
         if interaction.user.id in self.rejections:
@@ -64,7 +64,7 @@ class JoinRequestView(discord.ui.View):
                 await self.cog.remove_processed_request(self.guild_id, self.request_key)
                 voters_str = ", ".join([f"<@{v_id}>" for v_id in self.rejections])
                 await interaction.edit_original_response(
-                    content=f"❌ **Aanvraag definitief afgewezen door {voters_str} (3/3 stemmen).**",
+                    content=f"🚫 **Aanvraag definitief afgewezen door {voters_str} (3/3 stemmen).**",
                     embed=interaction.message.embeds[0] if interaction.message.embeds else None,
                     view=None
                 )
@@ -181,7 +181,7 @@ class memberapplications(commands.Cog):
                     self.log.error(f"Forum kanaal {forum_channel_id} kon niet opgehaald worden: {e}")
                     return
 
-            # Probeer de gebruiker/member op te halen voor de naam
+            # Haal gebruiker op voor naam en avatar
             member = guild.get_member(user_id)
             if not member:
                 try:
@@ -190,21 +190,27 @@ class memberapplications(commands.Cog):
                     member = None
 
             username = member.display_name if member else f"Gebruiker {user_id}"
+            avatar_url = member.display_avatar.url if member else guild.icon.url if guild.icon else None
 
             # Titel van de thread (max 100 tekens volgens Discord limiet)
-            thread_title = f"Voorstellen - {username}"[:100]
+            thread_title = f"👋 Voorstellen - {username}"[:100]
 
             # Inhoud van het voorstel-bericht
-            content_text = f"Welkom in de server <@{user_id}>! 🎉\n\nHier zijn de antwoorden uit de lidmaatschapsaanvraag:"
+            content_text = f"Welkom in Shadowzone <@{user_id}>! 🎉\nStel je gerust verder voor of klets gezellig mee in deze thread."
 
             intro_embed = discord.Embed(
-                title=f"Voorstellen: {username}",
+                title=f"📝 Ingevulde vragen van {username}",
                 color=discord.Color(0xff0502)
             )
 
+            if avatar_url:
+                intro_embed.set_thumbnail(url=avatar_url)
+
             if original_embed and original_embed.fields:
                 for field in original_embed.fields:
-                    intro_embed.add_field(name=field.name, value=field.value, inline=False)
+                    intro_embed.add_field(name=f"❓ {field.name}", value=field.value, inline=False)
+
+            intro_embed.set_footer(text="Shadowzone Welkomsteam", icon_url=guild.icon.url if guild.icon else None)
 
             # Maak de thread aan in het forumkanaal
             await channel.create_thread(
@@ -293,19 +299,34 @@ class memberapplications(commands.Cog):
             username = user_data.get("username", "Onbekend")
             form_responses = req.get("form_responses", [])
 
-            # Bouw de embed op met titel en kleur (#ff0502)
+            # Haal member of user op voor avatar
+            member = guild.get_member(user_id)
+            if not member:
+                try:
+                    member = await guild.fetch_member(user_id)
+                except Exception:
+                    member = None
+
+            avatar_url = member.display_avatar.url if member else None
+
+            # Bouw de gestylede v2 embed op
             embed = discord.Embed(
-                title="Aanvraag server joinen",
+                title="📥 Aanvraag server joinen",
                 description=f"**Gebruiker:** <@{user_id}> (`{username}`)\n**Aangemaakt:** {created_at or 'Zojuist'}",
                 color=discord.Color(0xff0502)
             )
+
+            if avatar_url:
+                embed.set_thumbnail(url=avatar_url)
 
             for form_item in form_responses:
                 label = form_item.get("label", "Vraag")
                 response = form_item.get("response", "Geen antwoord")
                 if isinstance(response, list):
                     response = ", ".join(response)
-                embed.add_field(name=label, value=response or "—", inline=False)
+                embed.add_field(name=f"📌 {label}", value=response or "—", inline=False)
+
+            embed.set_footer(text=f"User ID: {user_id}", icon_url=guild.icon.url if guild.icon else None)
 
             view = JoinRequestView(cog=self, guild_id=guild.id, user_id=user_id, request_key=request_key)
             await channel.send(embed=embed, view=view)
