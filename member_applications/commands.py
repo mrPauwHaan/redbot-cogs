@@ -26,11 +26,12 @@ class JoinRequestView(discord.ui.View):
             # Verwijder uit cache
             await self.cog.remove_processed_request(self.guild_id, self.request_key)
             
-            embed = interaction.message.embeds[0] if interaction.message.embeds else None
+            embed = interaction.message.embeds[0] if (interaction.message and interaction.message.embeds) else None
             
-            # Maak automatisch een voorstel-post aan in het forumkanaal
-            if interaction.guild:
-                await self.cog.post_to_intro_forum(interaction.guild, self.user_id, embed)
+            # Haal guild op en maak automatisch de voorstel-thread in het forum aan
+            guild = interaction.guild or self.cog.bot.get_guild(self.guild_id)
+            if guild:
+                await self.cog.post_to_intro_forum(guild, self.user_id, embed)
 
             await interaction.edit_original_response(
                 content=f"✅ **Aanvraag goedgekeurd door {interaction.user.mention}!**",
@@ -170,36 +171,45 @@ class memberapplications(commands.Cog):
         try:
             forum_channel_id = await self.config.guild(guild).forum_channel_id()
             if not forum_channel_id:
-                return
+                forum_channel_id = 1533910453183316159
 
             channel = guild.get_channel(forum_channel_id)
             if not channel:
                 try:
                     channel = await guild.fetch_channel(forum_channel_id)
-                except Exception:
-                    self.log.error(f"Forum kanaal {forum_channel_id} kon niet gevonden worden.")
+                except Exception as e:
+                    self.log.error(f"Forum kanaal {forum_channel_id} kon niet opgehaald worden: {e}")
                     return
 
-            if not isinstance(channel, discord.ForumChannel):
-                self.log.warning(f"Kanaal {forum_channel_id} is geen ForumChannel.")
-                return
+            # Probeer de gebruiker/member op te halen voor de naam
+            member = guild.get_member(user_id)
+            if not member:
+                try:
+                    member = await guild.fetch_member(user_id)
+                except Exception:
+                    member = None
 
-            user = self.bot.get_user(user_id)
-            username = user.display_name if user else f"Gebruiker {user_id}"
+            username = member.display_name if member else f"Gebruiker {user_id}"
+
+            # Titel van de thread (max 100 tekens volgens Discord limiet)
+            thread_title = f"Voorstellen - {username}"[:100]
+
+            # Inhoud van het voorstel-bericht
+            content_text = f"Welkom in de server <@{user_id}>! 🎉\n\nHier zijn de antwoorden uit de lidmaatschapsaanvraag:"
 
             intro_embed = discord.Embed(
-                title="👋 Nieuw lid binnengekomen!",
-                description=f"Hier zijn de antwoorden van <@{user_id}> uit de lidmaatschapsaanvraag:",
+                title=f"Voorstellen: {username}",
                 color=discord.Color(0xff0502)
             )
 
-            if original_embed:
+            if original_embed and original_embed.fields:
                 for field in original_embed.fields:
                     intro_embed.add_field(name=field.name, value=field.value, inline=False)
 
+            # Maak de thread aan in het forumkanaal
             await channel.create_thread(
-                name=f"Voorstellen - {username}",
-                content=f"Welkom in de server <@{user_id}>! Stel je gerust nog verder voor of klets mee in deze thread. 🎉",
+                name=thread_title,
+                content=content_text,
                 embed=intro_embed
             )
             self.log.info(f"✅ Voorstel-post succesvol aangemaakt in forum voor user {user_id}")
