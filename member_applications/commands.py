@@ -257,7 +257,7 @@ class memberapplications(commands.Cog):
             forum_container_children = [
                 {
                     "type": 10,  # Text Display
-                    "content": f"## 👋 Welkom in Shadowzone, <@{user_id}>!\nStel je gerust verder voor of klets gezellig mee in deze thread. 🎉"
+                    "content": f"## 👋 Welkom in Shadowzone, <@{user_id}>!\nStel je gerust verder voor of klets gezellig mee in de server 🎉"
                 }
             ]
 
