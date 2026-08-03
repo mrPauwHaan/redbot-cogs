@@ -244,7 +244,7 @@ class memberapplications(commands.Cog):
                     member = None
 
             username = member.display_name if member else f"Gebruiker {user_id}"
-            thread_title = f"👋 Voorstellen - {username}"[:100]
+            thread_title = f"{username}"[:100]
 
             form_responses = req_data.get("form_responses", [])
 
