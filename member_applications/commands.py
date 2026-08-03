@@ -22,7 +22,7 @@ class memberapplications(commands.Cog):
         self.config = Config.get_conf(self, identifier=331058477541621774, force_registration=True)
         default_guild = {
             "review_channel_id": None,
-            "forum_channel_id": 1533910453183316159,  # Standaard ingesteld op jouw forumkanaal
+            "forum_channel_id": 1053344324487761980,  # Standaard ingesteld op jouw forumkanaal
             "processed_requests": []
         }
         self.config.register_guild(**default_guild)
