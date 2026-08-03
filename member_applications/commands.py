@@ -11,7 +11,7 @@ from redbot.core.bot import Red
 # ==========================================
 class JoinRequestView(discord.ui.View):
     def __init__(self, cog: commands.Cog, guild_id: int, user_id: int):
-        super().__init__(timeout=None)
+        super().__init__(timeout=None)  # Knoppen blijven actief zolang het bericht bestaat
         self.cog = cog
         self.guild_id = guild_id
         self.user_id = user_id
@@ -25,7 +25,7 @@ class JoinRequestView(discord.ui.View):
             await interaction.edit_original_response(
                 content=f"✅ **Aanvraag goedgekeurd door {interaction.user.mention}!**",
                 embed=interaction.message.embeds[0] if interaction.message.embeds else None,
-                view=None
+                view=None  # Verwijder de knoppen na afhandeling
             )
         else:
             await interaction.followup.send("⚠️ Er is iets misgegaan bij het goedkeuren via de Discord API.", ephemeral=True)
@@ -39,7 +39,7 @@ class JoinRequestView(discord.ui.View):
             await interaction.edit_original_response(
                 content=f"❌ **Aanvraag afgewezen door {interaction.user.mention}.**",
                 embed=interaction.message.embeds[0] if interaction.message.embeds else None,
-                view=None
+                view=None  # Verwijder de knoppen na afhandeling
             )
         else:
             await interaction.followup.send("⚠️ Er is iets misgegaan bij het afwijzen via de Discord API.", ephemeral=True)
@@ -56,6 +56,7 @@ class memberapplications(commands.Cog):
         self.target_guild_id = 331058477541621774
         self.log = logging.getLogger("red.memberapplications")
 
+        # Redbot Config voor instellingen
         self.config = Config.get_conf(self, identifier=331058477541621774, force_registration=True)
         default_guild = {
             "review_channel_id": None,
@@ -70,16 +71,16 @@ class memberapplications(commands.Cog):
         self.applications_loop.cancel()
 
     # ------------------------------------------------------------------
-    # RAW WEBSOCKET LISTENER (REALTIME PARSING WITHOUT REST GET)
+    # RAW WEBSOCKET LISTENER (REALTIME)
     # ------------------------------------------------------------------
     @commands.Cog.listener()
     async def on_socket_raw_receive(self, msg):
         """
-        Vangt 'GUILD_JOIN_REQUEST_CREATE' op en verwerkt de data DIRECT
-        uit de payload, zonder afhankelijk te zijn van het (defecte) REST GET-endpoint.
+        Luistert live naar het ruwe WebSocket-verkeer van Discord.
+        Vangt 'GUILD_JOIN_REQUEST_CREATE' op voor directe verwerking!
         """
         if isinstance(msg, bytes):
-            return
+            return  # Sla audio/voice pakketjes over voor performance
 
         try:
             data = json.loads(msg)
@@ -90,14 +91,13 @@ class memberapplications(commands.Cog):
                 guild_id = int(payload.get("guild_id", 0))
                 
                 if guild_id == self.target_guild_id:
-                    self.log.info("📥 Realtime Join Request ontvangen via WebSocket! Direct verwerken...")
+                    self.log.info("📥 Realtime Join Request ontvangen via WebSocket!")
                     guild = self.bot.get_guild(self.target_guild_id)
                     if guild:
-                        # De payload bevat vaak 'request' of is direct het object
                         req_data = payload.get("request", payload)
                         await self._process_single_request(req_data, guild)
-        except Exception as e:
-            pass
+        except Exception:
+            pass  # Negeer parse errors van ongerelateerd netwerkverkeer
 
     # ------------------------------------------------------------------
     # DISCORD REST API ENDPOINTS
@@ -105,16 +105,14 @@ class memberapplications(commands.Cog):
     async def fetch_join_requests(self, guild_id: int, limit: int = 25):
         """
         Haalt openstaande join requests op.
-        Inclusief `status=SUBMITTED` om de 500 error van Discord te voorkomen.
+        Inclusief `status=SUBMITTED` om de 500 Internal Server Error van Discord te voorkomen.
         """
         route = discord.http.Route("GET", f"/guilds/{guild_id}/requests?status=SUBMITTED&limit={limit}")
         try:
             response = await self.bot.http.request(route)
             return response.get("guild_join_requests", [])
         except discord.HTTPException as e:
-            if e.status == 403:
-                self.log.warning("Discord API: Het GET-endpoint is momenteel uitgeschakeld door Discord (403). Realtime WebSocket verwerking blijft wel gewoon werken.")
-            else:
+            if e.status != 403:
                 self.log.error(f"Fout bij ophalen van join requests via REST: {e}")
             return []
 
@@ -122,6 +120,7 @@ class memberapplications(commands.Cog):
         """
         Keurt een request goed of wijst af via:
         PATCH /guilds/{guild_id}/requests/{user_id}
+        action kan 'APPROVED' of 'REJECTED' zijn.
         """
         route = discord.http.Route("PATCH", f"/guilds/{guild_id}/requests/{user_id}")
         payload = {"action": action}
@@ -137,7 +136,7 @@ class memberapplications(commands.Cog):
     # ------------------------------------------------------------------
     @tasks.loop(minutes=15)
     async def applications_loop(self):
-        """Achtergrond-back-up voor als de bot tijdelijk offline was."""
+        """Achtergrond-back-up die elke 15 minuten controleert voor het geval een WebSocket event gemist is."""
         await self._check_applications()
 
     @applications_loop.before_loop
@@ -159,6 +158,12 @@ class memberapplications(commands.Cog):
         await self.config.guild(ctx.guild).review_channel_id.set(channel.id)
         await ctx.send(f"✅ Aanvragen worden vanaf nu gestuurd naar {channel.mention}.")
 
+    @appset.command(name="reset")
+    async def reset_processed(self, ctx: commands.Context):
+        """Wist het geheugen van reeds verwerkte verzoeken (handig bij testen)."""
+        await self.config.guild(ctx.guild).processed_requests.set([])
+        await ctx.send("🧹 Het geheugen van verwerkte verzoeken is gewist!")
+
     @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def checkapps(self, ctx: commands.Context):
@@ -175,8 +180,11 @@ class memberapplications(commands.Cog):
         if not user_id:
             return False
 
+        # Maak een uniek ID per specifieke aanvraag
+        request_id = str(req.get("id") or req.get("request_id") or f"{user_id}_{req.get('created_at', '')}")
+
         processed = await self.config.guild(guild).processed_requests()
-        if user_id in processed:
+        if request_id in processed:
             return False
 
         review_channel_id = await self.config.guild(guild).review_channel_id()
@@ -208,9 +216,11 @@ class memberapplications(commands.Cog):
         view = JoinRequestView(cog=self, guild_id=guild.id, user_id=user_id)
         await channel.send(embed=embed, view=view)
 
-        # Sla op dat dit verzoek al geplaatst is
+        # Sla het unieke request_id op en bewaar maximaal 100 items om geheugen netjes te houden
         async with self.config.guild(guild).processed_requests() as proc_list:
-            proc_list.append(user_id)
+            proc_list.append(request_id)
+            if len(proc_list) > 100:
+                proc_list[:] = proc_list[-100:]
 
         return True
 
