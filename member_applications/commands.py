@@ -172,7 +172,7 @@ class memberapplications(commands.Cog):
             }
         ]
 
-        # In het reviewkanaal tonen we ALTIJD alle vragen (inclusief rules check)
+        # In het reviewkanaal tonen we ALTIJD alle vragen
         for item in form_responses:
             label = item.get("label", "Vraag")
             response = item.get("response", "Geen antwoord")
@@ -195,7 +195,6 @@ class memberapplications(commands.Cog):
             "content": f"-# User ID: `{user_id}`"
         })
 
-        # V2 Container (Type 17) zonder accent_color
         components_payload = [
             {
                 "type": 17,  # Container Component
@@ -249,9 +248,7 @@ class memberapplications(commands.Cog):
 
             form_responses = req_data.get("form_responses", [])
 
-            # =========================================================
-            # VUL HIER DE EXACTE LABEL-NAMEN IN DIE JE WILT UITSLEUTEN
-            # =========================================================
+            # Vragen uitsluiten die niet in de forum post hoeven
             EXCLUDED_QUESTIONS = [
                 "Read and agree to the server rules",
                 "Lees en ga akkoord met de serverregels"
@@ -270,7 +267,6 @@ class memberapplications(commands.Cog):
                 if item.get("label") not in EXCLUDED_QUESTIONS
             ]
 
-            # Voeg alleen een scheidingslijn en vragen toe als er geldige vragen overblijven
             if valid_responses:
                 forum_container_children.append({
                     "type": 14,  # Separator Component
@@ -289,11 +285,11 @@ class memberapplications(commands.Cog):
                         "content": f"**{label}**\n▸ {response or '—'}"
                     })
 
+            # FIX: Top-level "content" verwijderd bij IS_COMPONENTS_V2 flag
             payload = {
                 "name": thread_title,
                 "message": {
                     "flags": 32768,  # IS_COMPONENTS_V2
-                    "content": f"Welkom in Shadowzone, <@{user_id}>! 🎉",
                     "components": [
                         {
                             "type": 17,  # Container Component
