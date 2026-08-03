@@ -15,6 +15,7 @@ class JoinRequestView(discord.ui.View):
         self.guild_id = guild_id
         self.user_id = user_id
         self.request_key = request_key
+        self.rejections = set()  # Slaat user_ids op van leden die voor afwijzen stemmen
 
     @discord.ui.button(label="Goedkeuren", style=discord.ButtonStyle.green, custom_id="btn_approve_join")
     async def approve_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -22,6 +23,7 @@ class JoinRequestView(discord.ui.View):
         success = await self.cog.patch_join_request(self.guild_id, self.user_id, action="APPROVED")
         
         if success:
+            # Verwijder uit cache zodat een eventuele toekomstige re-join weer opgepakt kan worden
             await self.cog.remove_processed_request(self.guild_id, self.request_key)
             await interaction.edit_original_response(
                 content=f"✅ **Aanvraag goedgekeurd door {interaction.user.mention}!**",
@@ -31,20 +33,35 @@ class JoinRequestView(discord.ui.View):
         else:
             await interaction.followup.send("⚠️ Er is iets misgegaan bij het goedkeuren via de Discord API.", ephemeral=True)
 
-    @discord.ui.button(label="Afwijzen", style=discord.ButtonStyle.red, custom_id="btn_reject_join")
+    @discord.ui.button(label="Afwijzen (0/3)", style=discord.ButtonStyle.red, custom_id="btn_reject_join")
     async def reject_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        success = await self.cog.patch_join_request(self.guild_id, self.user_id, action="REJECTED")
-        
-        if success:
-            await self.cog.remove_processed_request(self.guild_id, self.request_key)
-            await interaction.edit_original_response(
-                content=f"❌ **Aanvraag afgewezen door {interaction.user.mention}.**",
-                embed=interaction.message.embeds[0] if interaction.message.embeds else None,
-                view=None
-            )
+        # Voorkom dat een gebruiker meerdere keren stemt
+        if interaction.user.id in self.rejections:
+            await interaction.response.send_message("⚠️ Je hebt al voor afwijzen gestemd op deze aanvraag!", ephemeral=True)
+            return
+
+        self.rejections.add(interaction.user.id)
+        votes = len(self.rejections)
+
+        # Als er nog geen 3 stemmen zijn, update de knop
+        if votes < 3:
+            button.label = f"Afwijzen ({votes}/3)"
+            await interaction.response.edit_message(view=self)
         else:
-            await interaction.followup.send("⚠️ Er is iets misgegaan bij het afwijzen via de Discord API.", ephemeral=True)
+            # Bij 3 stemmen sturen we de definitieve afwijzing naar Discord
+            await interaction.response.defer()
+            success = await self.cog.patch_join_request(self.guild_id, self.user_id, action="REJECTED")
+            
+            if success:
+                await self.cog.remove_processed_request(self.guild_id, self.request_key)
+                voters_str = ", ".join([f"<@{v_id}>" for v_id in self.rejections])
+                await interaction.edit_original_response(
+                    content=f"❌ **Aanvraag definitief afgewezen door {voters_str} (3/3 stemmen).**",
+                    embed=interaction.message.embeds[0] if interaction.message.embeds else None,
+                    view=None
+                )
+            else:
+                await interaction.followup.send("⚠️ Er is iets misgegaan bij het afwijzen via de Discord API.", ephemeral=True)
 
 
 # ==========================================
@@ -67,32 +84,37 @@ class memberapplications(commands.Cog):
         self.config.register_guild(**default_guild)
 
     async def cog_load(self):
-        """Start de achtergrond-timer zodra de cog wordt ingeladen."""
         self.applications_loop.start()
 
     async def cog_unload(self):
-        """Stop de achtergrond-timer bij het unloaden/reloaden."""
         self.applications_loop.cancel()
 
     # ------------------------------------------------------------------
-    # TASKS LOOP (ELKE 1 MINUUT)
+    # TASKS LOOP (EXACT ZOALS IN AUTOMATEDEVENTS)
     # ------------------------------------------------------------------
     @tasks.loop(minutes=1)
     async def applications_loop(self):
-        """Draait elke minuut automatisch op de achtergrond."""
+        """
+        This task will run every minute to check for join requests.
+        """
         try:
             await self._check_applications()
         except Exception as e:
-            self.log.exception(f"Fout tijdens uitvoeren van minuut-loop: {e}")
+            self.log.exception(f"Fout tijdens de minuut-loop van memberapplications: {e}")
 
     @applications_loop.before_loop
     async def before_applications_loop(self):
         await self.bot.wait_until_ready()
+        self.log.info("Applications loop is ready to start.")
 
     # ------------------------------------------------------------------
     # DISCORD REST API ENDPOINTS
     # ------------------------------------------------------------------
     async def fetch_join_requests(self, guild_id: int, limit: int = 25):
+        """
+        Haalt openstaande join requests op via het REST endpoint.
+        Status query `status=SUBMITTED` voorkomt Discord 500 errors.
+        """
         route = discord.http.Route("GET", f"/guilds/{guild_id}/requests?status=SUBMITTED&limit={limit}")
         try:
             response = await self.bot.http.request(route)
@@ -102,13 +124,19 @@ class memberapplications(commands.Cog):
                 return response.get("guild_join_requests") or response.get("requests") or []
             return []
         except discord.HTTPException as e:
-            self.log.error(f"HTTP Fout {e.status} bij ophalen van join requests via REST: {e}")
+            if e.status != 403:
+                self.log.error(f"HTTP Fout {e.status} bij ophalen van join requests via REST: {e}")
             return []
         except Exception as e:
             self.log.exception(f"Onverwachte fout bij fetch_join_requests: {e}")
             return []
 
     async def patch_join_request(self, guild_id: int, user_id: int, action: str):
+        """
+        Keurt een request goed of wijst af via:
+        PATCH /guilds/{guild_id}/requests/{user_id}
+        action kan 'APPROVED' of 'REJECTED' zijn.
+        """
         route = discord.http.Route("PATCH", f"/guilds/{guild_id}/requests/{user_id}")
         payload = {"action": action}
         try:
@@ -122,6 +150,7 @@ class memberapplications(commands.Cog):
             return False
 
     async def remove_processed_request(self, guild_id: int, request_key: str):
+        """Verwijder een verwerkte sleutel uit de config zodra deze is afgehandeld."""
         guild = self.bot.get_guild(guild_id)
         if guild:
             async with self.config.guild(guild).processed_requests() as proc_list:
@@ -145,7 +174,7 @@ class memberapplications(commands.Cog):
 
     @appset.command(name="reset")
     async def reset_processed(self, ctx: commands.Context):
-        """Wist het geheugen van reeds verwerkte verzoeken."""
+        """Wist het geheugen van reeds verwerkte verzoeken (handig bij testen)."""
         await self.config.guild(ctx.guild).processed_requests.set([])
         await ctx.send("🧹 Het geheugen van verwerkte verzoeken is gewist!")
 
@@ -164,6 +193,7 @@ class memberapplications(commands.Cog):
     # CORE LOGIC FOR APPLICATIONS
     # ------------------------------------------------------------------
     async def _process_single_request(self, req: dict, guild: discord.Guild) -> bool:
+        """Verwerkt één en enkel openstaand (SUBMITTED) verzoek."""
         try:
             status = req.get("status")
             if status and status != "SUBMITTED":
@@ -179,6 +209,7 @@ class memberapplications(commands.Cog):
 
             processed = await self.config.guild(guild).processed_requests()
             if request_key in processed:
+                self.log.debug(f"Aanvraag voor user {user_id} overgeslagen (staat al in processed cache).")
                 return False
 
             review_channel_id = await self.config.guild(guild).review_channel_id()
@@ -197,11 +228,11 @@ class memberapplications(commands.Cog):
             username = user_data.get("username", "Onbekend")
             form_responses = req.get("form_responses", [])
 
-            # Bouw de embed op
+            # Bouw de embed op met de nieuwe titel en kleur (#ff0502)
             embed = discord.Embed(
-                title="📥 Nieuwe Lidmaatschapsaanvraag",
+                title="Aanvraag server joinen",
                 description=f"**Gebruiker:** <@{user_id}> (`{username}`)\n**Aangemaakt:** {created_at or 'Zojuist'}",
-                color=discord.Color.blue()
+                color=discord.Color(0xff0502)
             )
 
             for form_item in form_responses:
@@ -227,6 +258,7 @@ class memberapplications(commands.Cog):
             return False
 
     async def _check_applications(self, guild: discord.Guild = None):
+        """Controleert op verzoeken via de REST API."""
         try:
             if not guild:
                 guild = self.bot.get_guild(self.target_guild_id)
@@ -239,7 +271,6 @@ class memberapplications(commands.Cog):
                     return 0
 
             requests = await self.fetch_join_requests(guild.id)
-
             new_count = 0
             for req in requests:
                 if await self._process_single_request(req, guild):
@@ -249,3 +280,10 @@ class memberapplications(commands.Cog):
         except Exception as e:
             self.log.exception(f"Fout tijdens _check_applications: {e}")
             return 0
+
+
+# ==========================================
+# REDBOT SETUP ENTRY POINT
+# ==========================================
+async def setup(bot: Red):
+    await bot.add_cog(memberapplications(bot))
