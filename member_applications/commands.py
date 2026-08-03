@@ -23,11 +23,18 @@ class JoinRequestView(discord.ui.View):
         success = await self.cog.patch_join_request(self.guild_id, self.user_id, action="APPROVED")
         
         if success:
-            # Verwijder uit cache zodat een eventuele toekomstige re-join weer opgepakt kan worden
+            # Verwijder uit cache
             await self.cog.remove_processed_request(self.guild_id, self.request_key)
+            
+            embed = interaction.message.embeds[0] if interaction.message.embeds else None
+            
+            # Maak automatisch een voorstel-post aan in het forumkanaal
+            if interaction.guild:
+                await self.cog.post_to_intro_forum(interaction.guild, self.user_id, embed)
+
             await interaction.edit_original_response(
                 content=f"✅ **Aanvraag goedgekeurd door {interaction.user.mention}!**",
-                embed=interaction.message.embeds[0] if interaction.message.embeds else None,
+                embed=embed,
                 view=None
             )
         else:
@@ -79,6 +86,7 @@ class memberapplications(commands.Cog):
         self.config = Config.get_conf(self, identifier=331058477541621774, force_registration=True)
         default_guild = {
             "review_channel_id": None,
+            "forum_channel_id": 1533910453183316159,  # Standaard ingesteld op jouw forumkanaal
             "processed_requests": []
         }
         self.config.register_guild(**default_guild)
@@ -90,7 +98,7 @@ class memberapplications(commands.Cog):
         self.applications_loop.cancel()
 
     # ------------------------------------------------------------------
-    # TASKS LOOP (EXACT ZOALS IN AUTOMATEDEVENTS)
+    # TASKS LOOP
     # ------------------------------------------------------------------
     @tasks.loop(minutes=1)
     async def applications_loop(self):
@@ -157,6 +165,47 @@ class memberapplications(commands.Cog):
                 if request_key in proc_list:
                     proc_list.remove(request_key)
 
+    async def post_to_intro_forum(self, guild: discord.Guild, user_id: int, original_embed: discord.Embed):
+        """Plaatst automatisch een voorstel-thread in het ingestelde forumkanaal."""
+        try:
+            forum_channel_id = await self.config.guild(guild).forum_channel_id()
+            if not forum_channel_id:
+                return
+
+            channel = guild.get_channel(forum_channel_id)
+            if not channel:
+                try:
+                    channel = await guild.fetch_channel(forum_channel_id)
+                except Exception:
+                    self.log.error(f"Forum kanaal {forum_channel_id} kon niet gevonden worden.")
+                    return
+
+            if not isinstance(channel, discord.ForumChannel):
+                self.log.warning(f"Kanaal {forum_channel_id} is geen ForumChannel.")
+                return
+
+            user = self.bot.get_user(user_id)
+            username = user.display_name if user else f"Gebruiker {user_id}"
+
+            intro_embed = discord.Embed(
+                title="👋 Nieuw lid binnengekomen!",
+                description=f"Hier zijn de antwoorden van <@{user_id}> uit de lidmaatschapsaanvraag:",
+                color=discord.Color(0xff0502)
+            )
+
+            if original_embed:
+                for field in original_embed.fields:
+                    intro_embed.add_field(name=field.name, value=field.value, inline=False)
+
+            await channel.create_thread(
+                name=f"Voorstellen - {username}",
+                content=f"Welkom in de server <@{user_id}>! Stel je gerust nog verder voor of klets mee in deze thread. 🎉",
+                embed=intro_embed
+            )
+            self.log.info(f"✅ Voorstel-post succesvol aangemaakt in forum voor user {user_id}")
+        except Exception as e:
+            self.log.exception(f"Fout bij het aanmaken van voorstel-post in forum: {e}")
+
     # ------------------------------------------------------------------
     # COMMANDS
     # ------------------------------------------------------------------
@@ -171,6 +220,12 @@ class memberapplications(commands.Cog):
         """Stel het kanaal in waar aanvragen binnenkomen."""
         await self.config.guild(ctx.guild).review_channel_id.set(channel.id)
         await ctx.send(f"✅ Aanvragen worden vanaf nu gestuurd naar {channel.mention}.")
+
+    @appset.command(name="forum")
+    async def set_forum_channel(self, ctx: commands.Context, channel: discord.ForumChannel):
+        """Stel het forumkanaal in voor automatische voorstel-posts."""
+        await self.config.guild(ctx.guild).forum_channel_id.set(channel.id)
+        await ctx.send(f"✅ Voorstel-posts worden vanaf nu gestuurd naar {channel.mention}.")
 
     @appset.command(name="reset")
     async def reset_processed(self, ctx: commands.Context):
@@ -228,7 +283,7 @@ class memberapplications(commands.Cog):
             username = user_data.get("username", "Onbekend")
             form_responses = req.get("form_responses", [])
 
-            # Bouw de embed op met de nieuwe titel en kleur (#ff0502)
+            # Bouw de embed op met titel en kleur (#ff0502)
             embed = discord.Embed(
                 title="Aanvraag server joinen",
                 description=f"**Gebruiker:** <@{user_id}> (`{username}`)\n**Aangemaakt:** {created_at or 'Zojuist'}",
