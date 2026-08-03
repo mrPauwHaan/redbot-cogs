@@ -5,96 +5,24 @@ from redbot.core import commands, Config
 from redbot.core.bot import Red
 
 
-# ==========================================
-# DISCORD UI V2 VIEW VOOR GOEDKEUREN / AFWIJZEN
-# ==========================================
-class JoinRequestView(discord.ui.View):
-    def __init__(self, cog: commands.Cog, guild_id: int, user_id: int, request_key: str):
-        super().__init__(timeout=None)
-        self.cog = cog
-        self.guild_id = guild_id
-        self.user_id = user_id
-        self.request_key = request_key
-        self.rejections = set()  # Slaat user_ids op van leden die voor afwijzen stemmen
-
-    @discord.ui.button(label="Goedkeuren", style=discord.ButtonStyle.green, emoji="✅", custom_id="btn_approve_join")
-    async def approve_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        success = await self.cog.patch_join_request(self.guild_id, self.user_id, action="APPROVED")
-        
-        if success:
-            # Verwijder uit cache
-            await self.cog.remove_processed_request(self.guild_id, self.request_key)
-            
-            guild = interaction.guild or self.cog.bot.get_guild(self.guild_id)
-            if guild:
-                await self.cog.post_to_intro_forum(guild, self.user_id, interaction.message)
-
-            # Update het v2 bericht
-            approved_content = (
-                f"✅ **Aanvraag goedgekeurd door {interaction.user.mention}!**\n\n"
-                f"~~{interaction.message.content}~~" if interaction.message else "Aanvraag verwerkt."
-            )
-            await interaction.edit_original_response(
-                content=approved_content,
-                embeds=[],
-                view=None
-            )
-        else:
-            await interaction.followup.send("⚠️ Er is iets misgegaan bij het goedkeuren via de Discord API.", ephemeral=True)
-
-    @discord.ui.button(label="Afwijzen (0/3)", style=discord.ButtonStyle.red, emoji="❌", custom_id="btn_reject_join")
-    async def reject_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Voorkom dat een gebruiker meerdere keren stemt
-        if interaction.user.id in self.rejections:
-            await interaction.response.send_message("⚠️ Je hebt al voor afwijzen gestemd op deze aanvraag!", ephemeral=True)
-            return
-
-        self.rejections.add(interaction.user.id)
-        votes = len(self.rejections)
-
-        # Als er nog geen 3 stemmen zijn, update de knop
-        if votes < 3:
-            button.label = f"Afwijzen ({votes}/3)"
-            await interaction.response.edit_message(view=self)
-        else:
-            # Bij 3 stemmen sturen we de definitieve afwijzing naar Discord
-            await interaction.response.defer()
-            success = await self.cog.patch_join_request(self.guild_id, self.user_id, action="REJECTED")
-            
-            if success:
-                await self.cog.remove_processed_request(self.guild_id, self.request_key)
-                voters_str = ", ".join([f"<@{v_id}>" for v_id in self.rejections])
-                
-                rejected_content = (
-                    f"❌ **Aanvraag definitief afgewezen door {voters_str} (3/3 stemmen).**\n\n"
-                    f"~~{interaction.message.content}~~" if interaction.message else "Aanvraag afgewezen."
-                )
-                await interaction.edit_original_response(
-                    content=rejected_content,
-                    embeds=[],
-                    view=None
-                )
-            else:
-                await interaction.followup.send("⚠️ Er is iets misgegaan bij het afwijzen via de Discord API.", ephemeral=True)
-
-
-# ==========================================
-# REDBOT COG
-# ==========================================
 class memberapplications(commands.Cog):
-    """Member Applications Cog voor Shadowzone met Components V2"""
+    """Member Applications Cog voor Shadowzone met Discord Components V2 Containers"""
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
         self.target_guild_id = 331058477541621774
         self.log = logging.getLogger(__name__)
 
+        # Slaat stemmen op voor afwijzing: { user_id: set(voter_ids) }
+        self.rejection_votes = {}
+        # Slaat raw request data op in het geheugen voor snelle toegang bij verwerking
+        self.request_cache = {}
+
         # Redbot Config voor instellingen
         self.config = Config.get_conf(self, identifier=331058477541621774, force_registration=True)
         default_guild = {
             "review_channel_id": None,
-            "forum_channel_id": 1533910453183316159,
+            "forum_channel_id": 1533910453183316159,  # Standaard ingesteld op jouw forumkanaal
             "processed_requests": []
         }
         self.config.register_guild(**default_guild)
@@ -111,7 +39,7 @@ class memberapplications(commands.Cog):
     @tasks.loop(minutes=1)
     async def applications_loop(self):
         """
-        This task will run every minute to check for join requests.
+        Draait elke minuut automatisch om aanvragen via REST op te halen.
         """
         try:
             await self._check_applications()
@@ -124,13 +52,248 @@ class memberapplications(commands.Cog):
         self.log.info("Applications loop is ready to start.")
 
     # ------------------------------------------------------------------
+    # DISCORD COMPONENTS V2 INTERACTION LISTENER
+    # ------------------------------------------------------------------
+    @commands.Cog.listener()
+    async def on_interaction(self, interaction: discord.Interaction):
+        """Luistert naar knop-interacties van de Components V2 containers."""
+        if interaction.type != discord.InteractionType.component:
+            return
+
+        custom_id = interaction.data.get("custom_id", "")
+        if not custom_id.startswith("v2_app_"):
+            return
+
+        # 1. GOEDKEUREN
+        if custom_id.startswith("v2_app_approve_"):
+            await interaction.response.defer()
+            user_id = int(custom_id.replace("v2_app_approve_", ""))
+            guild_id = interaction.guild_id or self.target_guild_id
+
+            success = await self.patch_join_request(guild_id, user_id, action="APPROVED")
+            if success:
+                req_data = self.request_cache.get(user_id, {})
+                guild = interaction.guild or self.bot.get_guild(guild_id)
+                
+                # Plaats automatisch de voorstel-post in V2 Container-vorm in het forum
+                if guild:
+                    await self.post_to_intro_forum_v2(guild, user_id, req_data)
+
+                # Werk de V2 Container in het review-kanaal bij naar 'Goedgekeurd'
+                updated_payload = self.build_v2_container_payload(
+                    user_id=user_id,
+                    username=req_data.get("user", {}).get("username", "Onbekend"),
+                    created_at=req_data.get("created_at", ""),
+                    form_responses=req_data.get("form_responses", []),
+                    status_banner=f"✅ **Aanvraag goedgekeurd door {interaction.user.mention}!**"
+                )
+                
+                route = discord.http.Route("PATCH", f"/channels/{interaction.channel_id}/messages/{interaction.message.id}")
+                await self.bot.http.request(route, json={"components": updated_payload})
+            else:
+                await interaction.followup.send("⚠️ Er is iets misgegaan bij het goedkeuren via de Discord API.", ephemeral=True)
+
+        # 2. AFWIJZEN (MET 3 STEMMEN REGEL)
+        elif custom_id.startswith("v2_app_reject_"):
+            user_id = int(custom_id.replace("v2_app_reject_", ""))
+            guild_id = interaction.guild_id or self.target_guild_id
+
+            if user_id not in self.rejection_votes:
+                self.rejection_votes[user_id] = set()
+
+            if interaction.user.id in self.rejection_votes[user_id]:
+                await interaction.response.send_message("⚠️ Je hebt al voor afwijzen gestemd op deze aanvraag!", ephemeral=True)
+                return
+
+            self.rejection_votes[user_id].add(interaction.user.id)
+            votes_count = len(self.rejection_votes[user_id])
+            req_data = self.request_cache.get(user_id, {})
+
+            if votes_count < 3:
+                # Update de knop-teller op de V2 container
+                await interaction.response.defer()
+                updated_payload = self.build_v2_container_payload(
+                    user_id=user_id,
+                    username=req_data.get("user", {}).get("username", "Onbekend"),
+                    created_at=req_data.get("created_at", ""),
+                    form_responses=req_data.get("form_responses", []),
+                    rejection_votes=votes_count
+                )
+                route = discord.http.Route("PATCH", f"/channels/{interaction.channel_id}/messages/{interaction.message.id}")
+                await self.bot.http.request(route, json={"components": updated_payload})
+            else:
+                # Bij 3 stemmen definitief afwijzen
+                await interaction.response.defer()
+                success = await self.patch_join_request(guild_id, user_id, action="REJECTED")
+                if success:
+                    voters_str = ", ".join([f"<@{v_id}>" for v_id in self.rejection_votes[user_id]])
+                    updated_payload = self.build_v2_container_payload(
+                        user_id=user_id,
+                        username=req_data.get("user", {}).get("username", "Onbekend"),
+                        created_at=req_data.get("created_at", ""),
+                        form_responses=req_data.get("form_responses", []),
+                        status_banner=f"❌ **Aanvraag definitief afgewezen door {voters_str} (3/3 stemmen).**"
+                    )
+                    route = discord.http.Route("PATCH", f"/channels/{interaction.channel_id}/messages/{interaction.message.id}")
+                    await self.bot.http.request(route, json={"components": updated_payload})
+                    self.rejection_votes.pop(user_id, None)
+                else:
+                    await interaction.followup.send("⚠️ Er is iets misgegaan bij het afwijzen via de Discord API.", ephemeral=True)
+
+    # ------------------------------------------------------------------
+    # COMPONENTS V2 CONTAINER PAYLOAD BUILDER
+    # ------------------------------------------------------------------
+    def build_v2_container_payload(self, user_id: int, username: str, created_at: str, form_responses: list, rejection_votes: int = 0, status_banner: str = None) -> list:
+        """
+        Bouwt de officiële Discord Components V2 Container JSON-structuur op.
+        Type 17 = Container
+        Type 10 = Text Display
+        Type 13 = Separator
+        Type 1  = Action Row
+        Type 2  = Button
+        """
+        header_text = f"# Aanvraag server joinen\n**Gebruiker:** <@{user_id}> (`{username}`)\n**Aangemaakt:** {created_at or 'Zojuist'}"
+        if status_banner:
+            header_text = f"{status_banner}\n\n" + header_text
+
+        container_children = [
+            {
+                "type": 10,  # Text Display
+                "content": header_text
+            },
+            {
+                "type": 13,  # Separator
+                "divider": True,
+                "spacing": 1
+            }
+        ]
+
+        # Vragen en antwoorden toevoegen
+        for item in form_responses:
+            label = item.get("label", "Vraag")
+            response = item.get("response", "Geen antwoord")
+            if isinstance(response, list):
+                response = ", ".join(response)
+
+            container_children.append({
+                "type": 10,  # Text Display
+                "content": f"❓ **{label}**\n▸ {response or '—'}"
+            })
+
+        container_children.append({
+            "type": 13,  # Separator
+            "divider": True,
+            "spacing": 1
+        })
+
+        container_children.append({
+            "type": 10,  # Text Display
+            "content": f"_User ID: `{user_id}`_"
+        })
+
+        # V2 Container (Type 17) met accent kleur #ff0502 (16712962)
+        components_payload = [
+            {
+                "type": 17,  # Container Component
+                "accent_color": 16712962,  # #ff0502 in integer
+                "components": container_children
+            }
+        ]
+
+        # Knoppen toevoegen zolang er geen eindstatus is
+        if not status_banner:
+            components_payload.append({
+                "type": 1,  # Action Row
+                "components": [
+                    {
+                        "type": 2,  # Button
+                        "style": 3,  # Green / Success
+                        "label": "Goedkeuren",
+                        "emoji": {"name": "✅"},
+                        "custom_id": f"v2_app_approve_{user_id}"
+                    },
+                    {
+                        "type": 2,  # Button
+                        "style": 4,  # Red / Danger
+                        "label": f"Afwijzen ({rejection_votes}/3)",
+                        "emoji": {"name": "❌"},
+                        "custom_id": f"v2_app_reject_{user_id}"
+                    }
+                ]
+            })
+
+        return components_payload
+
+    # ------------------------------------------------------------------
+    # FORUM POSTING VIA V2 CONTAINERS
+    # ------------------------------------------------------------------
+    async def post_to_intro_forum_v2(self, guild: discord.Guild, user_id: int, req_data: dict):
+        """Plaatst een voorstel-thread in het forumkanaal met een V2 Container."""
+        try:
+            forum_channel_id = await self.config.guild(guild).forum_channel_id()
+            if not forum_channel_id:
+                forum_channel_id = 1533910453183316159
+
+            member = guild.get_member(user_id)
+            if not member:
+                try:
+                    member = await guild.fetch_member(user_id)
+                except Exception:
+                    member = None
+
+            username = member.display_name if member else f"Gebruiker {user_id}"
+            thread_title = f"👋 Voorstellen - {username}"[:100]
+
+            form_responses = req_data.get("form_responses", [])
+
+            forum_container_children = [
+                {
+                    "type": 10,  # Text Display
+                    "content": f"# 👋 Welkom in Shadowzone, <@{user_id}>!\nStel je gerust verder voor of klets gezellig mee in deze thread. 🎉"
+                },
+                {
+                    "type": 13,  # Separator
+                    "divider": True,
+                    "spacing": 1
+                }
+            ]
+
+            for item in form_responses:
+                label = item.get("label", "Vraag")
+                response = item.get("response", "Geen antwoord")
+                if isinstance(response, list):
+                    response = ", ".join(response)
+
+                forum_container_children.append({
+                    "type": 10,  # Text Display
+                    "content": f"❓ **{label}**\n▸ {response or '—'}"
+                })
+
+            payload = {
+                "name": thread_title,
+                "message": {
+                    "content": f"Welkom in Shadowzone, <@{user_id}>! 🎉",
+                    "components": [
+                        {
+                            "type": 17,  # Container Component
+                            "accent_color": 16712962,  # #ff0502
+                            "components": forum_container_children
+                        }
+                    ]
+                }
+            }
+
+            route = discord.http.Route("POST", f"/channels/{forum_channel_id}/threads")
+            await self.bot.http.request(route, json=payload)
+            self.log.info(f"✅ Voorstel-thread in V2 Container succesvol aangemaakt voor user {user_id}")
+        except Exception as e:
+            self.log.exception(f"Fout bij het aanmaken van V2 forum-thread: {e}")
+
+    # ------------------------------------------------------------------
     # DISCORD REST API ENDPOINTS
     # ------------------------------------------------------------------
     async def fetch_join_requests(self, guild_id: int, limit: int = 25):
-        """
-        Haalt openstaande join requests op via het REST endpoint.
-        Status query `status=SUBMITTED` voorkomt Discord 500 errors.
-        """
+        """Haalt openstaande join requests op via het REST endpoint."""
         route = discord.http.Route("GET", f"/guilds/{guild_id}/requests?status=SUBMITTED&limit={limit}")
         try:
             response = await self.bot.http.request(route)
@@ -148,11 +311,7 @@ class memberapplications(commands.Cog):
             return []
 
     async def patch_join_request(self, guild_id: int, user_id: int, action: str):
-        """
-        Keurt een request goed of wijst af via:
-        PATCH /guilds/{guild_id}/requests/{user_id}
-        action kan 'APPROVED' of 'REJECTED' zijn.
-        """
+        """Keurt een request goed of wijst af via PATCH /guilds/{guild_id}/requests/{user_id}."""
         route = discord.http.Route("PATCH", f"/guilds/{guild_id}/requests/{user_id}")
         payload = {"action": action}
         try:
@@ -164,73 +323,6 @@ class memberapplications(commands.Cog):
         except Exception as e:
             self.log.exception(f"Onverwachte fout bij patch_join_request voor user {user_id}: {e}")
             return False
-
-    async def remove_processed_request(self, guild_id: int, request_key: str):
-        """Verwijder een verwerkte sleutel uit de config zodra deze is afgehandeld."""
-        guild = self.bot.get_guild(guild_id)
-        if guild:
-            async with self.config.guild(guild).processed_requests() as proc_list:
-                if request_key in proc_list:
-                    proc_list.remove(request_key)
-
-    async def send_v2_message(self, channel: discord.TextChannel, content_body: str, view: discord.ui.View = None):
-        """
-        Verstuurt een bericht opgebouwd volgens Discord Components V2 spec.
-        """
-        # Formatteer als een strak v2 container-gebaseerd bericht
-        formatted_message = content_body
-
-        if view:
-            return await channel.send(content=formatted_message, view=view)
-        else:
-            return await channel.send(content=formatted_message)
-
-    async def post_to_intro_forum(self, guild: discord.Guild, user_id: int, original_msg: discord.Message):
-        """Plaatst automatisch een voorstel-thread in het ingestelde forumkanaal."""
-        try:
-            forum_channel_id = await self.config.guild(guild).forum_channel_id()
-            if not forum_channel_id:
-                forum_channel_id = 1533910453183316159
-
-            channel = guild.get_channel(forum_channel_id)
-            if not channel:
-                try:
-                    channel = await guild.fetch_channel(forum_channel_id)
-                except Exception as e:
-                    self.log.error(f"Forum kanaal {forum_channel_id} kon niet opgehaald worden: {e}")
-                    return
-
-            member = guild.get_member(user_id)
-            if not member:
-                try:
-                    member = await guild.fetch_member(user_id)
-                except Exception:
-                    member = None
-
-            username = member.display_name if member else f"Gebruiker {user_id}"
-            thread_title = f"👋 Voorstellen - {username}"[:100]
-
-            # Inhoud van de V2 forum post
-            forum_body = f"## 👋 Welkom in Shadowzone, <@{user_id}>!\n"
-            forum_body += "Stel je gerust verder voor of klets mee in deze thread. 🎉\n\n"
-            forum_body += "--- \n"
-            
-            if original_msg and original_msg.content:
-                # Haal antwoorden op uit het oorspronkelijke V2 bericht
-                lines = original_msg.content.split("\n")
-                answers = [line for line in lines if line.startswith("▸") or line.startswith("❓")]
-                if answers:
-                    forum_body += "\n".join(answers)
-                else:
-                    forum_body += original_msg.content
-
-            await channel.create_thread(
-                name=thread_title,
-                content=forum_body
-            )
-            self.log.info(f"✅ Voorstel-post succesvol aangemaakt in forum voor user {user_id}")
-        except Exception as e:
-            self.log.exception(f"Fout bij het aanmaken van voorstel-post in forum: {e}")
 
     # ------------------------------------------------------------------
     # COMMANDS
@@ -255,7 +347,7 @@ class memberapplications(commands.Cog):
 
     @appset.command(name="reset")
     async def reset_processed(self, ctx: commands.Context):
-        """Wist het geheugen van reeds verwerkte verzoeken (handig bij testen)."""
+        """Wist het geheugen van reeds verwerkte verzoeken."""
         await self.config.guild(ctx.guild).processed_requests.set([])
         await ctx.send("🧹 Het geheugen van verwerkte verzoeken is gewist!")
 
@@ -271,10 +363,10 @@ class memberapplications(commands.Cog):
             await ctx.send(f"❌ Er is een fout opgetreden: {e}")
 
     # ------------------------------------------------------------------
-    # CORE LOGIC FOR APPLICATIONS (V2 LAYOUT BUILDER)
+    # CORE LOGIC FOR APPLICATIONS
     # ------------------------------------------------------------------
     async def _process_single_request(self, req: dict, guild: discord.Guild) -> bool:
-        """Verwerkt één en enkel openstaand (SUBMITTED) verzoek via V2 Components."""
+        """Verwerkt één en enkel openstaand (SUBMITTED) verzoek via Components V2 Container."""
         try:
             status = req.get("status")
             if status and status != "SUBMITTED":
@@ -290,50 +382,38 @@ class memberapplications(commands.Cog):
 
             processed = await self.config.guild(guild).processed_requests()
             if request_key in processed:
-                self.log.debug(f"Aanvraag voor user {user_id} overgeslagen (staat al in processed cache).")
                 return False
 
             review_channel_id = await self.config.guild(guild).review_channel_id()
             if not review_channel_id:
                 return False
 
-            channel = guild.get_channel(review_channel_id)
-            if not channel:
-                try:
-                    channel = await guild.fetch_channel(review_channel_id)
-                except Exception as e:
-                    self.log.error(f"Kanaal met ID {review_channel_id} kon niet worden opgehaald: {e}")
-                    return False
-
             user_data = req.get("user", {})
             username = user_data.get("username", "Onbekend")
             form_responses = req.get("form_responses", [])
 
-            # Bouw het bericht op volgens de Discord V2 Components lay-out
-            v2_body = f"# 📥 Aanvraag server joinen\n"
-            v2_body += f"**Gebruiker:** <@{user_id}> (`{username}`)\n"
-            v2_body += f"**Aangemaakt:** {created_at or 'Zojuist'}\n"
-            v2_body += "--- \n"
+            # Sla de raw request op in het tijdelijke geheugen
+            self.request_cache[user_id] = req
 
-            for form_item in form_responses:
-                label = form_item.get("label", "Vraag")
-                response = form_item.get("response", "Geen antwoord")
-                if isinstance(response, list):
-                    response = ", ".join(response)
-                v2_body += f"❓ **{label}**\n▸ {response or '—'}\n\n"
+            # Bouw het V2 Container payload
+            v2_components = self.build_v2_container_payload(
+                user_id=user_id,
+                username=username,
+                created_at=created_at,
+                form_responses=form_responses
+            )
 
-            v2_body += f"_User ID: `{user_id}`_"
+            # Verstuur het bericht rechtstreeks via de REST API met de V2 components
+            route = discord.http.Route("POST", f"/channels/{review_channel_id}/messages")
+            await self.bot.http.request(route, json={"components": v2_components})
 
-            view = JoinRequestView(cog=self, guild_id=guild.id, user_id=user_id, request_key=request_key)
-            await self.send_v2_message(channel, v2_body, view=view)
-
-            # Sla op in geheugen (maximaal 100 items bewaren)
+            # Sla op in de Redbot Config
             async with self.config.guild(guild).processed_requests() as proc_list:
                 proc_list.append(request_key)
                 if len(proc_list) > 100:
                     proc_list[:] = proc_list[-100:]
 
-            self.log.info(f"✅ Nieuwe V2-aanvraag verwerkt voor user {user_id} (key: {request_key})")
+            self.log.info(f"✅ Nieuwe V2 Container aanvraag verwerkt voor user {user_id} (key: {request_key})")
             return True
         except Exception as e:
             self.log.exception(f"Fout tijdens het verwerken van een enkele request: {e}")
