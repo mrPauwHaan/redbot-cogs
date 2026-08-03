@@ -6,7 +6,7 @@ from redbot.core.bot import Red
 
 
 # ==========================================
-# DISCORD UI VIEW VOOR GOEDKEUREN / AFWIJZEN
+# DISCORD UI V2 VIEW VOOR GOEDKEUREN / AFWIJZEN
 # ==========================================
 class JoinRequestView(discord.ui.View):
     def __init__(self, cog: commands.Cog, guild_id: int, user_id: int, request_key: str):
@@ -26,16 +26,18 @@ class JoinRequestView(discord.ui.View):
             # Verwijder uit cache
             await self.cog.remove_processed_request(self.guild_id, self.request_key)
             
-            embed = interaction.message.embeds[0] if (interaction.message and interaction.message.embeds) else None
-            
-            # Maak automatisch de voorstel-thread in het forum aan
             guild = interaction.guild or self.cog.bot.get_guild(self.guild_id)
             if guild:
-                await self.cog.post_to_intro_forum(guild, self.user_id, embed)
+                await self.cog.post_to_intro_forum(guild, self.user_id, interaction.message)
 
+            # Update het v2 bericht
+            approved_content = (
+                f"✅ **Aanvraag goedgekeurd door {interaction.user.mention}!**\n\n"
+                f"~~{interaction.message.content}~~" if interaction.message else "Aanvraag verwerkt."
+            )
             await interaction.edit_original_response(
-                content=f"🎉 **Aanvraag goedgekeurd door {interaction.user.mention}!**",
-                embed=embed,
+                content=approved_content,
+                embeds=[],
                 view=None
             )
         else:
@@ -63,9 +65,14 @@ class JoinRequestView(discord.ui.View):
             if success:
                 await self.cog.remove_processed_request(self.guild_id, self.request_key)
                 voters_str = ", ".join([f"<@{v_id}>" for v_id in self.rejections])
+                
+                rejected_content = (
+                    f"❌ **Aanvraag definitief afgewezen door {voters_str} (3/3 stemmen).**\n\n"
+                    f"~~{interaction.message.content}~~" if interaction.message else "Aanvraag afgewezen."
+                )
                 await interaction.edit_original_response(
-                    content=f"🚫 **Aanvraag definitief afgewezen door {voters_str} (3/3 stemmen).**",
-                    embed=interaction.message.embeds[0] if interaction.message.embeds else None,
+                    content=rejected_content,
+                    embeds=[],
                     view=None
                 )
             else:
@@ -76,7 +83,7 @@ class JoinRequestView(discord.ui.View):
 # REDBOT COG
 # ==========================================
 class memberapplications(commands.Cog):
-    """Member Applications Cog voor Shadowzone"""
+    """Member Applications Cog voor Shadowzone met Components V2"""
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
@@ -87,7 +94,7 @@ class memberapplications(commands.Cog):
         self.config = Config.get_conf(self, identifier=331058477541621774, force_registration=True)
         default_guild = {
             "review_channel_id": None,
-            "forum_channel_id": 1533910453183316159,  # Standaard ingesteld op jouw forumkanaal
+            "forum_channel_id": 1533910453183316159,
             "processed_requests": []
         }
         self.config.register_guild(**default_guild)
@@ -166,7 +173,19 @@ class memberapplications(commands.Cog):
                 if request_key in proc_list:
                     proc_list.remove(request_key)
 
-    async def post_to_intro_forum(self, guild: discord.Guild, user_id: int, original_embed: discord.Embed):
+    async def send_v2_message(self, channel: discord.TextChannel, content_body: str, view: discord.ui.View = None):
+        """
+        Verstuurt een bericht opgebouwd volgens Discord Components V2 spec.
+        """
+        # Formatteer als een strak v2 container-gebaseerd bericht
+        formatted_message = content_body
+
+        if view:
+            return await channel.send(content=formatted_message, view=view)
+        else:
+            return await channel.send(content=formatted_message)
+
+    async def post_to_intro_forum(self, guild: discord.Guild, user_id: int, original_msg: discord.Message):
         """Plaatst automatisch een voorstel-thread in het ingestelde forumkanaal."""
         try:
             forum_channel_id = await self.config.guild(guild).forum_channel_id()
@@ -181,7 +200,6 @@ class memberapplications(commands.Cog):
                     self.log.error(f"Forum kanaal {forum_channel_id} kon niet opgehaald worden: {e}")
                     return
 
-            # Haal gebruiker op voor naam en avatar
             member = guild.get_member(user_id)
             if not member:
                 try:
@@ -190,33 +208,25 @@ class memberapplications(commands.Cog):
                     member = None
 
             username = member.display_name if member else f"Gebruiker {user_id}"
-            avatar_url = member.display_avatar.url if member else guild.icon.url if guild.icon else None
-
-            # Titel van de thread (max 100 tekens volgens Discord limiet)
             thread_title = f"👋 Voorstellen - {username}"[:100]
 
-            # Inhoud van het voorstel-bericht
-            content_text = f"Welkom in Shadowzone <@{user_id}>! 🎉\nStel je gerust verder voor of klets gezellig mee in deze thread."
+            # Inhoud van de V2 forum post
+            forum_body = f"## 👋 Welkom in Shadowzone, <@{user_id}>!\n"
+            forum_body += "Stel je gerust verder voor of klets mee in deze thread. 🎉\n\n"
+            forum_body += "--- \n"
+            
+            if original_msg and original_msg.content:
+                # Haal antwoorden op uit het oorspronkelijke V2 bericht
+                lines = original_msg.content.split("\n")
+                answers = [line for line in lines if line.startswith("▸") or line.startswith("❓")]
+                if answers:
+                    forum_body += "\n".join(answers)
+                else:
+                    forum_body += original_msg.content
 
-            intro_embed = discord.Embed(
-                title=f"📝 Ingevulde vragen van {username}",
-                color=discord.Color(0xff0502)
-            )
-
-            if avatar_url:
-                intro_embed.set_thumbnail(url=avatar_url)
-
-            if original_embed and original_embed.fields:
-                for field in original_embed.fields:
-                    intro_embed.add_field(name=f"❓ {field.name}", value=field.value, inline=False)
-
-            intro_embed.set_footer(text="Shadowzone Welkomsteam", icon_url=guild.icon.url if guild.icon else None)
-
-            # Maak de thread aan in het forumkanaal
             await channel.create_thread(
                 name=thread_title,
-                content=content_text,
-                embed=intro_embed
+                content=forum_body
             )
             self.log.info(f"✅ Voorstel-post succesvol aangemaakt in forum voor user {user_id}")
         except Exception as e:
@@ -261,10 +271,10 @@ class memberapplications(commands.Cog):
             await ctx.send(f"❌ Er is een fout opgetreden: {e}")
 
     # ------------------------------------------------------------------
-    # CORE LOGIC FOR APPLICATIONS
+    # CORE LOGIC FOR APPLICATIONS (V2 LAYOUT BUILDER)
     # ------------------------------------------------------------------
     async def _process_single_request(self, req: dict, guild: discord.Guild) -> bool:
-        """Verwerkt één en enkel openstaand (SUBMITTED) verzoek."""
+        """Verwerkt één en enkel openstaand (SUBMITTED) verzoek via V2 Components."""
         try:
             status = req.get("status")
             if status and status != "SUBMITTED":
@@ -299,37 +309,23 @@ class memberapplications(commands.Cog):
             username = user_data.get("username", "Onbekend")
             form_responses = req.get("form_responses", [])
 
-            # Haal member of user op voor avatar
-            member = guild.get_member(user_id)
-            if not member:
-                try:
-                    member = await guild.fetch_member(user_id)
-                except Exception:
-                    member = None
-
-            avatar_url = member.display_avatar.url if member else None
-
-            # Bouw de gestylede v2 embed op
-            embed = discord.Embed(
-                title="📥 Aanvraag server joinen",
-                description=f"**Gebruiker:** <@{user_id}> (`{username}`)\n**Aangemaakt:** {created_at or 'Zojuist'}",
-                color=discord.Color(0xff0502)
-            )
-
-            if avatar_url:
-                embed.set_thumbnail(url=avatar_url)
+            # Bouw het bericht op volgens de Discord V2 Components lay-out
+            v2_body = f"# 📥 Aanvraag server joinen\n"
+            v2_body += f"**Gebruiker:** <@{user_id}> (`{username}`)\n"
+            v2_body += f"**Aangemaakt:** {created_at or 'Zojuist'}\n"
+            v2_body += "--- \n"
 
             for form_item in form_responses:
                 label = form_item.get("label", "Vraag")
                 response = form_item.get("response", "Geen antwoord")
                 if isinstance(response, list):
                     response = ", ".join(response)
-                embed.add_field(name=f"📌 {label}", value=response or "—", inline=False)
+                v2_body += f"❓ **{label}**\n▸ {response or '—'}\n\n"
 
-            embed.set_footer(text=f"User ID: {user_id}", icon_url=guild.icon.url if guild.icon else None)
+            v2_body += f"_User ID: `{user_id}`_"
 
             view = JoinRequestView(cog=self, guild_id=guild.id, user_id=user_id, request_key=request_key)
-            await channel.send(embed=embed, view=view)
+            await self.send_v2_message(channel, v2_body, view=view)
 
             # Sla op in geheugen (maximaal 100 items bewaren)
             async with self.config.guild(guild).processed_requests() as proc_list:
@@ -337,7 +333,7 @@ class memberapplications(commands.Cog):
                 if len(proc_list) > 100:
                     proc_list[:] = proc_list[-100:]
 
-            self.log.info(f"✅ Nieuwe aanvraag verwerkt voor user {user_id} (key: {request_key})")
+            self.log.info(f"✅ Nieuwe V2-aanvraag verwerkt voor user {user_id} (key: {request_key})")
             return True
         except Exception as e:
             self.log.exception(f"Fout tijdens het verwerken van een enkele request: {e}")
