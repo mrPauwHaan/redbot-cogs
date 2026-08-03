@@ -1,6 +1,6 @@
+import asyncio
 import logging
 import discord
-from discord.ext import tasks
 from redbot.core import commands, Config
 from redbot.core.bot import Red
 
@@ -10,7 +10,7 @@ from redbot.core.bot import Red
 # ==========================================
 class JoinRequestView(discord.ui.View):
     def __init__(self, cog: commands.Cog, guild_id: int, user_id: int):
-        super().__init__(timeout=None)  # Knoppen blijven actief zolang het bericht bestaat
+        super().__init__(timeout=None)
         self.cog = cog
         self.guild_id = guild_id
         self.user_id = user_id
@@ -24,7 +24,7 @@ class JoinRequestView(discord.ui.View):
             await interaction.edit_original_response(
                 content=f"✅ **Aanvraag goedgekeurd door {interaction.user.mention}!**",
                 embed=interaction.message.embeds[0] if interaction.message.embeds else None,
-                view=None  # Verwijder de knoppen na afhandeling
+                view=None
             )
         else:
             await interaction.followup.send("⚠️ Er is iets misgegaan bij het goedkeuren via de Discord API.", ephemeral=True)
@@ -38,7 +38,7 @@ class JoinRequestView(discord.ui.View):
             await interaction.edit_original_response(
                 content=f"❌ **Aanvraag afgewezen door {interaction.user.mention}.**",
                 embed=interaction.message.embeds[0] if interaction.message.embeds else None,
-                view=None  # Verwijder de knoppen na afhandeling
+                view=None
             )
         else:
             await interaction.followup.send("⚠️ Er is iets misgegaan bij het afwijzen via de Discord API.", ephemeral=True)
@@ -62,36 +62,35 @@ class memberapplications(commands.Cog):
         }
         self.config.register_guild(**default_guild)
 
-    async def cog_load(self):
-        self.log.info("🚀 [MemberApps] Cog geladen! Timer wordt gestart...")
-        if not self.applications_loop.is_running():
-            self.applications_loop.start()
+        # START DE TIMER DIRECT BIJ INITIALISATIE IN REDBOT
+        self.log.info("🚀 [MemberApps] Initialiseren... Timer wordt aangemaakt in __init__.")
+        self.loop_task = self.bot.loop.create_task(self._auto_check_loop())
 
-    async def cog_unload(self):
-        self.log.info("🛑 [MemberApps] Cog unloaded. Timer wordt gestopt.")
-        self.applications_loop.cancel()
+    def cog_unload(self):
+        # Stop de achtergrond-timer netjes bij unload/reload
+        if hasattr(self, "loop_task") and self.loop_task:
+            self.loop_task.cancel()
+            self.log.info("🛑 [MemberApps] Achtergrond-timer is gestopt bij unload.")
 
     # ------------------------------------------------------------------
-    # AUTOMATISCHE TASKS.LOOP (ELKE 1 MINUUT)
+    # AUTOMATISCHE TIMER (DIRECT IN INIT GEKOPPELD)
     # ------------------------------------------------------------------
-    @tasks.loop(minutes=1)
-    async def applications_loop(self):
-        """Controleert elke minuut automatisch op nieuwe lidmaatschapsaanvragen via tasks.loop."""
-        self.log.info("⏰ [Timer Tik] Bezig met automatische minuut-check voor aanvragen...")
-        count = await self._check_applications()
-        self.log.info(f"🏁 [Timer Tik] Minuut-check voltooid. {count} nieuwe verzoeken verwerkt.")
-
-    @applications_loop.before_loop
-    async def before_applications_loop(self):
-        # Voorkom dat de loop blijft hangen als de bot al online is bij een reload!
-        if not self.bot.is_ready():
-            self.log.info("⏳ [Timer] Wachten tot de bot ready is...")
-            await self.bot.wait_until_ready()
-        self.log.info("✅ [Timer] Bot is ready, lus start nu officieel!")
-
-    @applications_loop.error
-    async def applications_loop_error(self, error):
-        self.log.exception(f"❌ [Timer Fout] Kritieke fout in applications_loop:", exc_info=error)
+    async def _auto_check_loop(self):
+        """Draait elke 60 seconden op de achtergrond van de bot."""
+        await self.bot.wait_until_ready()
+        self.log.info("✅ [MemberApps] Bot is ready! De 60-seconden achtergrond-timer loopt nu actief.")
+        
+        while True:
+            try:
+                self.log.info("⏰ [Timer Tik] Bezig met automatische minuut-check voor aanvragen...")
+                count = await self._check_applications()
+                self.log.info(f"🏁 [Timer Tik] Minuut-check voltooid. {count} nieuwe verzoeken verwerkt.")
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                self.log.exception(f"❌ [Timer Fout] Fout tijdens automatische minuut-check: {e}")
+            
+            await asyncio.sleep(60)
 
     # ------------------------------------------------------------------
     # DISCORD REST API ENDPOINTS
@@ -256,3 +255,10 @@ class memberapplications(commands.Cog):
         except Exception as e:
             self.log.exception(f"Fout tijdens _check_applications: {e}")
             return 0
+
+
+# ==========================================
+# REDBOT SETUP ENTRY POINT
+# ==========================================
+async def setup(bot: Red):
+    await bot.add_cog(memberapplications(bot))
