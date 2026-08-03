@@ -1,216 +1,253 @@
+import logging
 import discord
 from discord.ext import tasks
-import logging
+from redbot.core import commands, Config
 from redbot.core.bot import Red
-from redbot.core import commands
-import datetime
-from dateutil.relativedelta import relativedelta
-import aiohttp
-from frappeclient import FrappeClient
-import pytz
 
-class automatedevents(commands.Cog):
+
+# ==========================================
+# DISCORD UI VIEW VOOR GOEDKEUREN / AFWIJZEN
+# ==========================================
+class JoinRequestView(discord.ui.View):
+    def __init__(self, cog: commands.Cog, guild_id: int, user_id: int):
+        super().__init__(timeout=None)  # Knoppen blijven actief zolang het bericht bestaat
+        self.cog = cog
+        self.guild_id = guild_id
+        self.user_id = user_id
+
+    @discord.ui.button(label="Goedkeuren", style=discord.ButtonStyle.green, custom_id="btn_approve_join")
+    async def approve_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        success = await self.cog.patch_join_request(self.guild_id, self.user_id, action="APPROVED")
+        
+        if success:
+            await interaction.edit_original_response(
+                content=f"✅ **Aanvraag goedgekeurd door {interaction.user.mention}!**",
+                embed=interaction.message.embeds[0] if interaction.message.embeds else None,
+                view=None  # Verwijder de knoppen na afhandeling
+            )
+        else:
+            await interaction.followup.send("⚠️ Er is iets misgegaan bij het goedkeuren via de Discord API.", ephemeral=True)
+
+    @discord.ui.button(label="Afwijzen", style=discord.ButtonStyle.red, custom_id="btn_reject_join")
+    async def reject_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        success = await self.cog.patch_join_request(self.guild_id, self.user_id, action="REJECTED")
+        
+        if success:
+            await interaction.edit_original_response(
+                content=f"❌ **Aanvraag afgewezen door {interaction.user.mention}.**",
+                embed=interaction.message.embeds[0] if interaction.message.embeds else None,
+                view=None  # Verwijder de knoppen na afhandeling
+            )
+        else:
+            await interaction.followup.send("⚠️ Er is iets misgegaan bij het afwijzen via de Discord API.", ephemeral=True)
+
+
+# ==========================================
+# REDBOT COG
+# ==========================================
+class memberapplications(commands.Cog):
+    """Member Applications Cog voor Shadowzone"""
+
     def __init__(self, bot: Red) -> None:
         self.bot = bot
-        self.Frappeclient = None
-        self.local_timezone = pytz.timezone('Europe/Amsterdam')
         self.target_guild_id = 331058477541621774
-        self.log = logging.getLogger(__name__)
+        self.log = logging.getLogger("red.memberapplications")
 
-        # Set local time for loop
-        self.daily_loop_local_time = datetime.time(0, 0, 0, tzinfo=self.local_timezone)
+        # Redbot Config voor instellingen
+        self.config = Config.get_conf(self, identifier=331058477541621774, force_registration=True)
+        default_guild = {
+            "review_channel_id": None,
+            "processed_requests": []
+        }
+        self.config.register_guild(**default_guild)
 
     async def cog_load(self):
-        frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
-        api_key =  frappe_keys.get("username")
-        api_secret = frappe_keys.get("password")
-        if api_key and api_secret:
-            self.Frappeclient = FrappeClient("https://shadowzone.nl")
-            self.Frappeclient.login(api_key, api_secret)
-        else:
-            self.log.error("API keys for Frappe are missing.")
-        
-        self.daily_loop.change_interval(time=self.daily_loop_local_time)
-        self.daily_loop.start()
-        self.hourly_loop.start()
+        # Exact dezelfde opstartmethode als in je werkende automatedevents cog
+        self.applications_loop.start()
 
     async def cog_unload(self):
-        self.daily_loop.cancel()
-        self.hourly_loop.cancel()
+        self.applications_loop.cancel()
 
-    @tasks.loop()
-    async def daily_loop(self):
+    # ------------------------------------------------------------------
+    # TASKS LOOP (EXACT ZOALS IN AUTOMATEDEVENTS)
+    # ------------------------------------------------------------------
+    @tasks.loop(minutes=1)
+    async def applications_loop(self):
         """
-        This task will run daily at the specified time.
+        This task will run every minute to check for join requests.
         """
-        await self._serverbanner()
-        await self._birthday()
+        await self._check_applications()
 
-    @daily_loop.before_loop
-    async def before_daily_loop(self):
+    @applications_loop.before_loop
+    async def before_applications_loop(self):
         await self.bot.wait_until_ready()
-        self.log.info("Daily loop is ready to start.")
+        self.log.info("Applications loop is ready to start.")
 
-    @tasks.loop(minutes=60)
-    async def hourly_loop(self):
+    # ------------------------------------------------------------------
+    # DISCORD REST API ENDPOINTS
+    # ------------------------------------------------------------------
+    async def fetch_join_requests(self, guild_id: int, limit: int = 25):
         """
-        This task will run every hour.
+        Haalt openstaande join requests op via het REST endpoint.
+        Status query `status=SUBMITTED` voorkomt Discord 500 errors.
         """
-        await self._serverevents()
+        route = discord.http.Route("GET", f"/guilds/{guild_id}/requests?status=SUBMITTED&limit={limit}")
+        try:
+            response = await self.bot.http.request(route)
+            if isinstance(response, list):
+                return response
+            elif isinstance(response, dict):
+                return response.get("guild_join_requests") or response.get("requests") or []
+            return []
+        except discord.HTTPException as e:
+            if e.status != 403:
+                self.log.error(f"HTTP Fout {e.status} bij ophalen van join requests via REST: {e}")
+            return []
+        except Exception as e:
+            self.log.exception(f"Onverwachte fout bij fetch_join_requests: {e}")
+            return []
 
-    @hourly_loop.before_loop
-    async def before_hourly_loop(self):
-        await self.bot.wait_until_ready()
-        self.log.info("Hourly loop is ready to start.")
+    async def patch_join_request(self, guild_id: int, user_id: int, action: str):
+        """
+        Keurt een request goed of wijst af via:
+        PATCH /guilds/{guild_id}/requests/{user_id}
+        action kan 'APPROVED' of 'REJECTED' zijn.
+        """
+        route = discord.http.Route("PATCH", f"/guilds/{guild_id}/requests/{user_id}")
+        payload = {"action": action}
+        try:
+            await self.bot.http.request(route, json=payload)
+            return True
+        except discord.HTTPException as e:
+            self.log.error(f"HTTP Fout bij bijwerken van join request voor user {user_id}: {e}")
+            return False
+        except Exception as e:
+            self.log.exception(f"Onverwachte fout bij patch_join_request voor user {user_id}: {e}")
+            return False
 
-    @commands.command(aliases=["banner"])
-    @commands.is_owner()
-    async def serverbanner(self, ctx: commands.Context):
-        """Update server banner based on database"""
-        await self._serverbanner(ctx)
-        await ctx.send("Update completed")
-    
-    @commands.command(aliases=["bd"])
-    @commands.has_permissions(manage_channels=True)
-    async def birthday(self, ctx: commands.Context):
-        """
-        Updates birthday roles based on Frappe data.
-        Adds role to members whose birthday is today and removes role
-        from members who have the role but their birthday is not today.
-        """
-        await self._birthday(ctx)
-        await ctx.send("Update completed")
+    # ------------------------------------------------------------------
+    # COMMANDS
+    # ------------------------------------------------------------------
+    @commands.group(name="appset")
+    @commands.has_permissions(administrator=True)
+    async def appset(self, ctx: commands.Context):
+        """Beheer de instellingen voor lidmaatschapsaanvragen."""
+        pass
+
+    @appset.command(name="channel")
+    async def set_review_channel(self, ctx: commands.Context, channel: discord.TextChannel):
+        """Stel het kanaal in waar aanvragen binnenkomen."""
+        await self.config.guild(ctx.guild).review_channel_id.set(channel.id)
+        await ctx.send(f"✅ Aanvragen worden vanaf nu gestuurd naar {channel.mention}.")
+
+    @appset.command(name="reset")
+    async def reset_processed(self, ctx: commands.Context):
+        """Wist het geheugen van reeds verwerkte verzoeken (handig bij testen)."""
+        await self.config.guild(ctx.guild).processed_requests.set([])
+        await ctx.send("🧹 Het geheugen van verwerkte verzoeken is gewist!")
 
     @commands.command()
-    @commands.has_permissions(manage_channels=True)
-    async def serverevents(self, ctx: commands.Context):
-        """Add server events based on database"""
-        await self._serverevents(ctx)
-        await ctx.send("Update completed")
+    @commands.has_permissions(manage_guild=True)
+    async def checkapps(self, ctx: commands.Context):
+        """Handmatig direct controleren op nieuwe lidmaatschapsaanvragen."""
+        try:
+            count = await self._check_applications(ctx.guild)
+            await ctx.send(f"Verwerking voltooid. {count} nieuwe aanvraag/aanvragen verwerkt.")
+        except Exception as e:
+            self.log.exception(f"Fout bij handmatig uitvoeren van checkapps commando: {e}")
+            await ctx.send(f"❌ Er is een fout opgetreden: {e}")
 
-    async def _serverbanner(self, ctx: commands.Context = None):
-        """Update server banner based on database"""
-        if not self.Frappeclient:
-            self.log.error("FrappeClient is not available. Cannot update banner.")
-            return
-        response = self.Frappeclient.get_list('Discord server banners', fields = ['*'], filters = {'datum':str(datetime.datetime.now(self.local_timezone).date())}, limit_page_length=float('inf'))
-        if response:
-            banner_url = "http://shadowzone.nl/" + response[0]['banner']
-            guild = self.bot.get_guild(self.target_guild_id)
-            async with aiohttp.ClientSession() as session:
-                async with session.get(banner_url) as resp:
-                    if resp.status == 200:
-                        image_data = await resp.read()
-                        await guild.edit(
-                            banner=image_data,
-                            reason=f"De server banner is veranderd naar: {response[0]['name']}",
-                        )
-                        if response[0]['eenmalig'] == 1:
-                            self.Frappeclient.delete('Discord server banners', response[0]['name'])
-                        else:
-                            doc = self.Frappeclient.get_doc('Discord server banners', response[0]['name'])
-                            date = datetime.datetime.strptime(doc['datum'], '%Y-%m-%d').date()
-                            newDate = date + relativedelta(years=1)
-                            doc['datum'] = str(newDate)
-                            self.Frappeclient.update(doc)
-                    else:
-                        self.log.error(f"Failed to download banner image from {banner_url}. Status: {resp.status}")
-    
-    async def _birthday(self, ctx: commands.Context = None):
-        """
-        Updates birthday roles based on Frappe data.
-        Adds role to members whose birthday is today and removes role
-        from members who have the role but their birthday is not today.
-        """
-        frappe_members = self.Frappeclient.get_list('Member', fields=['discord_id', 'geboortedatum', 'custom_status'], filters={'custom_status': 'Actief'}, limit_page_length=float('inf'))
-        guild = self.bot.get_guild(self.target_guild_id)
-        role = guild.get_role(943779141688381470)
-        today = datetime.datetime.now(self.local_timezone).date()
+    # ------------------------------------------------------------------
+    # CORE LOGIC FOR APPLICATIONS
+    # ------------------------------------------------------------------
+    async def _process_single_request(self, req: dict, guild: discord.Guild) -> bool:
+        """Verwerkt één en enkel openstaand (SUBMITTED) verzoek."""
+        try:
+            status = req.get("status")
+            if status and status != "SUBMITTED":
+                return False
 
-        # Build a set of Discord IDs for members whose birthday is today according to Frappe
-        today_birthdays_discord_ids = set()
-        if frappe_members:
-            for member_data in frappe_members:
-                # Ensure 'geboortedatum' and 'discord_id' exist and are not None
-                if member_data.get('geboortedatum') and member_data.get('discord_id'):
+            user_id = int(req.get("user_id") or req.get("user", {}).get("id", 0))
+            if not user_id:
+                return False
 
-                    geboortedatum = datetime.datetime.strptime(member_data['geboortedatum'], '%Y-%m-%d').date()
+            # Unieke sleutel per SPECIFIEKE INZENDING
+            raw_req_id = req.get("id") or req.get("request_id") or str(user_id)
+            created_at = req.get("created_at", "")
+            request_key = f"{raw_req_id}_{created_at}"
 
-                    if geboortedatum.day == today.day and geboortedatum.month == today.month:
-                        # Add the discord_id (as a string) to the set
-                        today_birthdays_discord_ids.add(member_data['discord_id'])
+            processed = await self.config.guild(guild).processed_requests()
+            if request_key in processed:
+                return False
 
-                        # Get the discord.Member object and add the role
-                        discordmember = guild.get_member(int(member_data['discord_id']))
-                        if discordmember and role not in discordmember.roles:
-                            await discordmember.add_roles(role, reason="Vandaag jarig")
+            review_channel_id = await self.config.guild(guild).review_channel_id()
+            if not review_channel_id:
+                return False
 
-        # Remove the role if their ID is NOT in the set of today's birthdays
-        for birthdaymember in role.members:
-            # Check if the member's ID (as a string) is in our set of today's birthdays
-            if str(birthdaymember.id) not in today_birthdays_discord_ids:
-                await birthdaymember.remove_roles(role, reason="Verjaardag voorbij")
+            # Haal kanaal op
+            channel = guild.get_channel(review_channel_id)
+            if not channel:
+                try:
+                    channel = await guild.fetch_channel(review_channel_id)
+                except Exception as e:
+                    self.log.error(f"Kanaal met ID {review_channel_id} kon niet worden opgehaald: {e}")
+                    return False
 
-    async def _serverevents(self, ctx: commands.Context = None):
-        """Maak server events gepland via de database"""
-        response = self.Frappeclient.get_list('Discord events', fields = ['*'], filters = {'concept': 0}, limit_page_length=float('inf'))
-        if response:
-            guild = self.bot.get_guild(self.target_guild_id)
-            image_data = None
-            for event in response:
-                if event['end_time'] and datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S'):
-                    self.log.error(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
-                    doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
-                    doc_to_update['status'] = 'Starttijd moet voor eindtijd zijn'
-                    self.Frappeclient.update(doc_to_update)
-                    continue
-                start_time_local = self.local_timezone.localize(datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S'))
-                if start_time_local <= datetime.datetime.now(self.local_timezone):
-                    doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
-                    doc_to_update['status'] = 'Starttijd moet in de toekomst zijn'
-                    self.Frappeclient.update(doc_to_update)
-                    self.log.error(f"[{event['title']}] Starttijd van nieuwe events kan niet in het verleden liggen")
-                    continue
-                
-                if datetime.datetime.strptime(event['date_create'], '%Y-%m-%d %H:%M:%S') <= datetime.datetime.now():
-                    event_args = {
-                    "name": event['title'],
-                    "description": event['description'],
-                    "start_time": self.local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc),
-                    "end_time": self.local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None,
-                    "privacy_level": discord.PrivacyLevel.guild_only,
-                    }
-                    
-                    if event['image']:
-                        image = "http://shadowzone.nl/" + event['image']
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(image) as resp:
-                                if resp.status == 200:
-                                    image_data = await resp.read()
-                                    event_args["image"] = image_data
-                                else:
-                                    self.log.error(f"[{event['title']}] Kan afbeelding niet downloaden")
-                                    doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
-                                    doc_to_update['status'] = 'Kan afbeelding niet downloaden'
-                                    self.Frappeclient.update(doc_to_update)
-                                    continue
+            user_data = req.get("user", {})
+            username = user_data.get("username", "Onbekend")
+            form_responses = req.get("form_responses", [])
 
-                    if 'location' in event and event['location']:
-                        try:
-                            int(event['location'])
-                            if guild.get_channel(int(event['location'])):
-                                event_args["channel"] = guild.get_channel(int(event['location']))
-                            else:
-                                event_args["entity_type"] = discord.EntityType.external
-                                event_args["location"] = event['location']
-                        except ValueError:
-                            event_args["entity_type"] = discord.EntityType.external
-                            event_args["location"] = event['location']
+            # Bouw de embed op
+            embed = discord.Embed(
+                title="📥 Nieuwe Lidmaatschapsaanvraag",
+                description=f"**Gebruiker:** <@{user_id}> (`{username}`)\n**Aangemaakt:** {created_at or 'Zojuist'}",
+                color=discord.Color.blue()
+            )
 
-                    if 'entity_type' in event_args and event_args["entity_type"] == discord.EntityType.external:
-                        if not event_args["end_time"] and event['override_check'] == 1: 
-                            event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
-                            self.log.error(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
+            for form_item in form_responses:
+                label = form_item.get("label", "Vraag")
+                response = form_item.get("response", "Geen antwoord")
+                if isinstance(response, list):
+                    response = ", ".join(response)
+                embed.add_field(name=label, value=response or "—", inline=False)
 
-                    await guild.create_scheduled_event(**event_args)
-                    self.Frappeclient.delete('Discord events', event['name'])
+            view = JoinRequestView(cog=self, guild_id=guild.id, user_id=user_id)
+            await channel.send(embed=embed, view=view)
+
+            # Sla op in geheugen (maximaal 100 items bewaren)
+            async with self.config.guild(guild).processed_requests() as proc_list:
+                proc_list.append(request_key)
+                if len(proc_list) > 100:
+                    proc_list[:] = proc_list[-100:]
+
+            self.log.info(f"✅ Nieuwe aanvraag verwerkt voor user {user_id} (key: {request_key})")
+            return True
+        except Exception as e:
+            self.log.exception(f"Fout tijdens het verwerken van een enkele request: {e}")
+            return False
+
+    async def _check_applications(self, guild: discord.Guild = None):
+        """Controleert op verzoeken via de REST API."""
+        try:
+            if not guild:
+                guild = self.bot.get_guild(self.target_guild_id)
+
+            if not guild:
+                try:
+                    guild = await self.bot.fetch_guild(self.target_guild_id)
+                except Exception as e:
+                    self.log.error(f"Kan server {self.target_guild_id} niet ophalen: {e}")
+                    return 0
+
+            requests = await self.fetch_join_requests(guild.id)
+            new_count = 0
+            for req in requests:
+                if await self._process_single_request(req, guild):
+                    new_count += 1
+
+            return new_count
+        except Exception as e:
+            self.log.exception(f"Fout tijdens _check_applications: {e}")
+            return 0
