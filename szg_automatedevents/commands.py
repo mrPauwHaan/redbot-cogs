@@ -67,44 +67,36 @@ class memberapplications(commands.Cog):
         self.config.register_guild(**default_guild)
 
     async def cog_load(self):
-        """Wordt door Redbot aangeroepen zodra de cog succesvol is geladen."""
-        self.log.info("▶️ [MemberApps] cog_load() aangeroepen. Loop starten...")
-        if not self.applications_loop.is_running():
-            self.applications_loop.start()
+        """Start de achtergrond-task op dezelfde manier als automatedevents."""
+        self.applications_loop.start()
 
     async def cog_unload(self):
-        """Wordt door Redbot aangeroepen zodra de cog wordt uninstalled of reloaded."""
-        self.log.info("⏹️ [MemberApps] cog_unload() aangeroepen. Loop stoppen...")
+        """Stop de achtergrond-task bij unload op dezelfde manier als automatedevents."""
         self.applications_loop.cancel()
 
     # ------------------------------------------------------------------
-    # TASKS LOOP (REDBOT SPECIFIEK)
+    # TASKS LOOP (STRUCTUUR IDENTIEK AAN AUTOMATEDEVENTS)
     # ------------------------------------------------------------------
     @tasks.loop(minutes=1)
     async def applications_loop(self):
-        """Draait elke minuut automatisch op de achtergrond."""
-        self.log.info("⏰ [Timer Tik] Minuut-check gestart...")
-        try:
-            count = await self._check_applications()
-            self.log.info(f"🏁 [Timer Tik] Minuut-check voltooid ({count} verwerkt).")
-        except Exception as e:
-            self.log.exception(f"❌ [Timer Fout] Fout in applications_loop: {e}")
+        """
+        This task will run every minute to check for member join requests.
+        """
+        await self._check_applications()
 
     @applications_loop.before_loop
     async def before_applications_loop(self):
-        """OFFICIËLE REDBOT METHODE: Wacht op Redbot readiness i.p.v. standaard d.py readiness"""
-        self.log.info("⏳ [Timer Setup] Wachten op Redbot readiness (wait_until_redbot_ready)...")
-        await self.bot.wait_until_redbot_ready()
-        self.log.info("🟢 [Timer Setup] Redbot is volledig ready! De minuut-loop start nu.")
-
-    @applications_loop.error
-    async def applications_loop_error(self, error: Exception):
-        self.log.exception(f"⚠️ [Timer Error Handler] Fout in applications_loop:", exc_info=error)
+        await self.bot.wait_until_ready()
+        self.log.info("Applications loop is ready to start.")
 
     # ------------------------------------------------------------------
     # DISCORD REST API ENDPOINTS
     # ------------------------------------------------------------------
     async def fetch_join_requests(self, guild_id: int, limit: int = 25):
+        """
+        Haalt openstaande join requests op via het REST endpoint.
+        Status query `status=SUBMITTED` voorkomt Discord 500 errors.
+        """
         route = discord.http.Route("GET", f"/guilds/{guild_id}/requests?status=SUBMITTED&limit={limit}")
         try:
             response = await self.bot.http.request(route)
@@ -122,6 +114,11 @@ class memberapplications(commands.Cog):
             return []
 
     async def patch_join_request(self, guild_id: int, user_id: int, action: str):
+        """
+        Keurt een request goed of wijst af via:
+        PATCH /guilds/{guild_id}/requests/{user_id}
+        action kan 'APPROVED' of 'REJECTED' zijn.
+        """
         route = discord.http.Route("PATCH", f"/guilds/{guild_id}/requests/{user_id}")
         payload = {"action": action}
         try:
@@ -135,6 +132,7 @@ class memberapplications(commands.Cog):
             return False
 
     async def remove_processed_request(self, guild_id: int, request_key: str):
+        """Verwijder een verwerkte sleutel uit de config zodra deze is afgehandeld."""
         guild = self.bot.get_guild(guild_id)
         if guild:
             async with self.config.guild(guild).processed_requests() as proc_list:
@@ -177,6 +175,7 @@ class memberapplications(commands.Cog):
     # CORE LOGIC FOR APPLICATIONS
     # ------------------------------------------------------------------
     async def _process_single_request(self, req: dict, guild: discord.Guild) -> bool:
+        """Verwerkt één en enkel openstaand (SUBMITTED) verzoek."""
         try:
             status = req.get("status")
             if status and status != "SUBMITTED":
@@ -196,6 +195,7 @@ class memberapplications(commands.Cog):
 
             review_channel_id = await self.config.guild(guild).review_channel_id()
             if not review_channel_id:
+                self.log.warning("Geen review_channel_id ingesteld in config. Gebruik [prefix]appset channel.")
                 return False
 
             channel = guild.get_channel(review_channel_id)
@@ -210,6 +210,7 @@ class memberapplications(commands.Cog):
             username = user_data.get("username", "Onbekend")
             form_responses = req.get("form_responses", [])
 
+            # Bouw de embed op
             embed = discord.Embed(
                 title="📥 Nieuwe Lidmaatschapsaanvraag",
                 description=f"**Gebruiker:** <@{user_id}> (`{username}`)\n**Aangemaakt:** {created_at or 'Zojuist'}",
@@ -226,6 +227,7 @@ class memberapplications(commands.Cog):
             view = JoinRequestView(cog=self, guild_id=guild.id, user_id=user_id, request_key=request_key)
             await channel.send(embed=embed, view=view)
 
+            # Sla op in geheugen (maximaal 100 items bewaren)
             async with self.config.guild(guild).processed_requests() as proc_list:
                 proc_list.append(request_key)
                 if len(proc_list) > 100:
@@ -238,6 +240,7 @@ class memberapplications(commands.Cog):
             return False
 
     async def _check_applications(self, guild: discord.Guild = None):
+        """Controleert op verzoeken via de REST API."""
         try:
             if not guild:
                 guild = self.bot.get_guild(self.target_guild_id)
@@ -259,10 +262,3 @@ class memberapplications(commands.Cog):
         except Exception as e:
             self.log.exception(f"Fout tijdens _check_applications: {e}")
             return 0
-
-
-# ==========================================
-# REDBOT ASYNC SETUP ENTRY POINT
-# ==========================================
-async def setup(bot: Red):
-    await bot.add_cog(memberapplications(bot))
