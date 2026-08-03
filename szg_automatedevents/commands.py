@@ -64,26 +64,51 @@ class memberapplications(commands.Cog):
         self.config.register_guild(**default_guild)
 
     async def cog_load(self):
-        # Exact dezelfde opstartmethode als in je werkende automatedevents cog
-        self.applications_loop.start()
+        self.log.info("▶️ [MemberApps] cog_load gestart. Loop wordt geïnitieerd...")
+        try:
+            if not self.applications_loop.is_running():
+                self.applications_loop.start()
+                self.log.info("✅ [MemberApps] applications_loop succesvol gestart via cog_load.")
+            else:
+                self.applications_loop.restart()
+                self.log.info("🔄 [MemberApps] applications_loop was al actief en is herstart.")
+        except Exception as e:
+            self.log.exception(f"❌ [MemberApps] Fout bij starten van applications_loop in cog_load: {e}")
 
     async def cog_unload(self):
+        self.log.info("⏹️ [MemberApps] cog_unload aangeroepen. Loop wordt stopgezet...")
         self.applications_loop.cancel()
 
     # ------------------------------------------------------------------
-    # TASKS LOOP (EXACT ZOALS IN AUTOMATEDEVENTS)
+    # TASKS LOOP MET ERROR HANDLING & AUTO-RECOVERY
     # ------------------------------------------------------------------
     @tasks.loop(minutes=1)
     async def applications_loop(self):
-        """
-        This task will run every minute to check for join requests.
-        """
-        await self._check_applications()
+        """Draait elke minuut automatisch op de achtergrond om verzoeken te controleren."""
+        self.log.info("⏰ [Timer Tik] Automatische minuut-check gestart...")
+        try:
+            count = await self._check_applications()
+            self.log.info(f"🏁 [Timer Tik] Minuut-check voltooid. {count} nieuwe verzoeken verwerkt.")
+        except Exception as e:
+            self.log.exception(f"❌ [Timer Fout] Fout in _check_applications tijdens loop-uitvoering: {e}")
 
     @applications_loop.before_loop
     async def before_applications_loop(self):
-        await self.bot.wait_until_ready()
-        self.log.info("Applications loop is ready to start.")
+        self.log.info("⏳ [Timer Setup] before_applications_loop gestart. Controleren op bot readiness...")
+        if not self.bot.is_ready():
+            await self.bot.wait_until_ready()
+        self.log.info("🟢 [Timer Setup] Bot is ready. De minuut-loop is nu officieel actief.")
+
+    @applications_loop.error
+    async def applications_loop_error(self, error: Exception):
+        """Vangt onbehandelde uitzonderingen op en herstart de loop automatisch."""
+        self.log.exception(f"⚠️ [Timer Error Handler] Onverwachte fout in applications_loop! automatische herstart...", exc_info=error)
+        try:
+            if not self.applications_loop.is_running():
+                self.applications_loop.restart()
+                self.log.info("🔄 [Timer Error Handler] applications_loop succesvol herstart na crash.")
+        except Exception as e:
+            self.log.exception(f"💥 [Timer Error Handler] Kon applications_loop niet herstarten: {e}")
 
     # ------------------------------------------------------------------
     # DISCORD REST API ENDPOINTS
@@ -148,6 +173,24 @@ class memberapplications(commands.Cog):
         await self.config.guild(ctx.guild).processed_requests.set([])
         await ctx.send("🧹 Het geheugen van verwerkte verzoeken is gewist!")
 
+    @appset.command(name="status")
+    async def loop_status(self, ctx: commands.Context):
+        """Controleert de status van de achtergrond-timer en herstart deze indien nodig."""
+        is_running = self.applications_loop.is_running()
+        is_failed = self.applications_loop.failed()
+        
+        msg = f"**Timer status:** {'🟢 Actief' if is_running else '🔴 Gestopt'}\n"
+        msg += f"**Gecrasht:** {'⚠️ Ja' if is_failed else '✅ Nee'}\n"
+
+        if not is_running or is_failed:
+            try:
+                self.applications_loop.restart()
+                msg += "🔄 **De timer is zojuist handmatig herstart!**"
+            except Exception as e:
+                msg += f"❌ **Herstarten mislukt:** {e}"
+
+        await ctx.send(msg)
+
     @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def checkapps(self, ctx: commands.Context):
@@ -186,7 +229,6 @@ class memberapplications(commands.Cog):
             if not review_channel_id:
                 return False
 
-            # Haal kanaal op
             channel = guild.get_channel(review_channel_id)
             if not channel:
                 try:
