@@ -230,7 +230,7 @@ class memberapplications(commands.Cog):
     # FORUM POSTING VIA V2 CONTAINERS (MET GEFILTERDE VRAGEN)
     # ------------------------------------------------------------------
     async def post_to_intro_forum_v2(self, guild: discord.Guild, user_id: int, req_data: dict):
-        """Plaatst een voorstel-thread in het forumkanaal."""
+        """Plaatst een voorstel-thread in het forumkanaal als een standaard tekstbericht."""
         try:
             forum_channel_id = await self.config.guild(guild).forum_channel_id()
             if not forum_channel_id:
@@ -248,57 +248,41 @@ class memberapplications(commands.Cog):
 
             form_responses = req_data.get("form_responses", [])
 
-            # Vragen uitsluiten die niet in de forum post hoeven
             EXCLUDED_QUESTIONS = [
                 "Read and agree to the server rules",
                 "Lees en ga akkoord met de serverregels"
             ]
 
-            forum_components = [
-                {
-                    "type": 10,  # Text Display
-                    "content": f"## 👋 Welkom in Shadowzone, <@{user_id}>!\nStel je gerust verder voor of klets gezellig mee in de server 🎉"
-                }
+            lines = [
+                f"## 👋 Welkom in Shadowzone, <@{user_id}>!",
+                "Stel je gerust verder voor of klets gezellig mee in de server 🎉\n"
             ]
 
-            # Haal de vragen op die NIET op de uitsluitlijst staan
             valid_responses = [
                 item for item in form_responses 
                 if item.get("label") not in EXCLUDED_QUESTIONS
             ]
 
-            if valid_responses:
-                forum_components.append({
-                    "type": 14,  # Separator Component
-                    "divider": True,
-                    "spacing": 1
-                })
+            for item in valid_responses:
+                label = item.get("label", "Vraag")
+                response = item.get("response", "Geen antwoord")
+                if isinstance(response, list):
+                    response = ", ".join(response)
 
-                for item in valid_responses:
-                    label = item.get("label", "Vraag")
-                    response = item.get("response", "Geen antwoord")
-                    if isinstance(response, list):
-                        response = ", ".join(response)
+                lines.append(f"**{label}**\n▸ {response or '—'}\n")
 
-                    forum_components.append({
-                        "type": 10,  # Text Display
-                        "content": f"**{label}**\n▸ {response or '—'}"
-                    })
-
-            # Components direct op top-level niveau plaatsen zonder Type 17 Container wrapper
             payload = {
                 "name": thread_title,
                 "message": {
-                    "flags": 32768,  # IS_COMPONENTS_V2
-                    "components": forum_components
+                    "content": "\n".join(lines).strip()
                 }
             }
 
             route = discord.http.Route("POST", f"/channels/{forum_channel_id}/threads")
             await self.bot.http.request(route, json=payload)
-            self.log.info(f"✅ Voorstel-thread in V2 Text succesvol aangemaakt voor user {user_id}")
+            self.log.info(f"✅ Voorstel-thread succesvol aangemaakt voor user {user_id}")
         except Exception as e:
-            self.log.exception(f"Fout bij het aanmaken van V2 forum-thread: {e}")
+            self.log.exception(f"Fout bij het aanmaken van forum-thread: {e}")
 
     # ------------------------------------------------------------------
     # DISCORD REST API ENDPOINTS
