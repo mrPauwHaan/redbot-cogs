@@ -230,7 +230,7 @@ class memberapplications(commands.Cog):
     # FORUM POSTING VIA V2 CONTAINERS (MET GEFILTERDE VRAGEN)
     # ------------------------------------------------------------------
     async def post_to_intro_forum_v2(self, guild: discord.Guild, user_id: int, req_data: dict):
-        """Plaatst een voorstel-thread in het forumkanaal met een V2 Container."""
+        """Plaatst een voorstel-thread in het forumkanaal."""
         try:
             forum_channel_id = await self.config.guild(guild).forum_channel_id()
             if not forum_channel_id:
@@ -254,7 +254,7 @@ class memberapplications(commands.Cog):
                 "Lees en ga akkoord met de serverregels"
             ]
 
-            forum_container_children = [
+            forum_components = [
                 {
                     "type": 10,  # Text Display
                     "content": f"## 👋 Welkom in Shadowzone, <@{user_id}>!\nStel je gerust verder voor of klets gezellig mee in de server 🎉"
@@ -268,7 +268,7 @@ class memberapplications(commands.Cog):
             ]
 
             if valid_responses:
-                forum_container_children.append({
+                forum_components.append({
                     "type": 14,  # Separator Component
                     "divider": True,
                     "spacing": 1
@@ -280,28 +280,23 @@ class memberapplications(commands.Cog):
                     if isinstance(response, list):
                         response = ", ".join(response)
 
-                    forum_container_children.append({
+                    forum_components.append({
                         "type": 10,  # Text Display
                         "content": f"**{label}**\n▸ {response or '—'}"
                     })
 
-            # FIX: Top-level "content" verwijderd bij IS_COMPONENTS_V2 flag
+            # Components direct op top-level niveau plaatsen zonder Type 17 Container wrapper
             payload = {
                 "name": thread_title,
                 "message": {
                     "flags": 32768,  # IS_COMPONENTS_V2
-                    "components": [
-                        {
-                            "type": 17,  # Container Component
-                            "components": forum_container_children
-                        }
-                    ]
+                    "components": forum_components
                 }
             }
 
             route = discord.http.Route("POST", f"/channels/{forum_channel_id}/threads")
             await self.bot.http.request(route, json=payload)
-            self.log.info(f"✅ Voorstel-thread in V2 Container succesvol aangemaakt voor user {user_id}")
+            self.log.info(f"✅ Voorstel-thread in V2 Text succesvol aangemaakt voor user {user_id}")
         except Exception as e:
             self.log.exception(f"Fout bij het aanmaken van V2 forum-thread: {e}")
 
