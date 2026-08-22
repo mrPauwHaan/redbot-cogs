@@ -28,7 +28,7 @@ class StatbotClient:
         now = time.time()
         if guild_id in self._leaderboard_cache:
             cache_time, cache_data = self._leaderboard_cache[guild_id]
-            if now - cache_time < 900:  # 15 minuten TTL
+            if now - cache_time < 900:  # 15 minuten cache
                 return cache_data
 
         session = await self._get_session()
@@ -44,18 +44,36 @@ class StatbotClient:
             async with session.get(sums_url, headers=self._headers, params=params) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    raw_list = data if isinstance(data, list) else data.get("data", [])
-                    
-                    # Sorteer op 'count' (aantal minuten) van hoog naar laag
+                    parsed_entries = []
+
+                    # 1. Lijst formaat: [{"memberId": "...", "count": 100}]
+                    if isinstance(data, list):
+                        parsed_entries = data
+                    # 2. Dictionary wrapper: {"data": [...]} of {"sums": [...]}
+                    elif isinstance(data, dict):
+                        for k in ("data", "sums", "series", "members", "results"):
+                            if isinstance(data.get(k), list):
+                                parsed_entries = data[k]
+                                break
+                        # 3. Directe key-value dictionary: {"<discord_id>": 1400} of {"<discord_id>": {"count": 1400}}
+                        if not parsed_entries:
+                            for member_key, val in data.items():
+                                if str(member_key).isdigit():
+                                    c = val if isinstance(val, (int, float)) else (val.get("count", 0) if isinstance(val, dict) else 0)
+                                    parsed_entries.append({"memberId": str(member_key), "count": c})
+
+                    # Filter op actieve leden en sorteer van hoog naar laag
                     sorted_lb = sorted(
-                        [e for e in raw_list if (e.get("count") or 0) > 0],
+                        [e for e in parsed_entries if (e.get("count") or 0) > 0],
                         key=lambda x: x.get("count", 0),
                         reverse=True,
                     )
                     self._leaderboard_cache[guild_id] = (now, sorted_lb)
                     return sorted_lb
-        except Exception:
-            pass
+                else:
+                    print(f"[UserCard Statbot] Leaderboard API error {resp.status}: {await resp.text()}")
+        except Exception as e:
+            print(f"[UserCard Statbot] Leaderboard ophalen mislukt: {e}")
 
         return []
 
@@ -108,7 +126,7 @@ class StatbotClient:
 
         user_id_str = str(user_id)
         for idx, entry in enumerate(leaderboard, start=1):
-            m_id = str(entry.get("memberId") or entry.get("id") or "")
+            m_id = str(entry.get("memberId") or entry.get("id") or entry.get("member_id") or entry.get("userId") or "")
             if m_id == user_id_str:
                 rank = idx
                 break
@@ -118,10 +136,10 @@ class StatbotClient:
             rank_str = f"#{rank} van {total_active_members}"
             top_pct_str = f"Top {top_pct}%"
         elif total_hours > 0:
-            rank_str = "#1+"
+            rank_str = "Actief"
             top_pct_str = "-"
         else:
-            rank_str = "-"
+            rank_str = "Geen Rang"
             top_pct_str = "-"
 
         # 4. Uur- en weekdagverdeling parsen
