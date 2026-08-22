@@ -697,7 +697,7 @@ class usercard(Cog):
 
         # Voetnoot linksonderin
         draw.text(
-            (70, 1025),
+            (200, 1025),
             text="* Op basis van de afgelopen 30 dagen",
             fill=(150, 155, 165),
             font=self.font[30],
