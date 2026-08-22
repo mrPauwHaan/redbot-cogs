@@ -2,16 +2,16 @@ import io
 import discord
 from .statbot_api import StatbotClient
 
+
 class UserCardView(discord.ui.View):
-    def __init__(self, cog, member: discord.Member, author: discord.Member, initial_lid_bytes: bytes):
+    def __init__(
+        self, cog, member: discord.Member, author: discord.Member, initial_lid_bytes: bytes
+    ):
         super().__init__(timeout=120)
         self.cog = cog
         self.member = member
         self.author = author
-        # Cache rendered image bytes to avoid re-rendering on every click
-        self.cached_files: dict[str, bytes] = {
-            "lid": initial_lid_bytes
-        }
+        self.cached_files: dict[str, bytes] = {"lid": initial_lid_bytes}
 
     @discord.ui.button(label="Lid", style=discord.ButtonStyle.primary, custom_id="btn_lid")
     async def lid_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -37,12 +37,13 @@ class UserCardView(discord.ui.View):
     async def stats_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
         if "stats" not in self.cached_files:
-            # Retrieve the API key set via [p]set api statbot api_key <KEY>
             api_tokens = await self.cog.bot.get_shared_api_tokens("statbot")
             api_key = api_tokens.get("api_key", "")
 
             client = StatbotClient(api_key=api_key)
-            stats = await client.get_user_voice_stats(interaction.guild_id, self.member.id, days=30)
+            stats = await client.get_user_voice_stats(
+                interaction.guild_id, self.member.id, days=30
+            )
             await client.close()
 
             buf = await self.cog.render_stats_card(self.member, stats)
@@ -53,6 +54,9 @@ class UserCardView(discord.ui.View):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author.id:
-            await interaction.response.send_message("Only the command caller can switch cards.", ephemeral=True)
+            await interaction.response.send_message(
+                "Alleen degene die het commando heeft aangeroepen kan van weergave wisselen.",
+                ephemeral=True,
+            )
             return False
         return True
