@@ -68,7 +68,7 @@ class usercard(Cog):
         await super().cog_unload()
 
     def get_latest_event_number(self, fallback_max: int = 0) -> int:
-        """Haalt het hoogste eventnummer op uit Frappe (met 1 uur cache)."""
+        """Haalt het hoogste afgelopen eventnummer op uit Frappe 'Beheer events' (1 uur cache)."""
         now = time.time()
         if self._latest_event_cache:
             cache_time, cached_val = self._latest_event_cache
@@ -79,20 +79,29 @@ class usercard(Cog):
             return fallback_max
 
         try:
-            docs = self.Frappeclient.get_list('Event', fields=['name', 'title'], limit_page_length=100)
+            docs = self.Frappeclient.get_list(
+                'Beheer events',
+                fields=['event_name', 'name'],
+                filters={'afgelopen': 1},
+                limit_page_length=200
+            )
             max_num = fallback_max
-            for doc in docs:
-                title = doc.get('title') or doc.get('name') or ''
-                if 'event' in title.lower():
-                    parts = title.split()
-                    for p in parts:
-                        cleaned = p.strip(":#- ")
-                        if cleaned.isdigit():
-                            max_num = max(max_num, int(cleaned))
-            self._latest_event_cache = (now, max_num)
-            return max_num
-        except Exception:
-            pass
+            if docs:
+                for doc in docs:
+                    event_name = doc.get('event_name') or doc.get('name') or ''
+                    if event_name and event_name not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
+                        try:
+                            num = int(event_name.split()[1].strip(":"))
+                            if num > max_num:
+                                max_num = num
+                        except (IndexError, ValueError):
+                            continue
+
+                if max_num > fallback_max:
+                    self._latest_event_cache = (now, max_num)
+                    return max_num
+        except Exception as e:
+            print(f"[UserCard] Fout bij ophalen Beheer events: {e}")
 
         return fallback_max
 
@@ -502,7 +511,7 @@ class usercard(Cog):
                     font=self.bold_font[36],
                 )
 
-                # Tekst: "Event X"
+                # Tekst: "Event X" (het laatst bezochte event van dit lid)
                 last_event_str = f"Event {highest_event_value}" if highest_event_value > 0 else "-"
                 align_text_center(
                     (1601 - 125, 863, 1892, 915),
@@ -511,7 +520,7 @@ class usercard(Cog):
                     font=self.bold_font[30],
                 )
 
-                # 10 Bolletjes voor de afgelopen 10 community events
+                # Bepaal het hoogste afgelopen event van de hele community (via Beheer events)
                 latest_global_event = max(self.get_latest_event_number(highest_event_value), highest_event_value, 10)
                 last_10_events = list(range(latest_global_event - 9, latest_global_event + 1))
 
@@ -528,8 +537,10 @@ class usercard(Cog):
                     dy2 = dy1 + dot_diameter
 
                     if ev_num in attended_events_set:
+                        # Bezocht door dit lid
                         draw.ellipse((dx1, dy1, dx2, dy2), fill=(255, 5, 2))
                     else:
+                        # Niet bezocht door dit lid
                         draw.ellipse((dx1, dy1, dx2, dy2), fill=(47, 49, 54), outline=(79, 84, 92), width=2)
 
                 if not to_file:
