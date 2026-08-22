@@ -15,7 +15,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFont
 from redbot.core.data_manager import bundled_data_path
 from frappeclient import FrappeClient
 
-from .view import usercardView, WrappedView
+from .view import usercardView
 from .statbot_api import StatbotClient
 
 
@@ -383,7 +383,7 @@ class usercard(Cog):
                 )
                 align_text_center(
                     (1601 - 125, 301, 1892, 418),
-                    text=f"{datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_start_lidmaatschap') and  member.get('custom_status') == 'Actief' and  member.get('membership_type') == 'Lid' else '-'}",
+                    text=f"{datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_start_lidmaatschap') and member.get('custom_status') == 'Actief' and member.get('membership_type') == 'Lid' else '-'}",
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -412,7 +412,6 @@ class usercard(Cog):
                             try:
                                 event_value = int(item["event_bezocht"].split()[1].strip(":"))
                                 if event_value > highest_event_value:
-                                    highest_event = item['event_bezocht']
                                     highest_event_value = event_value
                             except (IndexError, ValueError):
                                 continue
@@ -603,7 +602,6 @@ class usercard(Cog):
             to_file=False,
         )
 
-        # Haal token op en vraag stats op via StatbotClient
         api_tokens = await self.bot.get_shared_api_tokens("statbot")
         api_key = api_tokens.get("api_key", "")
 
@@ -618,41 +616,6 @@ class usercard(Cog):
             img=img,
             stats=stats,
         )
-
-    # --- WRAPPED IMAGE GENERATOR ---
-    async def generate_wrapped_image(
-        self,
-        _object: discord.Member,
-        to_file: bool = True,
-    ) -> typing.Union[Image.Image, discord.File]:
-        size = (1000, 500)
-        img = Image.new("RGBA", size, (0, 0, 0, 0))
-
-        draw = ImageDraw.Draw(img)
-        draw.rounded_rectangle((0, 0, size[0], size[1]), radius=20, fill=(25, 20, 20))
-
-        draw.text((50, 50), "Shadowzone Wrapped", fill=(255, 255, 255), font=self.bold_font[40])
-        draw.text((50, 120), _object.display_name, fill=(255, 255, 255), font=self.bold_font[50])
-
-        draw.text((50, 250), "Messages: -", fill=(200, 200, 200), font=self.font[36])
-        draw.text((50, 300), "Voice Hours: -", fill=(200, 200, 200), font=self.font[36])
-
-        avatar_asset = _object.display_avatar.with_size(128)
-        avatar_data = await avatar_asset.read()
-        avatar_img = Image.open(io.BytesIO(avatar_data)).resize((150, 150))
-
-        mask = Image.new("L", (150, 150), 0)
-        draw_mask = ImageDraw.Draw(mask)
-        draw_mask.ellipse((0, 0, 150, 150), fill=255)
-
-        img.paste(avatar_img, (800, 50), mask=mask)
-
-        if not to_file:
-            return img
-        buffer = io.BytesIO()
-        img.save(buffer, format="png", optimize=True)
-        buffer.seek(0)
-        return discord.File(buffer, filename="wrapped.png")
 
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
@@ -687,23 +650,5 @@ class usercard(Cog):
                 cog=self,
                 _object=member,
             ).start(ctx, command='id')
-        else:
-            await ctx.send('Niet mogelijk voor bot')
-
-    @commands.guild_only()
-    @commands.bot_has_permissions(attach_files=True)
-    @commands.hybrid_command(name="wrapped", description="Jouw stats van afgelopen jaar")
-    async def wrapped(
-        self,
-        ctx: commands.Context,
-        *,
-        member: discord.Member = commands.Author,
-    ) -> None:
-        """Jouw stats van afgelopen jaar"""
-        if not member.bot:
-            await WrappedView(
-                cog=self,
-                _object=member,
-            ).start(ctx)
         else:
             await ctx.send('Niet mogelijk voor bot')

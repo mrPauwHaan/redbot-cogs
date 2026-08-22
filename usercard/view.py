@@ -19,20 +19,20 @@ class usercardView(discord.ui.View):
         self._message: discord.Message = None
         self._ready: asyncio.Event = asyncio.Event()
 
-    async def start(self, ctx: commands.Context, command) -> discord.Message:
+    async def start(self, ctx: commands.Context, command: str) -> discord.Message:
         self.ctx: commands.Context = ctx
         file: discord.File = await self.cog.generate_image(
             self._object,
             to_file=True,
         )
-        if file and command == 'card':
+        if file and command == "card":
             self._message: discord.Message = await self.ctx.send(file=file, view=self)
-        elif file and command == 'id':
+        elif file and command == "id":
             self._message: discord.Message = await self.ctx.send(self._object.id, view=self)
-        elif command == 'id':
+        elif command == "id":
             self._message: discord.Message = await self.ctx.send(self._object.id)
         else:
-            self._message: discord.Message = await self.ctx.send('Gebruiker niet gevonden in database')
+            self._message: discord.Message = await self.ctx.send("Gebruiker niet gevonden in database")
         self.cog.views[self._message] = self
         await self._ready.wait()
         return self._message
@@ -52,95 +52,37 @@ class usercardView(discord.ui.View):
                 isinstance(child, discord.ui.Button) and child.style == discord.ButtonStyle.url
             ):
                 child.disabled = True
-        try:
-            await self._message.edit(view=self)
-        except discord.HTTPException:
-            pass
+            try:
+                await self._message.edit(view=self)
+            except discord.HTTPException:
+                pass
         self._ready.set()
 
     @discord.ui.button(emoji="👤", custom_id="reload_page", style=discord.ButtonStyle.secondary)
     async def reload_page(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
-        await interaction.response.defer(thinking=False)  # thinking=True
+        await interaction.response.defer(thinking=False)
         file: discord.File = await self.cog.generate_image(
             self._object,
             to_file=True,
         )
-        # try:
-        #     await interaction.delete_original_response()
-        # except discord.HTTPException:
-        #     pass
+        await self._message.edit(content="", attachments=[file])
+
+    @discord.ui.button(emoji="📊", custom_id="stats_page", style=discord.ButtonStyle.secondary)
+    async def stats_page(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        await interaction.response.defer(thinking=False)
+        file: discord.File = await self.cog.generate_stats_image(
+            self._object,
+            to_file=True,
+        )
         await self._message.edit(content="", attachments=[file])
 
     @discord.ui.button(emoji="🆔", custom_id="id_page", style=discord.ButtonStyle.secondary)
     async def id_page(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
-        await interaction.response.defer(thinking=False)  # thinking=True
+        await interaction.response.defer(thinking=False)
         await self._message.edit(content=self._object.id, attachments=[])
-
-    @discord.ui.button(style=discord.ButtonStyle.danger, emoji="✖️", custom_id="close_page")
-    async def close_page(
-        self, interaction: discord.Interaction, button: discord.ui.Button
-    ) -> None:
-        try:
-            await interaction.response.defer()
-        except discord.errors.NotFound:
-            pass
-        self.stop()
-        if self._message is None:
-            return None
-        try:
-            await self._message.delete()
-            self._ready.set()
-        except discord.NotFound:  # Already deleted.
-            return True
-        except discord.HTTPException:
-            return False
-        else:
-            return True
-
-class WrappedView(discord.ui.View):
-    def __init__(
-        self,
-        cog: commands.Cog,
-        _object: discord.Member,
-    ) -> None:
-        super().__init__(timeout=60 * 60)
-        self.cog = cog
-        self.ctx: commands.Context = None
-        self._object: discord.Member = _object
-        self._message: discord.Message = None
-
-    async def start(self, ctx: commands.Context) -> discord.Message:
-        self.ctx = ctx
-        # Calls the renamed generator function
-        file: discord.File = await self.cog.generate_wrapped_image(
-            self._object,
-            to_file=True,
-        )
-        self._message = await self.ctx.send(file=file, view=self)
-        return self._message
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.user.id not in [self.ctx.author.id] + list(self.ctx.bot.owner_ids):
-            await interaction.response.send_message(
-                "You are not allowed to use this.", ephemeral=True
-            )
-            return False
-        return True
-
-    @discord.ui.button(emoji="🔄", style=discord.ButtonStyle.primary)
-    async def reload_wrapped(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        file: discord.File = await self.cog.generate_wrapped_image(
-            self._object,
-            to_file=True,
-        )
-        await self._message.edit(attachments=[file])
-
-    @discord.ui.button(emoji="✖️", style=discord.ButtonStyle.danger)
-    async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.message.delete()
-        self.stop()

@@ -22,12 +22,12 @@ class StatbotClient:
     async def get_user_voice_stats(
         self, guild_id: int, user_id: int, days: int = 30
     ) -> Dict[str, Any]:
-        """Haalt totale voice tijd en top kanalen op voor een gebruiker."""
+        """Fetches total voice time and top channels for a user over a rolling window."""
         session = await self._get_session()
         now_ms = int(time.time() * 1000)
         start_ms = now_ms - (days * 24 * 60 * 60 * 1000)
 
-        # 1. Totale voice tijd
+        # 1. Total voice duration sum
         sums_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/sums"
         sums_params = {
             "start": start_ms,
@@ -36,7 +36,7 @@ class StatbotClient:
             "voice_states[]": "normal",
         }
 
-        # 2. Kanaal uitsplitsing
+        # 2. Voice duration breakdown by channel
         series_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/series"
         series_params = {
             "start": start_ms,
