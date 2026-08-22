@@ -512,8 +512,7 @@ class usercard(Cog):
                     dy2 = dy1 + dot_diameter
 
                     if ev_num in attended_events_set:
-                        # Ingevuld (Bezocht) in Discord Blurple
-                        draw.ellipse((dx1, dy1, dx2, dy2), fill=(88, 101, 242))
+                        draw.ellipse((dx1, dy1, dx2, dy2), fill=(255, 5, 2))
                     else:
                         # Niet bezocht: donker rondje met subtiele rand
                         draw.ellipse((dx1, dy1, dx2, dy2), fill=(47, 49, 54), outline=(79, 84, 92), width=2)
@@ -589,7 +588,7 @@ class usercard(Cog):
 
         persona_str = f"Voice Persona: {stats.get('persona', 'Stille Luisteraar')}"
         persona_w = self.bold_font[30].getbbox(persona_str)[2]
-        draw.rounded_rectangle((225, 120, 245 + persona_w + 20, 180), radius=12, fill=(88, 101, 242))
+        draw.rounded_rectangle((225, 120, 245 + persona_w + 20, 180), radius=12, fill=(255, 5, 2))
         draw.text((235, 130), text=persona_str, fill=(255, 255, 255), font=self.bold_font[30])
 
         # 4. Header: Server Logo & Name
@@ -680,7 +679,7 @@ class usercard(Cog):
             bar_h = max(int(val * max_bar_height), 8) if stats.get("total_minutes", 0) > 0 else 8
             is_peak = (val == 1.0 and stats.get("total_minutes", 0) > 0)
 
-            bar_color = (114, 137, 218) if is_peak else (79, 84, 92)
+            bar_color = (255, 5, 2) if is_peak else (79, 84, 92)
             draw.rounded_rectangle((bx, 905 - bar_h, bx + 65, 905), radius=6, fill=bar_color)
 
             # Daglabel
@@ -699,7 +698,7 @@ class usercard(Cog):
         # Voetnoot linksonderin
         draw.text(
             (70, 1025),
-            text="* Statistieken zijn berekend op basis van de afgelopen 30 dagen",
+            text="* Op basis van de afgelopen 30 dagen",
             fill=(150, 155, 165),
             font=self.font[30],
         )
