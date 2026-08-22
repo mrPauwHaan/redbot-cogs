@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Optional, List, Tuple
 import aiohttp
 
@@ -125,7 +125,7 @@ class StatbotClient:
         # 4. Uur- en weekdagverdeling parsen
         data_points = series_data if isinstance(series_data, list) else series_data.get("data", [])
         hour_bins = [0] * 24
-        weekday_bins = [0] * 7
+        weekday_bins = [0] * 7  # 0=Maandag ... 6=Zondag
 
         for entry in data_points:
             raw_time = entry.get("unixTimestamp") or entry.get("timestamp") or entry.get("time")
@@ -183,9 +183,26 @@ class StatbotClient:
             else f"{round(total_hours / 30, 1)} uur / dag"
         )
 
-        max_weekday = max(weekday_bins) if max(weekday_bins) > 0 else 1
-        weekday_norm = [round(w / max_weekday, 2) for w in weekday_bins]
-        weekday_hours = [round(w / 60, 1) for w in weekday_bins]
+        # 8. Gemiddelde per specifieke weekdag berekenen
+        # Tel exact hoeveel maandagen, dinsdagen, etc. er in de afgelopen 30 dagen zaten
+        end_dt = datetime.fromtimestamp(now_ms / 1000, tz=timezone.utc).astimezone()
+        weekday_occurrences = [0] * 7
+        for d in range(days):
+            day_dt = end_dt - timedelta(days=d)
+            weekday_occurrences[day_dt.weekday()] += 1
+
+        # Bereken het gemiddelde aantal minuten per weekdag
+        avg_weekday_mins = [
+            (weekday_bins[i] / max(weekday_occurrences[i], 1))
+            for i in range(7)
+        ]
+
+        # Converteer gemiddelde naar uren (1 decimaal)
+        weekday_hours = [round(m / 60, 1) for m in avg_weekday_mins]
+
+        # Normaliseer staafhoogtes op basis van de hoogste gemiddelde dag
+        max_avg_val = max(avg_weekday_mins) if max(avg_weekday_mins) > 0 else 1
+        weekday_norm = [round(m / max_avg_val, 2) for m in avg_weekday_mins]
 
         return {
             "total_minutes": total_minutes,
