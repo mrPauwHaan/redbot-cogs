@@ -21,18 +21,20 @@ class usercardView(discord.ui.View):
 
     async def start(self, ctx: commands.Context, command: str) -> discord.Message:
         self.ctx: commands.Context = ctx
-        file: discord.File = await self.cog.generate_image(
+        file = await self.cog.generate_image(
             self._object,
             to_file=True,
         )
         if file and command == "card":
             self._message: discord.Message = await self.ctx.send(file=file, view=self)
         elif file and command == "id":
-            self._message: discord.Message = await self.ctx.send(self._object.id, view=self)
+            self._message: discord.Message = await self.ctx.send(str(self._object.id), view=self)
         elif command == "id":
-            self._message: discord.Message = await self.ctx.send(self._object.id)
+            self._message: discord.Message = await self.ctx.send(str(self._object.id))
         else:
             self._message: discord.Message = await self.ctx.send("Gebruiker niet gevonden in database")
+            return self._message
+
         self.cog.views[self._message] = self
         await self._ready.wait()
         return self._message
@@ -63,11 +65,14 @@ class usercardView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(thinking=False)
-        file: discord.File = await self.cog.generate_image(
+        file = await self.cog.generate_image(
             self._object,
             to_file=True,
         )
-        await self._message.edit(content="", attachments=[file])
+        if file:
+            await self._message.edit(content="", attachments=[file])
+        else:
+            await self._message.edit(content="Gebruiker niet gevonden in database", attachments=[])
 
     @discord.ui.button(emoji="📊", custom_id="stats_page", style=discord.ButtonStyle.secondary)
     async def stats_page(
@@ -85,4 +90,4 @@ class usercardView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(thinking=False)
-        await self._message.edit(content=self._object.id, attachments=[])
+        await self._message.edit(content=str(self._object.id), attachments=[])

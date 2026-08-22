@@ -355,7 +355,7 @@ class usercard(Cog):
         _object: discord.Member,
         to_file: bool,
         img: Image.Image,
-    ) -> typing.Union[Image.Image, discord.File]:
+    ) -> typing.Optional[typing.Union[Image.Image, discord.File]]:
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
         align_text_center = functools.partial(self.align_text_center, draw)
 
@@ -452,18 +452,21 @@ class usercard(Cog):
                     font=self.font[36],
                 )
 
-        if not to_file:
-            return img
-        buffer = io.BytesIO()
-        img.save(buffer, format="png", optimize=True)
-        buffer.seek(0)
-        return discord.File(buffer, filename="image.png")
+                # Return staat uitsluitend binnen 'if member:' zodat niet-geregistreerde leden None terugkrijgen
+                if not to_file:
+                    return img
+                buffer = io.BytesIO()
+                img.save(buffer, format="png", optimize=True)
+                buffer.seek(0)
+                return discord.File(buffer, filename="image.png")
+
+        return None
 
     async def generate_image(
         self,
         _object: discord.Member,
         to_file: bool = True,
-    ) -> typing.Union[Image.Image, discord.File]:
+    ) -> typing.Optional[typing.Union[Image.Image, discord.File]]:
         img: Image.Image = await self.generate_prefix_image(
             _object,
             size=(1942, 1096),
@@ -536,24 +539,30 @@ class usercard(Cog):
         # Links: x=60 -> 940 (breedte 880)
         # Rechts: x=1000 -> 1880 (breedte 880)
 
-        # --- BOX 1 (TOP LINKS): VOICE STATUS & TIER ---
+        # --- BOX 1 (TOP LINKS): VOICE STATUS & SERVER RANG ---
         draw.rounded_rectangle((60, 204, 940, 585), radius=15, fill=(47, 49, 54))
-        align_text_center((80, 214, 920, 284), text="Voice Status & Tier", fill=(255, 255, 255), font=self.bold_font[40])
+        align_text_center((80, 214, 920, 284), text="Voice Status & Rang", fill=(255, 255, 255), font=self.bold_font[40])
         try:
             icon_p = Image.open(self.icons["person"]).resize((65, 65))
             img.paste(icon_p, (855, 214), mask=icon_p.split()[3])
         except Exception:
             pass
 
+        # Row 1: Server Rang
         draw.rounded_rectangle((80, 301, 920, 418), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 301, 380, 418), radius=15, fill=(24, 26, 27))
-        align_text_center((80, 301, 380, 418), text="Voice Tier", fill=(255, 255, 255), font=self.bold_font[36])
-        align_text_center((380, 301, 920, 418), text=stats.get("tier", "Geen Tier"), fill=(255, 255, 255), font=self.bold_font[36])
+        align_text_center((80, 301, 380, 418), text="30d Rang", fill=(255, 255, 255), font=self.bold_font[36])
+        align_text_center((380, 301, 920, 418), text=stats.get("rank_str", "-"), fill=(255, 255, 255), font=self.bold_font[36])
 
+        # Row 2: Totaal Uren + Percentiel
         draw.rounded_rectangle((80, 448, 920, 565), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 448, 380, 565), radius=15, fill=(24, 26, 27))
         align_text_center((80, 448, 380, 565), text="Totaal (30d)", fill=(255, 255, 255), font=self.bold_font[30])
-        align_text_center((380, 448, 920, 565), text=f"{stats.get('total_hours', 0)} Uur", fill=(255, 255, 255), font=self.font[36])
+        
+        total_display = f"{stats.get('total_hours', 0)} Uur"
+        if stats.get("top_pct_str") and stats.get("top_pct_str") != "-":
+            total_display += f" ({stats.get('top_pct_str')})"
+        align_text_center((380, 448, 920, 565), text=total_display, fill=(255, 255, 255), font=self.font[36])
 
         # --- BOX 2 (BOTTOM LINKS): TIJDSBESTEDING ---
         draw.rounded_rectangle((60, 615, 940, 996), radius=15, fill=(47, 49, 54))

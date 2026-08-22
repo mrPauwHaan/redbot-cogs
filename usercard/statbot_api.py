@@ -1,11 +1,12 @@
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List, Tuple
 import aiohttp
 
 
 class StatbotClient:
     BASE_URL = "https://api.statbot.net/v1"
+    _leaderboard_cache: Dict[int, Tuple[float, List[Dict[str, Any]]]] = {}
 
     def __init__(self, api_key: str, session: Optional[aiohttp.ClientSession] = None):
         self.api_key = api_key
@@ -19,6 +20,37 @@ class StatbotClient:
         if self._session is None or self._session.closed:
             self._session = aiohttp.ClientSession()
         return self._session
+
+    async def _get_guild_leaderboard(
+        self, guild_id: int, start_ms: int, end_ms: int
+    ) -> List[Dict[str, Any]]:
+        """Haalt het leaderboard van de server op met een in-memory cache van 15 minuten."""
+        now = time.time()
+        if guild_id in self._leaderboard_cache:
+            cache_time, cache_data = self._leaderboard_cache[guild_id]
+            if now - cache_time < 900:  # 15 minuten TTL
+                return cache_data
+
+        session = await self._get_session()
+        leaderboard_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/leaderboard"
+        params = {
+            "start": start_ms,
+            "end": end_ms,
+            "voice_states[]": "normal",
+            "limit": 500,
+        }
+
+        try:
+            async with session.get(leaderboard_url, headers=self._headers, params=params) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    lb = data if isinstance(data, list) else data.get("data", [])
+                    self._leaderboard_cache[guild_id] = (now, lb)
+                    return lb
+        except Exception:
+            pass
+
+        return []
 
     async def get_user_voice_stats(
         self, guild_id: int, user_id: int, days: int = 30
@@ -61,18 +93,36 @@ class StatbotClient:
         total_minutes = sums_data.get("count", 0) if isinstance(sums_data, dict) else 0
         total_hours = round(total_minutes / 60, 1)
 
-        # Normaliseer lijst
-        data_points = []
-        if isinstance(series_data, list):
-            data_points = series_data
-        elif isinstance(series_data, dict):
-            data_points = series_data.get("data") or series_data.get("series") or []
+        # 3. Server Rang & Percentiel bepalen
+        leaderboard = await self._get_guild_leaderboard(guild_id, start_ms, now_ms)
+        rank = None
+        total_active_members = len(leaderboard)
+        top_pct = None
 
+        user_id_str = str(user_id)
+        for idx, entry in enumerate(leaderboard, start=1):
+            m_id = str(entry.get("memberId") or entry.get("id") or "")
+            if m_id == user_id_str:
+                rank = idx
+                break
+
+        if rank and total_active_members > 0:
+            top_pct = max(1, round((rank / total_active_members) * 100))
+            rank_str = f"#{rank} van {total_active_members}"
+            top_pct_str = f"Top {top_pct}%"
+        elif total_hours > 0:
+            rank_str = "Actief"
+            top_pct_str = "Geplaatst"
+        else:
+            rank_str = "Geen Rang"
+            top_pct_str = "-"
+
+        # 4. Verwerk uur- en weekdagverdeling
+        data_points = series_data if isinstance(series_data, list) else series_data.get("data", [])
         hour_bins = [0] * 24
         weekday_bins = [0] * 7  # 0=Maandag ... 6=Zondag
 
         for entry in data_points:
-            # Statbot API levert exact 'unixTimestamp' in ms en 'count' in minuten
             raw_time = entry.get("unixTimestamp") or entry.get("timestamp") or entry.get("time")
             cnt = entry.get("count", 0)
 
@@ -87,14 +137,14 @@ class StatbotClient:
 
         has_series_data = sum(hour_bins) > 0
 
-        # 1. Piekuur bepalen
+        # 5. Piekuur bepalen
         if has_series_data:
             peak_hour = max(range(24), key=lambda h: hour_bins[h])
             peak_str = f"{peak_hour:02d}:00 - {(peak_hour + 1) % 24:02d}:00"
         else:
             peak_str = "-"
 
-        # 2. Gewoontes & Weekend aandeel (Vrijdag t/m Zondag)
+        # 6. Gewoontes & Weekend aandeel
         weekend_mins = weekday_bins[4] + weekday_bins[5] + weekday_bins[6]
         total_tracked_mins = sum(weekday_bins) or total_minutes or 1
         weekend_pct = round((weekend_mins / total_tracked_mins) * 100)
@@ -103,7 +153,7 @@ class StatbotClient:
         evening_mins = sum(hour_bins[18:23])
         day_mins = sum(hour_bins[6:18])
 
-        # 3. Persona bepaling
+        # 7. Persona bepaling
         if total_hours < 0.5:
             persona = "Stille Luisteraar"
             activity_label = "Weinig activiteit"
@@ -123,18 +173,6 @@ class StatbotClient:
             persona = "Dagvogel"
             activity_label = "Overdag actief"
 
-        # 4. Voice Tier
-        if total_hours >= 35:
-            tier = "Diamant"
-        elif total_hours >= 20:
-            tier = "Goud"
-        elif total_hours >= 8:
-            tier = "Zilver"
-        elif total_hours >= 0.5:
-            tier = "Brons"
-        else:
-            tier = "Geen Tier"
-
         daily_avg_mins = round(total_minutes / 30)
         daily_avg_str = f"{daily_avg_mins} min / dag" if daily_avg_mins < 60 else f"{round(total_hours / 30, 1)} uur / dag"
 
@@ -145,8 +183,9 @@ class StatbotClient:
         return {
             "total_minutes": total_minutes,
             "total_hours": total_hours,
+            "rank_str": rank_str,
+            "top_pct_str": top_pct_str,
             "persona": persona,
-            "tier": tier,
             "peak_time": peak_str,
             "activity_label": activity_label,
             "weekend_pct": weekend_pct,
