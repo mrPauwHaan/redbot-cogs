@@ -24,11 +24,11 @@ class StatbotClient:
     async def get_top_voice_members(
         self, guild_id: int, start_ms: int, end_ms: int
     ) -> List[Dict[str, Any]]:
-        """Haalt de top voice members op via /guilds/{guildId}/top/voice/members (15 min cache)."""
+        """Haalt de top 50 voice members op via /guilds/{guildId}/top/voice/members (15 min cache)."""
         now = time.time()
         if guild_id in self._top_cache:
             cache_time, cache_data = self._top_cache[guild_id]
-            if now - cache_time < 900:
+            if now - cache_time < 900:  # 15 minuten cache
                 return cache_data
 
         session = await self._get_session()
@@ -37,7 +37,7 @@ class StatbotClient:
             "start": start_ms,
             "end": end_ms,
             "voice_states[]": "normal",
-            "limit": 500,
+            "limit": 50,
         }
 
         try:
@@ -48,7 +48,7 @@ class StatbotClient:
                     self._top_cache[guild_id] = (now, members)
                     return members
                 else:
-                    print(f"[UserCard Statbot] Top Voice API fout {resp.status}: {await resp.text()}")
+                    print(f"[UserCard Statbot] Top Voice API status {resp.status}: {await resp.text()}")
         except Exception as e:
             print(f"[UserCard Statbot] Fout bij ophalen top voice members: {e}")
 
@@ -95,14 +95,13 @@ class StatbotClient:
         total_minutes = sums_data.get("count", 0) if isinstance(sums_data, dict) else 0
         total_hours = round(total_minutes / 60, 1)
 
-        # 3. Positie bepalen via het officiële top/voice/members endpoint
+        # 3. Top 50 positie bepalen
         top_members = await self.get_top_voice_members(guild_id, start_ms, now_ms)
         rank = None
-        total_active_members = len(top_members)
         user_id_str = str(user_id)
 
         for idx, entry in enumerate(top_members, start=1):
-            m_id = str(entry.get("memberId") or entry.get("id") or "")
+            m_id = str(entry.get("memberId") or entry.get("id") or entry.get("member_id") or "")
             if m_id == user_id_str:
                 rank = idx
                 if not total_minutes and entry.get("count"):
@@ -110,12 +109,12 @@ class StatbotClient:
                     total_hours = round(total_minutes / 60, 1)
                 break
 
-        if rank is not None and total_active_members > 0:
-            top_pct = max(1, round((rank / total_active_members) * 100))
-            rank_str = f"#{rank} van {total_active_members}"
+        if rank is not None:
+            rank_str = f"#{rank}"
+            top_pct = max(1, round((rank / 50) * 100))
             top_pct_str = f"Top {top_pct}%"
         elif total_hours > 0:
-            rank_str = f"#{total_active_members + 1}"
+            rank_str = "50+"
             top_pct_str = "-"
         else:
             rank_str = "-"
