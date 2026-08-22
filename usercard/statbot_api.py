@@ -14,6 +14,7 @@ class StatbotClient:
         self._headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
+            "Accept": "application/json",
         }
 
     async def _get_session(self) -> aiohttp.ClientSession:
@@ -24,7 +25,7 @@ class StatbotClient:
     async def get_top_voice_members(
         self, guild_id: int, start_ms: int, end_ms: int
     ) -> List[Dict[str, Any]]:
-        """Haalt de top 50 voice members op via /guilds/{guildId}/top/voice/members (15 min cache)."""
+        """Haalt de top 50 voice members op via /guilds/{guild_id}/voice/tops/members (15 min cache)."""
         now = time.time()
         if guild_id in self._top_cache:
             cache_time, cache_data = self._top_cache[guild_id]
@@ -32,7 +33,7 @@ class StatbotClient:
                 return cache_data
 
         session = await self._get_session()
-        url = f"{self.BASE_URL}/guilds/{guild_id}/top/voice/members"
+        url = f"{self.BASE_URL}/guilds/{guild_id}/voice/tops/members"
         params = {
             "start": start_ms,
             "end": end_ms,
@@ -48,7 +49,7 @@ class StatbotClient:
                     self._top_cache[guild_id] = (now, members)
                     return members
                 else:
-                    print(f"[UserCard Statbot] Top Voice API status {resp.status}: {await resp.text()}")
+                    print(f"[UserCard Statbot] Tops Members API fout {resp.status}: {await resp.text()}")
         except Exception as e:
             print(f"[UserCard Statbot] Fout bij ophalen top voice members: {e}")
 
@@ -95,15 +96,14 @@ class StatbotClient:
         total_minutes = sums_data.get("count", 0) if isinstance(sums_data, dict) else 0
         total_hours = round(total_minutes / 60, 1)
 
-        # 3. Top 50 positie bepalen
+        # 3. Top 50 positie matchen op 'id' en direct 'rank' uitlezen
         top_members = await self.get_top_voice_members(guild_id, start_ms, now_ms)
         rank = None
         user_id_str = str(user_id)
 
-        for idx, entry in enumerate(top_members, start=1):
-            m_id = str(entry.get("memberId") or entry.get("id") or entry.get("member_id") or "")
-            if m_id == user_id_str:
-                rank = idx
+        for entry in top_members:
+            if str(entry.get("id")) == user_id_str:
+                rank = entry.get("rank")
                 if not total_minutes and entry.get("count"):
                     total_minutes = entry.get("count", 0)
                     total_hours = round(total_minutes / 60, 1)
