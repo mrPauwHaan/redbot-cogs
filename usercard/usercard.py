@@ -487,7 +487,7 @@ class usercard(Cog):
         size = (1942, 1096)
         img = Image.new("RGBA", size, (0, 0, 0, 0))
 
-        # 1. Base Background with rounded corners
+        # 1. Base Background
         try:
             bg_image = Image.open(self.icons["background"]).convert("RGBA").resize(size)
             mask = Image.new("L", size, 0)
@@ -515,7 +515,7 @@ class usercard(Cog):
             except Exception:
                 pass
 
-        # 3. Header: Username & Persona Title Subtitle
+        # 3. Header: Username & Persona Badge
         name_str = self.remove_unprintable_characters(_object.display_name) or _object.name
         draw.text((225, 45), text=name_str, fill=(255, 255, 255), font=self.bold_font[50])
 
@@ -533,10 +533,10 @@ class usercard(Cog):
         draw.text((1390, 50), text="Shadowzone Gaming", fill=(163, 163, 163), font=self.font[54])
 
         # ==================== 4-QUADRANT DASHBOARD ====================
-        # Left column: x=60 -> 940 (width 880)
-        # Right column: x=1000 -> 1880 (width 880)
+        # Links: x=60 -> 940 (breedte 880)
+        # Rechts: x=1000 -> 1880 (breedte 880)
 
-        # --- BOX 1 (TOP LEFT): VOICE TIER & RANG ---
+        # --- BOX 1 (TOP LINKS): VOICE STATUS & TIER ---
         draw.rounded_rectangle((60, 204, 940, 585), radius=15, fill=(47, 49, 54))
         align_text_center((80, 214, 920, 284), text="Voice Status & Tier", fill=(255, 255, 255), font=self.bold_font[40])
         try:
@@ -555,7 +555,7 @@ class usercard(Cog):
         align_text_center((80, 448, 380, 565), text="Totaal (30d)", fill=(255, 255, 255), font=self.bold_font[30])
         align_text_center((380, 448, 920, 565), text=f"{stats.get('total_hours', 0)} Uur", fill=(255, 255, 255), font=self.font[36])
 
-        # --- BOX 2 (BOTTOM LEFT): TIJDSBESTEDING & INTENSITEIT ---
+        # --- BOX 2 (BOTTOM LINKS): TIJDSBESTEDING ---
         draw.rounded_rectangle((60, 615, 940, 996), radius=15, fill=(47, 49, 54))
         align_text_center((80, 625, 920, 695), text="Tijdsbesteding", fill=(255, 255, 255), font=self.bold_font[40])
         try:
@@ -574,7 +574,7 @@ class usercard(Cog):
         align_text_center((80, 859, 430, 976), text="Weekend Aandeel", fill=(255, 255, 255), font=self.bold_font[30])
         align_text_center((430, 859, 920, 976), text=f"{stats.get('weekend_pct', 0)}% van voice tijd", fill=(255, 255, 255), font=self.font[36])
 
-        # --- BOX 3 (TOP RIGHT): GEWOONTES & PIEKTIJD ---
+        # --- BOX 3 (TOP RECHTS): GEWOONTES & PIEKTIJD ---
         draw.rounded_rectangle((1000, 204, 1880, 585), radius=15, fill=(47, 49, 54))
         align_text_center((1020, 214, 1860, 284), text="Gewoontes & Piektijd", fill=(255, 255, 255), font=self.bold_font[40])
 
@@ -588,7 +588,7 @@ class usercard(Cog):
         align_text_center((1020, 448, 1370, 565), text="Patroon", fill=(255, 255, 255), font=self.bold_font[30])
         align_text_center((1370, 448, 1860, 565), text=stats.get("activity_label", "-"), fill=(255, 255, 255), font=self.font[36])
 
-        # --- BOX 4 (BOTTOM RIGHT): WEKELIJKSE ACTIVITEIT (7-DAGEN GRAFIEK) ---
+        # --- BOX 4 (BOTTOM RECHTS): WEKELIJKSE ACTIVITEIT (7-DAGEN GRAFIEK) ---
         draw.rounded_rectangle((1000, 615, 1880, 996), radius=15, fill=(47, 49, 54))
         align_text_center((1020, 625, 1860, 695), text="Wekelijkse Activiteit", fill=(255, 255, 255), font=self.bold_font[40])
 
@@ -598,10 +598,10 @@ class usercard(Cog):
         norms = stats.get("weekday_norm", [0] * 7)
         hours = stats.get("weekday_hours", [0] * 7)
         base_x = 1060
-        max_bar_height = 145
+        max_bar_height = 135
 
         for i in range(7):
-            bx = base_x + (i * 115)
+            bx = base_x + (i * 110)
             val = norms[i] if i < len(norms) else 0
             bar_h = max(int(val * max_bar_height), 8) if stats.get("total_minutes", 0) > 0 else 8
             is_peak = (val == 1.0 and stats.get("total_minutes", 0) > 0)
@@ -609,13 +609,13 @@ class usercard(Cog):
             bar_color = (114, 137, 218) if is_peak else (79, 84, 92)
             draw.rounded_rectangle((bx, 905 - bar_h, bx + 65, 905), radius=6, fill=bar_color)
 
-            # Day label
+            # Daglabel
             lbl = day_labels[i]
             lbl_box = self.bold_font[30].getbbox(lbl)
             lbl_x = bx + int((65 - (lbl_box[2] - lbl_box[0])) / 2)
             draw.text((lbl_x, 920), text=lbl, fill=(255, 255, 255) if is_peak else (160, 160, 160), font=self.bold_font[30])
 
-            # Hour label above bar
+            # Uur-aantal boven de staaf
             if hours[i] > 0:
                 h_str = f"{hours[i]}u"
                 h_box = self.font[28].getbbox(h_str)

@@ -25,125 +25,92 @@ class StatbotClient:
     ) -> Dict[str, Any]:
         session = await self._get_session()
         now_ms = int(time.time() * 1000)
-        start_30d_ms = now_ms - (days * 24 * 60 * 60 * 1000)
-        start_7d_ms = now_ms - (7 * 24 * 60 * 60 * 1000)
+        start_ms = now_ms - (days * 24 * 60 * 60 * 1000)
 
-        # 1. Totale voice tijd (30 dagen gefilterd)
+        # 1. Totale voice tijd (gefilterd op normal)
         sums_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/sums"
         sums_params = {
-            "start": start_30d_ms,
+            "start": start_ms,
             "end": now_ms,
             "whitelist_members[]": str(user_id),
             "voice_states[]": "normal",
         }
 
-        # 2. Dagelijkse series (30 dagen) voor de Ma-Zo weekgrafiek
-        day_series_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/series"
-        day_series_params = {
-            "start": start_30d_ms,
-            "end": now_ms,
-            "whitelist_members[]": str(user_id),
-            "voice_states[]": "normal",
-            "interval": "day",
-        }
-
-        # 3. Uurlijkse series (7 dagen) voor piekuur zonder 400-fout
-        hour_series_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/series"
-        hour_series_params = {
-            "start": start_7d_ms,
+        # 2. Uurlijkse series voor piekuur en weekverdeling
+        series_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/series"
+        series_params = {
+            "start": start_ms,
             "end": now_ms,
             "whitelist_members[]": str(user_id),
             "voice_states[]": "normal",
             "interval": "hour",
         }
 
-        # Request 1: Sums
         try:
             async with session.get(sums_url, headers=self._headers, params=sums_params) as resp:
                 sums_data = await resp.json() if resp.status == 200 else {}
         except Exception:
             sums_data = {}
 
-        # Request 2: Dagen (30d)
         try:
-            async with session.get(day_series_url, headers=self._headers, params=day_series_params) as resp:
-                day_data = await resp.json() if resp.status == 200 else []
+            async with session.get(series_url, headers=self._headers, params=series_params) as resp:
+                series_data = await resp.json() if resp.status == 200 else []
         except Exception:
-            day_data = []
-
-        # Request 3: Uren (7d)
-        try:
-            async with session.get(hour_series_url, headers=self._headers, params=hour_series_params) as resp:
-                hour_data = await resp.json() if resp.status == 200 else []
-        except Exception:
-            hour_data = []
+            series_data = []
 
         total_minutes = sums_data.get("count", 0) if isinstance(sums_data, dict) else 0
         total_hours = round(total_minutes / 60, 1)
 
-        def extract_points(raw):
-            if isinstance(raw, list):
-                return raw
-            if isinstance(raw, dict):
-                return raw.get("data") or raw.get("series") or []
-            return []
+        # Normaliseer lijst
+        data_points = []
+        if isinstance(series_data, list):
+            data_points = series_data
+        elif isinstance(series_data, dict):
+            data_points = series_data.get("data") or series_data.get("series") or []
 
-        # Verwerk 30-dagen weekdagverdeling (Ma=0 ... Zo=6)
-        weekday_bins = [0] * 7
-        for entry in extract_points(day_data):
-            t_val = entry.get("timestamp") or entry.get("time") or entry.get("t") or entry.get("start")
-            cnt = entry.get("count") or entry.get("c") or entry.get("value") or entry.get("v") or 0
-            if t_val is not None and cnt:
+        hour_bins = [0] * 24
+        weekday_bins = [0] * 7  # 0=Maandag ... 6=Zondag
+
+        for entry in data_points:
+            # Statbot API levert exact 'unixTimestamp' in ms en 'count' in minuten
+            raw_time = entry.get("unixTimestamp") or entry.get("timestamp") or entry.get("time")
+            cnt = entry.get("count", 0)
+
+            if raw_time is not None and cnt:
                 try:
-                    if isinstance(t_val, (int, float)):
-                        ts = t_val / 1000 if t_val > 1e11 else t_val
-                        dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
-                    else:
-                        dt = datetime.fromisoformat(str(t_val).replace("Z", "+00:00")).astimezone()
+                    ts = raw_time / 1000 if raw_time > 1e11 else raw_time
+                    dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
+                    hour_bins[dt.hour] += cnt
                     weekday_bins[dt.weekday()] += cnt
                 except Exception:
                     continue
 
-        # Verwerk 7-dagen uurverdeling
-        hour_bins = [0] * 24
-        for entry in extract_points(hour_data):
-            t_val = entry.get("timestamp") or entry.get("time") or entry.get("t") or entry.get("start")
-            cnt = entry.get("count") or entry.get("c") or entry.get("value") or entry.get("v") or 0
-            if t_val is not None and cnt:
-                try:
-                    if isinstance(t_val, (int, float)):
-                        ts = t_val / 1000 if t_val > 1e11 else t_val
-                        dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
-                    else:
-                        dt = datetime.fromisoformat(str(t_val).replace("Z", "+00:00")).astimezone()
-                    hour_bins[dt.hour] += cnt
-                except Exception:
-                    continue
+        has_series_data = sum(hour_bins) > 0
 
         # 1. Piekuur bepalen
-        if sum(hour_bins) > 0:
+        if has_series_data:
             peak_hour = max(range(24), key=lambda h: hour_bins[h])
             peak_str = f"{peak_hour:02d}:00 - {(peak_hour + 1) % 24:02d}:00"
         else:
-            peak_str = "Onbekend"
+            peak_str = "-"
 
-        # 2. Gewoontes berekenen
+        # 2. Gewoontes & Weekend aandeel (Vrijdag t/m Zondag)
         weekend_mins = weekday_bins[4] + weekday_bins[5] + weekday_bins[6]
-        total_weekday_mins = sum(weekday_bins) or total_minutes or 1
-        weekend_pct = round((weekend_mins / total_weekday_mins) * 100)
+        total_tracked_mins = sum(weekday_bins) or total_minutes or 1
+        weekend_pct = round((weekend_mins / total_tracked_mins) * 100)
 
         night_mins = sum(hour_bins[0:6]) + hour_bins[23]
         evening_mins = sum(hour_bins[18:23])
         day_mins = sum(hour_bins[6:18])
 
-        # 3. Persona bepalen
+        # 3. Persona bepaling
         if total_hours < 0.5:
             persona = "Stille Luisteraar"
             activity_label = "Weinig activiteit"
         elif total_hours >= 40:
             persona = "VC Stamgast"
             activity_label = "Dagelijkse aanwezigheid"
-        elif night_mins > 0 and night_mins > (sum(hour_bins) * 0.35):
+        elif night_mins > (total_tracked_mins * 0.4):
             persona = "De Nachtbraker"
             activity_label = "Nachtbraker uren"
         elif weekend_pct >= 60:
