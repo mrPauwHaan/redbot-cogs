@@ -35,8 +35,6 @@ class StatbotClient:
 
         session = await self._get_session()
         url = f"{self.BASE_URL}/guilds/{guild_id}/voice/tops/members"
-        
-        # Correcte query parameters zonder ongeldige 'page' parameter
         params = [
             ("start", str(start_ms)),
             ("end", str(end_ms)),
@@ -117,17 +115,12 @@ class StatbotClient:
 
         if rank is not None and total_active_members > 0:
             rank_str = f"#{rank} van {total_active_members}"
-            top_pct = max(1, round((rank / total_active_members) * 100))
-            top_pct_str = f"Top {top_pct}%"
         elif total_active_members > 0 and total_hours > 0:
             rank_str = f">{total_active_members}"
-            top_pct_str = "-"
         elif total_hours > 0:
             rank_str = "Actief"
-            top_pct_str = "-"
         else:
             rank_str = "-"
-            top_pct_str = "-"
 
         # 4. Uur- en weekdagverdeling parsen
         data_points = series_data if isinstance(series_data, list) else series_data.get("data", [])
@@ -198,7 +191,6 @@ class StatbotClient:
             "total_minutes": total_minutes,
             "total_hours": total_hours,
             "rank_str": rank_str,
-            "top_pct_str": top_pct_str,
             "persona": persona,
             "peak_time": peak_str,
             "activity_label": activity_label,

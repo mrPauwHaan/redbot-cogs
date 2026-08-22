@@ -612,21 +612,17 @@ class usercard(Cog):
         except Exception:
             pass
 
-        # Row 1: Server Rang
+        # Row 1: Server Rang (#X van Y)
         draw.rounded_rectangle((80, 301, 920, 418), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 301, 380, 418), radius=15, fill=(24, 26, 27))
         align_text_center((80, 301, 380, 418), text="Rang", fill=(255, 255, 255), font=self.bold_font[36])
         align_text_center((380, 301, 920, 418), text=stats.get("rank_str", "-"), fill=(255, 255, 255), font=self.bold_font[36])
 
-        # Row 2: Totaal Uren + Percentiel
+        # Row 2: Totaal Uren (puur het aantal uren)
         draw.rounded_rectangle((80, 448, 920, 565), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 448, 380, 565), radius=15, fill=(24, 26, 27))
         align_text_center((80, 448, 380, 565), text="Totaal", fill=(255, 255, 255), font=self.bold_font[30])
-
-        total_display = f"{stats.get('total_hours', 0)} Uur"
-        if stats.get("top_pct_str") and stats.get("top_pct_str") != "-":
-            total_display += f" ({stats.get('top_pct_str')})"
-        align_text_center((380, 448, 920, 565), text=total_display, fill=(255, 255, 255), font=self.font[36])
+        align_text_center((380, 448, 920, 565), text=f"{stats.get('total_hours', 0)} Uur", fill=(255, 255, 255), font=self.font[36])
 
         # --- BOX 2 (BOTTOM LINKS): TIJDSBESTEDING ---
         draw.rounded_rectangle((60, 615, 940, 996), radius=15, fill=(47, 49, 54))
