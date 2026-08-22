@@ -550,13 +550,13 @@ class usercard(Cog):
         # Row 1: Server Rang
         draw.rounded_rectangle((80, 301, 920, 418), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 301, 380, 418), radius=15, fill=(24, 26, 27))
-        align_text_center((80, 301, 380, 418), text="30d Rang", fill=(255, 255, 255), font=self.bold_font[36])
+        align_text_center((80, 301, 380, 418), text="Rang", fill=(255, 255, 255), font=self.bold_font[36])
         align_text_center((380, 301, 920, 418), text=stats.get("rank_str", "-"), fill=(255, 255, 255), font=self.bold_font[36])
 
         # Row 2: Totaal Uren + Percentiel
         draw.rounded_rectangle((80, 448, 920, 565), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 448, 380, 565), radius=15, fill=(24, 26, 27))
-        align_text_center((80, 448, 380, 565), text="Totaal (30d)", fill=(255, 255, 255), font=self.bold_font[30])
+        align_text_center((80, 448, 380, 565), text="Totaal", fill=(255, 255, 255), font=self.bold_font[30])
 
         total_display = f"{stats.get('total_hours', 0)} Uur"
         if stats.get("top_pct_str") and stats.get("top_pct_str") != "-":
@@ -629,6 +629,14 @@ class usercard(Cog):
                 h_box = self.font[28].getbbox(h_str)
                 h_x = bx + int((65 - (h_box[2] - h_box[0])) / 2)
                 draw.text((h_x, 905 - bar_h - 32), text=h_str, fill=(200, 200, 200), font=self.font[28])
+
+        # --- VOETNOOT LINKSONDERIN ---
+        draw.text(
+            (70, 1025),
+            text="* Statistieken zijn berekend op basis van de afgelopen 30 dagen",
+            fill=(150, 155, 165),
+            font=self.font[30],
+        )
 
         if not to_file:
             return img

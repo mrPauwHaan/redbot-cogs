@@ -7,6 +7,7 @@ import aiohttp
 class StatbotClient:
     BASE_URL = "https://api.statbot.net/v1"
     _top_cache: Dict[int, Tuple[float, List[Dict[str, Any]]]] = {}
+    WHITELIST_ROLES = ["724556731564163082", "563348666312687618"]
 
     def __init__(self, api_key: str, session: Optional[aiohttp.ClientSession] = None):
         self.api_key = api_key
@@ -25,7 +26,7 @@ class StatbotClient:
     async def get_top_voice_members(
         self, guild_id: int, start_ms: int, end_ms: int
     ) -> List[Dict[str, Any]]:
-        """Haalt de top 50 voice members op via /guilds/{guild_id}/voice/tops/members (15 min cache)."""
+        """Haalt alle gerankte leden met de Lid/SZG+ rollen op (15 min cache)."""
         now = time.time()
         if guild_id in self._top_cache:
             cache_time, cache_data = self._top_cache[guild_id]
@@ -34,26 +35,40 @@ class StatbotClient:
 
         session = await self._get_session()
         url = f"{self.BASE_URL}/guilds/{guild_id}/voice/tops/members"
-        params = {
-            "start": start_ms,
-            "end": end_ms,
-            "voice_states[]": "normal",
-            "limit": 50,
-        }
+        all_members = []
 
-        try:
-            async with session.get(url, headers=self._headers, params=params) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    members = data if isinstance(data, list) else data.get("data", [])
-                    self._top_cache[guild_id] = (now, members)
-                    return members
-                else:
-                    print(f"[UserCard Statbot] Tops Members API fout {resp.status}: {await resp.text()}")
-        except Exception as e:
-            print(f"[UserCard Statbot] Fout bij ophalen top voice members: {e}")
+        # Paginatie om alle leden met de rollen op te halen
+        for page in range(1, 10):
+            params = [
+                ("start", str(start_ms)),
+                ("end", str(end_ms)),
+                ("voice_states[]", "normal"),
+                ("whitelist_roles[]", self.WHITELIST_ROLES[0]),
+                ("whitelist_roles[]", self.WHITELIST_ROLES[1]),
+                ("limit", "100"),
+                ("page", str(page)),
+            ]
+            try:
+                async with session.get(url, headers=self._headers, params=params) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        page_items = data if isinstance(data, list) else data.get("data", [])
+                        if not page_items:
+                            break
+                        all_members.extend(page_items)
+                        if len(page_items) < 100:
+                            break
+                    else:
+                        print(f"[UserCard Statbot] Tops API status {resp.status}: {await resp.text()}")
+                        break
+            except Exception as e:
+                print(f"[UserCard Statbot] Fout bij ophalen top voice members: {e}")
+                break
 
-        return []
+        if all_members:
+            self._top_cache[guild_id] = (now, all_members)
+
+        return all_members
 
     async def get_user_voice_stats(
         self, guild_id: int, user_id: int, days: int = 30
@@ -96,25 +111,26 @@ class StatbotClient:
         total_minutes = sums_data.get("count", 0) if isinstance(sums_data, dict) else 0
         total_hours = round(total_minutes / 60, 1)
 
-        # 3. Top 50 positie matchen op 'id' en direct 'rank' uitlezen
+        # 3. Positie bepalen binnen de leden- en SZG+ pool
         top_members = await self.get_top_voice_members(guild_id, start_ms, now_ms)
         rank = None
+        total_active_members = len(top_members)
         user_id_str = str(user_id)
 
-        for entry in top_members:
+        for idx, entry in enumerate(top_members, start=1):
             if str(entry.get("id")) == user_id_str:
-                rank = entry.get("rank")
+                rank = entry.get("rank") or idx
                 if not total_minutes and entry.get("count"):
                     total_minutes = entry.get("count", 0)
                     total_hours = round(total_minutes / 60, 1)
                 break
 
-        if rank is not None:
-            rank_str = f"#{rank}"
-            top_pct = max(1, round((rank / 50) * 100))
+        if rank is not None and total_active_members > 0:
+            rank_str = f"#{rank} van {total_active_members}"
+            top_pct = max(1, round((rank / total_active_members) * 100))
             top_pct_str = f"Top {top_pct}%"
-        elif total_hours > 0:
-            rank_str = "50+"
+        elif total_hours > 0 and total_active_members > 0:
+            rank_str = f"#{total_active_members + 1}"
             top_pct_str = "-"
         else:
             rank_str = "-"
