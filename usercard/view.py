@@ -1,62 +1,146 @@
-import io
-import discord
-from .statbot_api import StatbotClient
+from redbot.core import commands  # isort:skip
+import discord  # isort:skip
+
+import asyncio
 
 
-class UserCardView(discord.ui.View):
+class usercardView(discord.ui.View):
     def __init__(
-        self, cog, member: discord.Member, author: discord.Member, initial_lid_bytes: bytes
-    ):
-        super().__init__(timeout=120)
-        self.cog = cog
-        self.member = member
-        self.author = author
-        self.cached_files: dict[str, bytes] = {"lid": initial_lid_bytes}
+        self,
+        cog: commands.Cog,
+        _object: discord.Member,
+    ) -> None:
+        super().__init__(timeout=60 * 60)
+        self.cog: commands.Cog = cog
+        self.ctx: commands.Context = None
 
-    @discord.ui.button(label="Lid", style=discord.ButtonStyle.primary, custom_id="btn_lid")
-    async def lid_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        if "lid" not in self.cached_files:
-            buf = await self.cog.render_lid_card(self.member)
-            self.cached_files["lid"] = buf.getvalue()
+        self._object: discord.Member = _object
 
-        file = discord.File(io.BytesIO(self.cached_files["lid"]), filename="lid_card.png")
-        await interaction.edit_original_response(attachments=[file], view=self)
+        self._message: discord.Message = None
+        self._ready: asyncio.Event = asyncio.Event()
 
-    @discord.ui.button(label="ID", style=discord.ButtonStyle.secondary, custom_id="btn_id")
-    async def id_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        if "id" not in self.cached_files:
-            buf = await self.cog.render_id_card(self.member)
-            self.cached_files["id"] = buf.getvalue()
-
-        file = discord.File(io.BytesIO(self.cached_files["id"]), filename="id_card.png")
-        await interaction.edit_original_response(attachments=[file], view=self)
-
-    @discord.ui.button(label="Stats", style=discord.ButtonStyle.secondary, custom_id="btn_stats")
-    async def stats_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer()
-        if "stats" not in self.cached_files:
-            api_tokens = await self.cog.bot.get_shared_api_tokens("statbot")
-            api_key = api_tokens.get("api_key", "")
-
-            client = StatbotClient(api_key=api_key)
-            stats = await client.get_user_voice_stats(
-                interaction.guild_id, self.member.id, days=30
-            )
-            await client.close()
-
-            buf = await self.cog.render_stats_card(self.member, stats)
-            self.cached_files["stats"] = buf.getvalue()
-
-        file = discord.File(io.BytesIO(self.cached_files["stats"]), filename="stats_card.png")
-        await interaction.edit_original_response(attachments=[file], view=self)
+    async def start(self, ctx: commands.Context, command) -> discord.Message:
+        self.ctx: commands.Context = ctx
+        file: discord.File = await self.cog.generate_image(
+            self._object,
+            to_file=True,
+        )
+        if file and command == 'card':
+            self._message: discord.Message = await self.ctx.send(file=file, view=self)
+        elif file and command == 'id':
+            self._message: discord.Message = await self.ctx.send(self._object.id, view=self)
+        elif command == 'id':
+            self._message: discord.Message = await self.ctx.send(self._object.id)
+        else:
+            self._message: discord.Message = await self.ctx.send('Gebruiker niet gevonden in database')
+        self.cog.views[self._message] = self
+        await self._ready.wait()
+        return self._message
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.user.id != self.author.id:
+        if interaction.user.id not in [self.ctx.author.id] + list(self.ctx.bot.owner_ids):
             await interaction.response.send_message(
-                "Alleen degene die het commando heeft aangeroepen kan van weergave wisselen.",
-                ephemeral=True,
+                "Je kunt deze interactie niet uitvoeren", ephemeral=True
             )
             return False
         return True
+
+    async def on_timeout(self) -> None:
+        for child in self.children:
+            child: discord.ui.Item
+            if hasattr(child, "disabled") and not (
+                isinstance(child, discord.ui.Button) and child.style == discord.ButtonStyle.url
+            ):
+                child.disabled = True
+        try:
+            await self._message.edit(view=self)
+        except discord.HTTPException:
+            pass
+        self._ready.set()
+
+    @discord.ui.button(emoji="👤", custom_id="reload_page", style=discord.ButtonStyle.secondary)
+    async def reload_page(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        await interaction.response.defer(thinking=False)  # thinking=True
+        file: discord.File = await self.cog.generate_image(
+            self._object,
+            to_file=True,
+        )
+        # try:
+        #     await interaction.delete_original_response()
+        # except discord.HTTPException:
+        #     pass
+        await self._message.edit(content="", attachments=[file])
+
+    @discord.ui.button(emoji="🆔", custom_id="id_page", style=discord.ButtonStyle.secondary)
+    async def id_page(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        await interaction.response.defer(thinking=False)  # thinking=True
+        await self._message.edit(content=self._object.id, attachments=[])
+
+    @discord.ui.button(style=discord.ButtonStyle.danger, emoji="✖️", custom_id="close_page")
+    async def close_page(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
+        try:
+            await interaction.response.defer()
+        except discord.errors.NotFound:
+            pass
+        self.stop()
+        if self._message is None:
+            return None
+        try:
+            await self._message.delete()
+            self._ready.set()
+        except discord.NotFound:  # Already deleted.
+            return True
+        except discord.HTTPException:
+            return False
+        else:
+            return True
+
+class WrappedView(discord.ui.View):
+    def __init__(
+        self,
+        cog: commands.Cog,
+        _object: discord.Member,
+    ) -> None:
+        super().__init__(timeout=60 * 60)
+        self.cog = cog
+        self.ctx: commands.Context = None
+        self._object: discord.Member = _object
+        self._message: discord.Message = None
+
+    async def start(self, ctx: commands.Context) -> discord.Message:
+        self.ctx = ctx
+        # Calls the renamed generator function
+        file: discord.File = await self.cog.generate_wrapped_image(
+            self._object,
+            to_file=True,
+        )
+        self._message = await self.ctx.send(file=file, view=self)
+        return self._message
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id not in [self.ctx.author.id] + list(self.ctx.bot.owner_ids):
+            await interaction.response.send_message(
+                "You are not allowed to use this.", ephemeral=True
+            )
+            return False
+        return True
+
+    @discord.ui.button(emoji="🔄", style=discord.ButtonStyle.primary)
+    async def reload_wrapped(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        file: discord.File = await self.cog.generate_wrapped_image(
+            self._object,
+            to_file=True,
+        )
+        await self._message.edit(attachments=[file])
+
+    @discord.ui.button(emoji="✖️", style=discord.ButtonStyle.danger)
+    async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.message.delete()
+        self.stop()

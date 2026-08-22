@@ -1,180 +1,585 @@
+from AAA3A_utils import Cog  # isort:skip
+from redbot.core import commands  # isort:skip
+from redbot.core.bot import Red  # isort:skip
+import discord  # isort:skip
+import typing  # isort:skip
+
+import asyncio
+import functools
 import io
-import discord
-from PIL import Image, ImageDraw, ImageFont
-from redbot.core import commands
-from redbot.core.bot import Red
+from pathlib import Path
+from datetime import datetime
+
+from fontTools.ttLib import TTFont
+from PIL import Image, ImageChops, ImageDraw, ImageFont
 from redbot.core.data_manager import bundled_data_path
+from frappeclient import FrappeClient
 
-from .view import UserCardView
+from .view import usercardView, WrappedView
 
 
-class usercard(commands.Cog):
-    """Genereert Lid, ID en Statistieken kaarten."""
+class usercard(Cog):
+    """A cog to generate images"""
 
-    def __init__(self, bot: Red):
-        self.bot = bot
+    def __init__(self, bot: Red) -> None:
+        super().__init__(bot=bot)
+        self.Frappeclient = None
+        self.api_key = None
+        self.api_secret = None
 
-    def _get_fonts(self):
-        data_dir = bundled_data_path(self)
-        font_path = data_dir / "arial.ttf"
-        font_bold_path = data_dir / "arial_bold.ttf"
-
-        try:
-            title_font = ImageFont.truetype(str(font_bold_path), 32)
-            header_font = ImageFont.truetype(str(font_bold_path), 24)
-            body_font = ImageFont.truetype(str(font_path), 20)
-            small_font = ImageFont.truetype(str(font_path), 16)
-        except Exception:
-            title_font = header_font = body_font = small_font = ImageFont.load_default()
-
-        return title_font, header_font, body_font, small_font
-
-    async def _get_base_image(self) -> Image.Image:
-        bg_path = bundled_data_path(self) / "background.png"
-        if bg_path.exists():
-            return Image.open(bg_path).convert("RGBA")
-        return Image.new("RGBA", (1000, 500), (32, 34, 37, 255))
-
-    async def _draw_avatar(self, base_img: Image.Image, member: discord.Member, pos=(50, 50)):
-        try:
-            avatar_bytes = await member.display_avatar.read()
-            avatar_img = (
-                Image.open(io.BytesIO(avatar_bytes)).convert("RGBA").resize((120, 120))
+        self.font_path: Path = bundled_data_path(self) / "arial.ttf"
+        self.bold_font_path: Path = bundled_data_path(self) / "arial_bold.ttf"
+        self.font: typing.Dict[int, ImageFont.ImageFont] = {
+            size: ImageFont.truetype(str(self.font_path), size=size)
+            for size in {28, 30, 36, 40, 54}
+        }
+        self.bold_font: typing.Dict[int, ImageFont.ImageFont] = {
+            size: ImageFont.truetype(str(self.bold_font_path), size=size)
+            for size in {30, 36, 40, 50, 60}
+        }
+        self.font_to_remove_unprintable_characters: TTFont = TTFont(self.font_path)
+        self.icons: typing.Dict[str, Path] = {
+            name: (bundled_data_path(self) / f"{name}.png")
+            for name in (
+                "logo",
+                "person",
+                "game",
+                "background",
             )
+        }
 
-            mask = Image.new("L", (120, 120), 0)
-            mask_draw = ImageDraw.Draw(mask)
-            mask_draw.ellipse((0, 0, 120, 120), fill=255)
-
-            base_img.paste(avatar_img, pos, mask)
-        except Exception:
-            pass
-
-    async def render_lid_card(self, member: discord.Member) -> io.BytesIO:
-        """Rendert de standaard Lid profielkaart."""
-        base_img = await self._get_base_image()
-        draw = ImageDraw.Draw(base_img)
-        title_font, header_font, body_font, small_font = self._get_fonts()
-
-        await self._draw_avatar(base_img, member)
-
-        # Header Info
-        draw.text((190, 60), member.display_name, fill=(255, 255, 255), font=title_font)
-        draw.text(
-            (190, 110),
-            f"Lid sinds: {member.joined_at.strftime('%d-%m-%Y') if member.joined_at else 'Onbekend'}",
-            fill=(180, 180, 180),
-            font=body_font,
-        )
-
-        draw.line([(50, 190), (950, 190)], fill=(70, 75, 80), width=2)
-
-        # Content Box
-        draw.text((50, 220), "LIDMAATSCHAP STATUS", fill=(114, 137, 218), font=header_font)
-        roles = [r.name for r in member.roles if r.name != "@everyone"]
-        role_str = ", ".join(roles[:3]) if roles else "Geen specifieke rollen"
-        draw.text((50, 260), f"Rollen: {role_str}", fill=(255, 255, 255), font=body_font)
-
-        draw.text((50, 310), "EVENEMENTEN", fill=(114, 137, 218), font=header_font)
-        draw.text((50, 350), "Bezochte events: Ingeschreven", fill=(255, 255, 255), font=body_font)
-
-        buf = io.BytesIO()
-        base_img.save(buf, format="PNG")
-        buf.seek(0)
-        return buf
-
-    async def render_id_card(self, member: discord.Member) -> io.BytesIO:
-        """Rendert de digitale ID kaart."""
-        base_img = await self._get_base_image()
-        draw = ImageDraw.Draw(base_img)
-        title_font, header_font, body_font, small_font = self._get_fonts()
-
-        await self._draw_avatar(base_img, member)
-
-        # Header Info
-        draw.text((190, 60), f"ID Kaart — {member.name}", fill=(255, 255, 255), font=title_font)
-        draw.text((190, 110), f"Tag: {member.discriminator if member.discriminator != '0' else '@' + member.name}", fill=(180, 180, 180), font=body_font)
-
-        draw.line([(50, 190), (950, 190)], fill=(70, 75, 80), width=2)
-
-        # Identity Details
-        draw.text((50, 220), "DISCORD IDENTIFICATIE", fill=(114, 137, 218), font=header_font)
-        draw.text((50, 260), f"Gebruiker ID: {member.id}", fill=(255, 255, 255), font=body_font)
-        draw.text(
-            (50, 300),
-            f"Account Aangemaakt: {member.created_at.strftime('%d-%m-%Y')}",
-            fill=(255, 255, 255),
-            font=body_font,
-        )
-
-        draw.text((50, 360), f"Server: {member.guild.name}", fill=(150, 150, 150), font=small_font)
-
-        buf = io.BytesIO()
-        base_img.save(buf, format="PNG")
-        buf.seek(0)
-        return buf
-
-    async def render_stats_card(self, member: discord.Member, stats: dict) -> io.BytesIO:
-        """Rendert de voice statistieken kaart."""
-        base_img = await self._get_base_image()
-        draw = ImageDraw.Draw(base_img)
-        title_font, header_font, body_font, small_font = self._get_fonts()
-
-        await self._draw_avatar(base_img, member)
-
-        # Header Info
-        draw.text((190, 60), member.display_name, fill=(255, 255, 255), font=title_font)
-        draw.text((190, 110), "Voice Activiteit (Laatste 30 Dagen)", fill=(180, 180, 180), font=body_font)
-
-        draw.line([(50, 190), (950, 190)], fill=(70, 75, 80), width=2)
-
-        # Voice Duration Box
-        total_hours = stats.get("total_hours", 0)
-        draw.text((50, 220), "TOTALE TIJD IN VOICE", fill=(114, 137, 218), font=header_font)
-        draw.text((50, 260), f"{total_hours} Uur", fill=(255, 255, 255), font=title_font)
-
-        # Top Channels Box
-        draw.text((450, 220), "MEEST ACTIEVE KANALEN", fill=(114, 137, 218), font=header_font)
-
-        top_channels = stats.get("top_channels", [])
-        y_offset = 265
-
-        if not top_channels:
-            draw.text(
-                (450, y_offset),
-                "Geen voice activiteit geregistreerd.",
-                fill=(150, 150, 150),
-                font=body_font,
-            )
+    async def cog_load(self):
+        await super().cog_load()
+        frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
+        self.api_key = frappe_keys.get("username")
+        self.api_secret = frappe_keys.get("password")
+        
+        if self.api_key and self.api_secret:
+            self.Frappeclient = FrappeClient("https://shadowzone.nl")
+            self.Frappeclient.login(self.api_key, self.api_secret)
         else:
-            for rank, (ch_id, duration) in enumerate(top_channels, start=1):
-                channel = member.guild.get_channel(int(ch_id)) if str(ch_id).isdigit() else None
-                ch_name = f"#{channel.name}" if channel else f"Kanaal ({ch_id})"
-                ch_hours = round(duration / 3600, 1)
+            print("API keys for Frappe are missing.")
 
-                draw.text((450, y_offset), f"{rank}. {ch_name}", fill=(255, 255, 255), font=body_font)
-                draw.text((800, y_offset), f"{ch_hours} uur", fill=(200, 200, 200), font=body_font)
-                y_offset += 35
+    async def cog_unload(self) -> None:
+        self.font_to_remove_unprintable_characters.close()
+        await super().cog_unload() 
 
-        draw.text((50, 440), "Powered by Statbot API", fill=(100, 100, 100), font=small_font)
+    def get_frappe_member_data(self, discord_id):
+        """Haalt member data op en logt automatisch opnieuw in als de sessie verlopen is."""
+        if not self.Frappeclient:
+            return None
 
-        buf = io.BytesIO()
-        base_img.save(buf, format="PNG")
-        buf.seek(0)
-        return buf
+        try:
+            docs = self.Frappeclient.get_list('Member', fields=['name'], filters={'discord_id': str(discord_id)})
+            if docs:
+                return self.Frappeclient.get_doc("Member", docs[0]['name'])
+        except Exception as e:
+            print(f"[UserCard] Fout bij ophalen data: {e}. Probeer opnieuw in te loggen...")
+            try:
+                if self.api_key and self.api_secret:
+                    self.Frappeclient.login(self.api_key, self.api_secret)
+                    docs = self.Frappeclient.get_list('Member', fields=['name'], filters={'discord_id': str(discord_id)})
+                    if docs:
+                        return self.Frappeclient.get_doc("Member", docs[0]['name'])
+            except Exception as e2:
+                print(f"[UserCard] Herstel mislukt: {e2}")
+        
+        return None
 
-    @commands.command(name="usercard")
-    @commands.guild_only()
-    async def usercard(self, ctx: commands.Context, *, member: discord.Member = None):
-        """Toont de interactieve gebruikerskaart met Lid, ID en Stats weergaven."""
-        member = member or ctx.author
+    def align_text_center(
+        self,
+        draw: ImageDraw.Draw,
+        xy: typing.Tuple[int, int, int, int],
+        text: str,
+        fill: typing.Optional[typing.Tuple[int, int, int, typing.Optional[int]]],
+        font: ImageFont.ImageFont,
+    ) -> typing.Tuple[int, int]:
+        x1, y1, x2, y2 = xy
+        text_size = font.getbbox(text)
+        x = int((x2 - x1 - text_size[2]) / 2)
+        x = max(x, 0)
+        y = int((y2 - y1 - text_size[3]) / 2)
+        y = max(y, 0)
+        if font in self.bold_font.values():
+            y -= 5
+        draw.text((x1 + x, y1 + y), text=text, fill=fill, font=font)
+        return text_size
 
-        lid_buf = await self.render_lid_card(member)
-        lid_bytes = lid_buf.getvalue()
-
-        file = discord.File(io.BytesIO(lid_bytes), filename="lid_card.png")
-        view = UserCardView(
-            cog=self, member=member, author=ctx.author, initial_lid_bytes=lid_bytes
+    def remove_unprintable_characters(self, text: str) -> str:
+        return (
+            "".join(
+                [
+                    char
+                    for char in text
+                    if ord(char) in self.font_to_remove_unprintable_characters.getBestCmap()
+                    and char.isascii()
+                ]
+            )
+            .strip()
+            .strip("-|_")
+            .strip()
         )
 
-        await ctx.send(file=file, view=view)
+    def get_member_display(self, member: discord.Member) -> str:
+        return (
+            self.remove_unprintable_characters(member.display_name)
+            if (
+                sum(
+                    (
+                        1
+                        if ord(char) in self.font_to_remove_unprintable_characters.getBestCmap()
+                        else 0
+                    )
+                    for char in member.display_name
+                )
+                / len(member.display_name)
+                > 0.8
+            )
+            and len(self.remove_unprintable_characters(member.display_name)) >= 5
+            else (
+                self.remove_unprintable_characters(member.global_name)
+                if member.global_name is not None
+                and (
+                    sum(
+                        (
+                            1
+                            if ord(char)
+                            in self.font_to_remove_unprintable_characters.getBestCmap()
+                            else 0
+                        )
+                        for char in member.global_name
+                    )
+                    / len(member.global_name)
+                    > 0.8
+                )
+                and len(self.remove_unprintable_characters(member.global_name)) >= 5
+                else member.name
+            )
+        )
+
+    def _generate_prefix_image(
+        self,
+        _object: discord.Member,
+        size: typing.Tuple[int, int],
+        to_file: bool,
+        _object_display: typing.Optional[bytes],
+    ) -> typing.Union[Image.Image, discord.File]:
+        img: Image.Image = Image.new("RGBA", size, (0, 0, 0, 0))
+        try:
+            # Open the background image from the icons dictionary
+            image = Image.open(self.icons["background"])
+            image = image.convert("RGBA").resize(size)
+            
+            # Create a mask for rounded corners (radius 50)
+            mask = Image.new("L", size, 0)
+            d = ImageDraw.Draw(mask)
+            d.rounded_rectangle((0, 0, size[0], size[1]), radius=50, fill=255)
+            
+            # Paste the background image using the mask
+            img.paste(image, (0, 0), mask=mask)
+        except Exception as e:
+            # Fallback to dark gray if background.png is missing or fails
+            print(f"Failed to load background: {e}")
+            draw_bg = ImageDraw.Draw(img)
+            draw_bg.rounded_rectangle(
+                (0, 0, img.width, img.height),
+                radius=50,
+                fill=(32, 34, 37),
+            )
+
+        # Initialize the draw object for the text that follows
+        draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
+        align_text_center = functools.partial(self.align_text_center, draw)
+
+        member = self.get_frappe_member_data(_object.id)
+        
+        if member:
+            # Member name & Member avatar.
+            image = Image.open(io.BytesIO(_object_display))
+            image = image.resize((140, 140))
+            mask = Image.new("L", image.size, 0)
+            d = ImageDraw.Draw(mask)
+            d.rounded_rectangle(
+                (0, 0, image.width, image.height),
+                radius=20,
+                fill=255,
+            )
+            try:
+                img.paste(
+                    image, (30, 478, 170, 618), mask=ImageChops.multiply(mask, image.split()[3])
+                )
+            except IndexError:
+                img.paste(image, (30, 478, 170, 618), mask=mask)
+            if (
+                sum(
+                    (
+                        1
+                        if ord(char) in self.font_to_remove_unprintable_characters.getBestCmap()
+                        else 0
+                    )
+                    for char in _object.display_name
+                )
+                / len(_object.display_name)
+                > 0.8
+            ) and len(self.remove_unprintable_characters(_object.display_name)) >= 5:
+                draw.text(
+                    (190, 478),
+                    text=self.remove_unprintable_characters(_object.display_name),
+                    fill=(255, 255, 255),
+                    font=self.bold_font[50],
+                )
+                display_name_size = self.bold_font[50].getbbox(_object.display_name)
+                if (
+                    display_name_size[2]
+                    + 25
+                    + self.font[40].getbbox(_object.global_name or _object.name)[2]
+                ) <= 1000:
+                    draw.text(
+                        (190 + display_name_size[2] + 25, 496),
+                        text=(
+                            self.remove_unprintable_characters(_object.global_name)
+                            if _object.global_name is not None
+                            else _object.name
+                        ),
+                        fill=(163, 163, 163),
+                        font=self.font[40],
+                    )
+            elif (
+                _object.global_name is not None
+                and (
+                    sum(
+                        (
+                            1
+                            if ord(char)
+                            in self.font_to_remove_unprintable_characters.getBestCmap()
+                            else 0
+                        )
+                        for char in _object.global_name
+                    )
+                    / len(_object.global_name)
+                    > 0.8
+                )
+                and len(self.remove_unprintable_characters(_object.global_name)) >= 5
+            ):
+                draw.text(
+                    (190, 478),
+                    text=self.remove_unprintable_characters(_object.global_name),
+                    fill=(255, 255, 255),
+                    font=self.bold_font[50],
+                )
+            else:
+                draw.text(
+                    (190, 478), text=_object.name, fill=(255, 255, 255), font=self.bold_font[50]
+                )
+
+            # Rol
+            draw.text(
+                (190, 553),
+                text=f"{member.get('membership_type') if member.get('custom_status') == 'Actief' else ''}",
+                fill=(163, 163, 163),
+                font=self.font[54],
+            )
+
+            # Guild name & Guild icon.
+            image = Image.open(self.icons["logo"])
+            image = image.resize((55, 55))
+            img.paste(image, (30, 30, 85, 85), mask=image.split()[3])
+            draw.text(
+                (105, 30),
+                text='Shadowzone Gaming',
+                fill=(163, 163, 163),
+                font=self.font[54],
+            )
+
+            # `created_on`
+            draw.rounded_rectangle((1200, 75, 1545, 175), radius=15, fill=(47, 49, 54))
+            align_text_center(
+                (1200, 75, 1545, 175),
+                text=_object.created_at.strftime("%d %B %Y"),
+                fill=(255, 255, 255),
+                font=self.font[36],
+            )
+            draw.rounded_rectangle((1220, 30, 1476, 90), radius=15, fill=(79, 84, 92))
+            align_text_center(
+                (1220, 30, 1476, 90),
+                text="Op Discord",
+                fill=(255, 255, 255),
+                font=self.bold_font[30],
+            )
+            # `joined_on`
+            draw.rounded_rectangle((1200 + 365, 75, 1545 + 365, 175), radius=15, fill=(47, 49, 54))
+            align_text_center(
+                (1200 + 365, 75, 1545 + 365, 175),
+                text=_object.joined_at.strftime("%d %B %Y"),
+                fill=(255, 255, 255),
+                font=self.font[36],
+            )
+            draw.rounded_rectangle((1220 + 365, 30, 1476 + 365, 90), radius=15, fill=(79, 84, 92))
+            align_text_center(
+                (1220 + 365, 30, 1476 + 365, 90),
+                text="In server",
+                fill=(255, 255, 255),
+                font=self.bold_font[30],
+            )
+
+        if not to_file:
+            return img
+        buffer = io.BytesIO()
+        img.save(buffer, format="png", optimize=True)
+        buffer.seek(0)
+        return discord.File(buffer, filename="image.png")
+
+    async def generate_prefix_image(
+        self,
+        _object: discord.Member,
+        size: typing.Tuple[int, int] = (1942, 1026),
+        to_file: bool = True,
+    ) -> typing.Union[Image.Image, discord.File]:
+        if isinstance(_object, typing.Tuple):
+            _object, _type = _object
+        else:
+            _type = None
+        return await asyncio.to_thread(
+            self._generate_prefix_image,
+            _object=_object if _type is None else (_object, _type),
+            size=size,
+            to_file=to_file,
+            _object_display=(
+                (await _object.display_avatar.read())
+                if isinstance(_object, discord.Member)
+                else (
+                    (await _object.display_icon.read())
+                    if isinstance(_object, discord.Role) and _object.display_icon is not None
+                    else None
+                )
+            ),
+        )
+
+    def _generate_image(
+        self,
+        _object: discord.Member,
+        to_file: bool,
+        img: Image.Image,
+    ) -> typing.Union[Image.Image, discord.File]:
+        draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
+        align_text_center = functools.partial(self.align_text_center, draw)
+
+        # Data.
+        if isinstance(_object, (discord.Member)):
+            # FIX: Gebruik de nieuwe slimme functie
+            member = self.get_frappe_member_data(_object.id)
+
+            if member:
+                draw.rounded_rectangle((1306 - 125, 204, 1912, 585), radius=15, fill=(47, 49, 54))
+                align_text_center(
+                    (1325 - 125, 214, 1325 - 125, 284),
+                    text="Lidmaatschap",
+                    fill=(255, 255, 255),
+                    font=self.bold_font[40],
+                )
+                image = Image.open(self.icons["person"])
+                image = image.resize((70, 70))
+                img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
+                draw.rounded_rectangle((1325 - 125, 301, 1892, 418), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((1325 - 125, 301, 1588 - 125, 418), radius=15, fill=(24, 26, 27))
+                align_text_center(
+                    (1326 - 125, 301, 1601 - 125, 418),
+                    text="Lid",
+                    fill=(255, 255, 255),
+                    font=self.bold_font[36],
+                )
+                align_text_center(
+                    (1601 - 125, 301, 1892, 418),
+                    text=f"{datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_start_lidmaatschap') and  member.get('custom_status') == 'Actief' and  member.get('membership_type') == 'Lid' else '-'}",
+                    fill=(255, 255, 255),
+                    font=self.font[36],
+                )
+                draw.rounded_rectangle((1325 - 125, 448, 1892, 565), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((1325 - 125, 448, 1601 - 125, 565), radius=15, fill=(24, 26, 27))
+                align_text_center(
+                    (1325 - 125, 448, 1601 - 125, 565),
+                    text="Betrokken",
+                    fill=(255, 255, 255),
+                    font=self.bold_font[30],
+                )
+                align_text_center(
+                    (1601 - 125, 448, 1892, 565),
+                    text=f"{datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_begin_datum') else '-'}",
+                    fill=(255, 255, 255),
+                    font=self.font[36],
+                )
+                
+                # Events
+                events = 0
+                highest_event_value = 0
+                # Veiligheidscheck: custom_events kan soms leeg zijn
+                if member.get("custom_events"):
+                    for item in member.get("custom_events"):
+                        if item['event_bezocht'] not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
+                            events += 1
+                            try:
+                                event_value = int(item["event_bezocht"].split()[1].strip(":"))
+                                if event_value > highest_event_value:
+                                    highest_event = item['event_bezocht']
+                                    highest_event_value = event_value
+                            except (IndexError, ValueError):
+                                continue
+
+                draw.rounded_rectangle((1306 - 125, 615, 1912, 996), radius=15, fill=(47, 49, 54))
+                align_text_center(
+                    (1326 - 125, 625, 1326 - 125, 695),
+                    text="Events",
+                    fill=(255, 255, 255),
+                    font=self.bold_font[40],
+                )
+                image = Image.open(self.icons["game"])
+                image = image.resize((70, 70))
+                img.paste(image, (1822, 625, 1892, 695), mask=image.split()[3])
+                draw.rounded_rectangle((1326 - 125, 712, 1892, 829), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((1326 - 125, 712, 1601 - 125, 829), radius=15, fill=(24, 26, 27))
+                align_text_center(
+                    (1326 - 125, 712, 1601 - 125, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36]
+                )
+                align_text_center(
+                    (1601 - 125, 712, 1892, 829),
+                    text=(
+                        str(events)
+                    ),
+                    fill=(255, 255, 255),
+                    font=self.font[36],
+                )
+                draw.rounded_rectangle((1326 - 125, 859, 1892, 976), radius=15, fill=(32, 34, 37))
+                draw.rounded_rectangle((1326 - 125, 859, 1601 - 125, 976), radius=15, fill=(24, 26, 27))
+                align_text_center(
+                    (1326 - 125, 859, 1601 - 125, 976),
+                    text="Laatste",
+                    fill=(255, 255, 255),
+                    font=self.bold_font[36],
+                )
+                align_text_center(
+                    (1601 - 125, 859, 1892, 976),
+                    text=f"{'Event ' + str(highest_event_value) if highest_event_value > 0 else '-'}",
+                    fill=(255, 255, 255),
+                    font=self.font[36],
+                )
+        
+                if not to_file:
+                    return img
+                buffer = io.BytesIO()
+                img.save(buffer, format="png", optimize=True)
+                buffer.seek(0)
+                return discord.File(buffer, filename="image.png")
+
+    async def generate_image(
+        self,
+        _object: discord.Member,
+        to_file: bool = True,
+    ) -> typing.Union[Image.Image, discord.File]:
+        img: Image.Image = await self.generate_prefix_image(
+            _object,
+            size=(1942, 1096),
+            to_file=False,
+        )  # (1940, 1481) / 1942 + 636
+        return await asyncio.to_thread(
+            self._generate_image,
+            _object,
+            to_file=to_file,
+            img=img,
+        )
+
+    # --- WRAPPED IMAGE GENERATOR ---
+    async def generate_wrapped_image(
+        self,
+        _object: discord.Member,
+        to_file: bool = True,
+    ) -> typing.Union[Image.Image, discord.File]:
+        
+        # 1. Canvas
+        size = (1000, 500) 
+        img = Image.new("RGBA", size, (0, 0, 0, 0))
+        
+        # 2. Background
+        # You can eventually use self.icons["wrapped_background"] here
+        draw = ImageDraw.Draw(img)
+        draw.rounded_rectangle((0, 0, size[0], size[1]), radius=20, fill=(25, 20, 20)) # Darker background
+
+        # 3. Text & Stats
+        draw.text((50, 50), "Shadowzone Wrapped", fill=(255, 255, 255), font=self.bold_font[40])
+        draw.text((50, 120), _object.display_name, fill=(255, 255, 255), font=self.bold_font[50])
+
+        # Example stat placeholders
+        draw.text((50, 250), "Messages: -", fill=(200, 200, 200), font=self.font[36])
+        draw.text((50, 300), "Voice Hours: -", fill=(200, 200, 200), font=self.font[36])
+
+        # 4. Avatar (Circular)
+        avatar_asset = _object.display_avatar.with_size(128)
+        avatar_data = await avatar_asset.read()
+        avatar_img = Image.open(io.BytesIO(avatar_data)).resize((150, 150))
+        
+        mask = Image.new("L", (150, 150), 0)
+        draw_mask = ImageDraw.Draw(mask)
+        draw_mask.ellipse((0, 0, 150, 150), fill=255)
+        
+        img.paste(avatar_img, (800, 50), mask=mask)
+
+        # 5. Return
+        if not to_file:
+            return img
+        buffer = io.BytesIO()
+        img.save(buffer, format="png", optimize=True)
+        buffer.seek(0)
+        return discord.File(buffer, filename="wrapped.png")
+
+    @commands.guild_only()
+    @commands.bot_has_permissions(attach_files=True)
+    @commands.hybrid_command(name="lid", description="Krijg profiel van gebruiker")
+    async def lid(
+        self,
+        ctx: commands.Context,
+        *,
+        member: discord.Member = commands.Author,
+    ) -> None:
+        """Krijg profiel van gebruiker"""
+        if not member.bot:
+            await usercardView(
+                cog=self,
+                _object=member,
+            ).start(ctx, command='card')
+        else: 
+            await ctx.send('Niet mogelijk voor bot')
+
+    @commands.guild_only()
+    @commands.bot_has_permissions(attach_files=True)
+    @commands.hybrid_command(name="id", description="Krijg Discord ID van gebruiker")
+    async def id(
+        self,
+        ctx: commands.Context,
+        *,
+        member: discord.Member = commands.Author,
+    ) -> None:
+        """Krijg Discord ID van gebruiker"""
+        if not member.bot:
+            await usercardView(
+                cog=self,
+                _object=member,
+            ).start(ctx, command='id')
+        else: 
+            await ctx.send('Niet mogelijk voor bot')
+    
+    @commands.guild_only()
+    @commands.bot_has_permissions(attach_files=True)
+    @commands.hybrid_command(name="wrapped", description="Jouw stats van afgelopen jaar")
+    async def wrapped(
+        self,
+        ctx: commands.Context,
+        *,
+        member: discord.Member = commands.Author,
+    ) -> None:
+        """Jouw stats van afgelopen jaar"""
+        if not member.bot:
+            await WrappedView(
+                cog=self,
+                _object=member,
+            ).start(ctx)
+        else: 
+            await ctx.send('Niet mogelijk voor bot')
