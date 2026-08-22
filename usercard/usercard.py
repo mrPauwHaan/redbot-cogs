@@ -476,7 +476,7 @@ class usercard(Cog):
             img=img,
         )
 
-    # --- VOICE STATS / STATBOT CARD GENERATOR ---
+    # --- VOICE IDENTITY & HABITS CARD GENERATOR ---
     def _generate_stats_image(
         self,
         _object: discord.Member,
@@ -487,102 +487,108 @@ class usercard(Cog):
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
         align_text_center = functools.partial(self.align_text_center, draw)
 
-        total_hours = stats.get("total_hours", 0)
-        top_channels = stats.get("top_channels", [])
-
-        # 1. Bovenste Kaart: Totale Voice Tijd
+        # 1. Top Container: Voice Identiteit
         draw.rounded_rectangle((1306 - 125, 204, 1912, 585), radius=15, fill=(47, 49, 54))
         align_text_center(
             (1325 - 125, 214, 1325 - 125, 284),
-            text="Voice Activiteit",
+            text="Voice Identiteit",
             fill=(255, 255, 255),
             font=self.bold_font[40],
         )
+        image = Image.open(self.icons["person"])
+        image = image.resize((70, 70))
+        img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
 
+        # Row 1: Persona
         draw.rounded_rectangle((1325 - 125, 301, 1892, 418), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((1325 - 125, 301, 1588 - 125, 418), radius=15, fill=(24, 26, 27))
         align_text_center(
             (1326 - 125, 301, 1601 - 125, 418),
-            text="30 Dagen",
+            text="Persona",
             fill=(255, 255, 255),
             font=self.bold_font[36],
         )
         align_text_center(
             (1601 - 125, 301, 1892, 418),
-            text=f"{total_hours} uur",
+            text=stats.get("persona", "Stille Luisteraar"),
             fill=(255, 255, 255),
-            font=self.font[36],
+            font=self.bold_font[36],
         )
 
+        # Row 2: Tier + Hours
         draw.rounded_rectangle((1325 - 125, 448, 1892, 565), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((1325 - 125, 448, 1601 - 125, 565), radius=15, fill=(24, 26, 27))
         align_text_center(
             (1325 - 125, 448, 1601 - 125, 565),
-            text="Status",
+            text="Tier",
             fill=(255, 255, 255),
             font=self.bold_font[30],
         )
         align_text_center(
             (1601 - 125, 448, 1892, 565),
-            text="Actief" if total_hours > 0 else "Inactief",
+            text=f"{stats.get('tier', 'Geen Tier')} ({stats.get('total_hours', 0)} uur)",
             fill=(255, 255, 255),
             font=self.font[36],
         )
 
-        # 2. Onderste Kaart: Top Kanalen
+        # 2. Bottom Container: Activiteitspatroon
         draw.rounded_rectangle((1306 - 125, 615, 1912, 996), radius=15, fill=(47, 49, 54))
         align_text_center(
             (1326 - 125, 625, 1326 - 125, 695),
-            text="Top Kanalen",
+            text="Activiteitspatroon",
             fill=(255, 255, 255),
             font=self.bold_font[40],
         )
+        image = Image.open(self.icons["game"])
+        image = image.resize((70, 70))
+        img.paste(image, (1822, 625, 1892, 695), mask=image.split()[3])
 
-        # Kanaal 1
-        ch1_name, ch1_hours = "-", "-"
-        if len(top_channels) > 0:
-            ch_id, duration = top_channels[0]
-            channel = _object.guild.get_channel(int(ch_id)) if str(ch_id).isdigit() else None
-            ch1_name = channel.name if channel else f"Kanaal {ch_id}"
-            ch1_hours = f"{round(duration / 3600, 1)} uur"
-
+        # Row 1: Piekuur
         draw.rounded_rectangle((1326 - 125, 712, 1892, 829), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((1326 - 125, 712, 1601 - 125, 829), radius=15, fill=(24, 26, 27))
         align_text_center(
             (1326 - 125, 712, 1601 - 125, 829),
-            text=(ch1_name[:12] + "...") if len(ch1_name) > 12 else ch1_name,
+            text="Piekuur",
             fill=(255, 255, 255),
-            font=self.bold_font[30],
+            font=self.bold_font[36],
         )
         align_text_center(
             (1601 - 125, 712, 1892, 829),
-            text=ch1_hours,
+            text=stats.get("peak_time", "-"),
             fill=(255, 255, 255),
             font=self.font[36],
         )
 
-        # Kanaal 2
-        ch2_name, ch2_hours = "-", "-"
-        if len(top_channels) > 1:
-            ch_id, duration = top_channels[1]
-            channel = _object.guild.get_channel(int(ch_id)) if str(ch_id).isdigit() else None
-            ch2_name = channel.name if channel else f"Kanaal {ch_id}"
-            ch2_hours = f"{round(duration / 3600, 1)} uur"
-
+        # Row 2: 7-Dagen Ritme Visualisatie
         draw.rounded_rectangle((1326 - 125, 859, 1892, 976), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((1326 - 125, 859, 1601 - 125, 976), radius=15, fill=(24, 26, 27))
         align_text_center(
             (1326 - 125, 859, 1601 - 125, 976),
-            text=(ch2_name[:12] + "...") if len(ch2_name) > 12 else ch2_name,
+            text="Ritme",
             fill=(255, 255, 255),
-            font=self.bold_font[30],
+            font=self.bold_font[36],
         )
-        align_text_center(
-            (1601 - 125, 859, 1892, 976),
-            text=ch2_hours,
-            fill=(255, 255, 255),
-            font=self.font[36],
-        )
+
+        # Mini 7-Dagen Barchart (Ma - Zo)
+        day_labels = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"]
+        norms = stats.get("weekday_norm", [0] * 7)
+        base_x = 1500
+        max_h = 42
+
+        for i in range(7):
+            cx = base_x + (i * 54)
+            val = norms[i] if i < len(norms) else 0
+
+            # Bepaal hoogte en accentkleur voor piekdag
+            h = max(int(val * max_h), 6) if stats.get("total_minutes", 0) > 0 else 6
+            bar_color = (114, 137, 218) if val == 1.0 and stats.get("total_minutes", 0) > 0 else (79, 84, 92)
+
+            draw.rounded_rectangle((cx, 915 - h, cx + 32, 915), radius=4, fill=bar_color)
+            
+            # Daglabel
+            lbl_bbox = self.font[28].getbbox(day_labels[i])
+            lbl_x = cx + int((32 - (lbl_bbox[2] - lbl_bbox[0])) / 2)
+            draw.text((lbl_x, 922), day_labels[i], fill=(180, 180, 180), font=self.font[28])
 
         if not to_file:
             return img
