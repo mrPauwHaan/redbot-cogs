@@ -452,7 +452,6 @@ class usercard(Cog):
                     font=self.font[36],
                 )
 
-                # Return staat uitsluitend binnen 'if member:' zodat niet-geregistreerde leden None terugkrijgen
                 if not to_file:
                     return img
                 buffer = io.BytesIO()
@@ -558,7 +557,7 @@ class usercard(Cog):
         draw.rounded_rectangle((80, 448, 920, 565), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 448, 380, 565), radius=15, fill=(24, 26, 27))
         align_text_center((80, 448, 380, 565), text="Totaal (30d)", fill=(255, 255, 255), font=self.bold_font[30])
-        
+
         total_display = f"{stats.get('total_hours', 0)} Uur"
         if stats.get("top_pct_str") and stats.get("top_pct_str") != "-":
             total_display += f" ({stats.get('top_pct_str')})"
