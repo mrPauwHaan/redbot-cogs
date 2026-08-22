@@ -24,7 +24,7 @@ class StatbotClient:
     async def _get_guild_leaderboard(
         self, guild_id: int, start_ms: int, end_ms: int
     ) -> List[Dict[str, Any]]:
-        """Haalt het leaderboard van de server op met een in-memory cache van 15 minuten."""
+        """Haalt alle leden op via /voice/sums?by_member=true en cachet dit 15 minuten."""
         now = time.time()
         if guild_id in self._leaderboard_cache:
             cache_time, cache_data = self._leaderboard_cache[guild_id]
@@ -32,21 +32,28 @@ class StatbotClient:
                 return cache_data
 
         session = await self._get_session()
-        leaderboard_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/leaderboard"
+        sums_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/sums"
         params = {
             "start": start_ms,
             "end": end_ms,
+            "by_member": "true",
             "voice_states[]": "normal",
-            "limit": 500,
         }
 
         try:
-            async with session.get(leaderboard_url, headers=self._headers, params=params) as resp:
+            async with session.get(sums_url, headers=self._headers, params=params) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    lb = data if isinstance(data, list) else data.get("data", [])
-                    self._leaderboard_cache[guild_id] = (now, lb)
-                    return lb
+                    raw_list = data if isinstance(data, list) else data.get("data", [])
+                    
+                    # Sorteer op 'count' (aantal minuten) van hoog naar laag
+                    sorted_lb = sorted(
+                        [e for e in raw_list if (e.get("count") or 0) > 0],
+                        key=lambda x: x.get("count", 0),
+                        reverse=True,
+                    )
+                    self._leaderboard_cache[guild_id] = (now, sorted_lb)
+                    return sorted_lb
         except Exception:
             pass
 
@@ -59,7 +66,7 @@ class StatbotClient:
         now_ms = int(time.time() * 1000)
         start_ms = now_ms - (days * 24 * 60 * 60 * 1000)
 
-        # 1. Totale voice tijd (gefilterd op normal)
+        # 1. Totale voice tijd voor specifieke gebruiker
         sums_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/sums"
         sums_params = {
             "start": start_ms,
@@ -93,11 +100,11 @@ class StatbotClient:
         total_minutes = sums_data.get("count", 0) if isinstance(sums_data, dict) else 0
         total_hours = round(total_minutes / 60, 1)
 
-        # 3. Server Rang & Percentiel bepalen
+        # 3. Exacte Rang (#X van Y) en Percentiel bepalen
         leaderboard = await self._get_guild_leaderboard(guild_id, start_ms, now_ms)
         rank = None
         total_active_members = len(leaderboard)
-        top_pct = None
+        top_pct_str = "-"
 
         user_id_str = str(user_id)
         for idx, entry in enumerate(leaderboard, start=1):
@@ -106,18 +113,18 @@ class StatbotClient:
                 rank = idx
                 break
 
-        if rank and total_active_members > 0:
+        if rank is not None and total_active_members > 0:
             top_pct = max(1, round((rank / total_active_members) * 100))
             rank_str = f"#{rank} van {total_active_members}"
             top_pct_str = f"Top {top_pct}%"
         elif total_hours > 0:
-            rank_str = "Actief"
-            top_pct_str = "Geplaatst"
+            rank_str = "#1+"
+            top_pct_str = "-"
         else:
-            rank_str = "Geen Rang"
+            rank_str = "-"
             top_pct_str = "-"
 
-        # 4. Verwerk uur- en weekdagverdeling
+        # 4. Uur- en weekdagverdeling parsen
         data_points = series_data if isinstance(series_data, list) else series_data.get("data", [])
         hour_bins = [0] * 24
         weekday_bins = [0] * 7  # 0=Maandag ... 6=Zondag
@@ -144,7 +151,7 @@ class StatbotClient:
         else:
             peak_str = "-"
 
-        # 6. Gewoontes & Weekend aandeel
+        # 6. Weekend percentage berekenen
         weekend_mins = weekday_bins[4] + weekday_bins[5] + weekday_bins[6]
         total_tracked_mins = sum(weekday_bins) or total_minutes or 1
         weekend_pct = round((weekend_mins / total_tracked_mins) * 100)
@@ -153,7 +160,7 @@ class StatbotClient:
         evening_mins = sum(hour_bins[18:23])
         day_mins = sum(hour_bins[6:18])
 
-        # 7. Persona bepaling
+        # 7. Persona toekennen
         if total_hours < 0.5:
             persona = "Stille Luisteraar"
             activity_label = "Weinig activiteit"
