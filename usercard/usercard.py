@@ -7,6 +7,7 @@ import typing  # isort:skip
 import asyncio
 import functools
 import io
+import time
 from pathlib import Path
 from datetime import datetime
 
@@ -27,6 +28,7 @@ class usercard(Cog):
         self.Frappeclient = None
         self.api_key = None
         self.api_secret = None
+        self._latest_event_cache: typing.Optional[typing.Tuple[float, int]] = None
 
         self.font_path: Path = bundled_data_path(self) / "arial.ttf"
         self.bold_font_path: Path = bundled_data_path(self) / "arial_bold.ttf"
@@ -36,7 +38,7 @@ class usercard(Cog):
         }
         self.bold_font: typing.Dict[int, ImageFont.ImageFont] = {
             size: ImageFont.truetype(str(self.bold_font_path), size=size)
-            for size in {30, 36, 40, 50, 60}
+            for size in {30, 32, 36, 40, 50, 60}
         }
         self.font_to_remove_unprintable_characters: TTFont = TTFont(self.font_path)
         self.icons: typing.Dict[str, Path] = {
@@ -64,6 +66,35 @@ class usercard(Cog):
     async def cog_unload(self) -> None:
         self.font_to_remove_unprintable_characters.close()
         await super().cog_unload()
+
+    def get_latest_event_number(self, fallback_max: int = 0) -> int:
+        """Haalt het hoogste eventnummer op uit Frappe (met 1 uur cache)."""
+        now = time.time()
+        if self._latest_event_cache:
+            cache_time, cached_val = self._latest_event_cache
+            if now - cache_time < 3600:
+                return max(cached_val, fallback_max)
+
+        if not self.Frappeclient:
+            return fallback_max
+
+        try:
+            docs = self.Frappeclient.get_list('Event', fields=['name', 'title'], limit_page_length=100)
+            max_num = fallback_max
+            for doc in docs:
+                title = doc.get('title') or doc.get('name') or ''
+                if 'event' in title.lower():
+                    parts = title.split()
+                    for p in parts:
+                        cleaned = p.strip(":#- ")
+                        if cleaned.isdigit():
+                            max_num = max(max_num, int(cleaned))
+            self._latest_event_cache = (now, max_num)
+            return max_num
+        except Exception:
+            pass
+
+        return fallback_max
 
     def get_frappe_member_data(self, discord_id):
         """Haalt member data op en logt automatisch opnieuw in als de sessie verlopen is."""
@@ -363,6 +394,7 @@ class usercard(Cog):
             member = self.get_frappe_member_data(_object.id)
 
             if member:
+                # 1. Bovenste Kaart: Lidmaatschap
                 draw.rounded_rectangle((1306 - 125, 204, 1912, 585), radius=15, fill=(47, 49, 54))
                 align_text_center(
                     (1325 - 125, 214, 1325 - 125, 284),
@@ -402,15 +434,19 @@ class usercard(Cog):
                     font=self.font[36],
                 )
 
-                # Events
+                # 2. Onderste Kaart: Events
                 events = 0
                 highest_event_value = 0
+                attended_events_set = set()
+
                 if member.get("custom_events"):
                     for item in member.get("custom_events"):
-                        if item['event_bezocht'] not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
+                        event_name = item.get('event_bezocht', '')
+                        if event_name not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
                             events += 1
                             try:
-                                event_value = int(item["event_bezocht"].split()[1].strip(":"))
+                                event_value = int(event_name.split()[1].strip(":"))
+                                attended_events_set.add(event_value)
                                 if event_value > highest_event_value:
                                     highest_event_value = event_value
                             except (IndexError, ValueError):
@@ -426,6 +462,8 @@ class usercard(Cog):
                 image = Image.open(self.icons["game"])
                 image = image.resize((70, 70))
                 img.paste(image, (1822, 625, 1892, 695), mask=image.split()[3])
+
+                # Row 1: Totaal
                 draw.rounded_rectangle((1326 - 125, 712, 1892, 829), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1326 - 125, 712, 1601 - 125, 829), radius=15, fill=(24, 26, 27))
                 align_text_center(
@@ -437,6 +475,8 @@ class usercard(Cog):
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
+
+                # Row 2: Laatste Event + 10 Bolletjes
                 draw.rounded_rectangle((1326 - 125, 859, 1892, 976), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1326 - 125, 859, 1601 - 125, 976), radius=15, fill=(24, 26, 27))
                 align_text_center(
@@ -445,12 +485,38 @@ class usercard(Cog):
                     fill=(255, 255, 255),
                     font=self.bold_font[36],
                 )
+
+                # Tekst: "Event X"
+                last_event_str = f"Event {highest_event_value}" if highest_event_value > 0 else "-"
                 align_text_center(
-                    (1601 - 125, 859, 1892, 976),
-                    text=f"{'Event ' + str(highest_event_value) if highest_event_value > 0 else '-'}",
+                    (1601 - 125, 863, 1892, 915),
+                    text=last_event_str,
                     fill=(255, 255, 255),
-                    font=self.font[36],
+                    font=self.bold_font[30],
                 )
+
+                # 10 Bolletjes voor de afgelopen 10 community events
+                latest_global_event = max(self.get_latest_event_number(highest_event_value), highest_event_value, 10)
+                last_10_events = list(range(latest_global_event - 9, latest_global_event + 1))
+
+                dot_diameter = 14
+                dot_spacing = 26
+                total_dots_w = (9 * dot_spacing) + dot_diameter
+                start_dot_x = 1684 - int(total_dots_w / 2)
+                dot_y = 932
+
+                for k, ev_num in enumerate(last_10_events):
+                    dx1 = start_dot_x + (k * dot_spacing)
+                    dy1 = dot_y
+                    dx2 = dx1 + dot_diameter
+                    dy2 = dy1 + dot_diameter
+
+                    if ev_num in attended_events_set:
+                        # Ingevuld (Bezocht) in Discord Blurple
+                        draw.ellipse((dx1, dy1, dx2, dy2), fill=(88, 101, 242))
+                    else:
+                        # Niet bezocht: donker rondje met subtiele rand
+                        draw.ellipse((dx1, dy1, dx2, dy2), fill=(47, 49, 54), outline=(79, 84, 92), width=2)
 
                 if not to_file:
                     return img
@@ -630,7 +696,7 @@ class usercard(Cog):
                 h_x = bx + int((65 - (h_box[2] - h_box[0])) / 2)
                 draw.text((h_x, 905 - bar_h - 32), text=h_str, fill=(200, 200, 200), font=self.font[28])
 
-        # --- VOETNOOT LINKSONDERIN ---
+        # Voetnoot linksonderin
         draw.text(
             (70, 1025),
             text="* Statistieken zijn berekend op basis van de afgelopen 30 dagen",
