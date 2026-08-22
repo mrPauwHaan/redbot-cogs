@@ -162,13 +162,13 @@ class StatbotClient:
             activity_label = "Weinig activiteit"
         elif total_hours >= 40:
             persona = "VC Stamgast"
-            activity_label = "Dagelijkse aanwezigheid"
+            activity_label = "Dagelijks aanwezig"
         elif night_mins > (tracked_mins * 0.4):
             persona = "De Nachtbraker"
-            activity_label = "Nachtbraker uren"
+            activity_label = "Vooral 's nachts"
         elif weekend_pct >= 60:
             persona = "Weekend Strijder"
-            activity_label = "Hoofdzakelijk weekends"
+            activity_label = "Vooral weekends"
         elif evening_mins > day_mins:
             persona = "Prime-Time Prater"
             activity_label = "Avondspits"
