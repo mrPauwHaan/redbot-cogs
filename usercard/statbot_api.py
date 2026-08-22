@@ -23,12 +23,11 @@ class StatbotClient:
     async def get_user_voice_stats(
         self, guild_id: int, user_id: int, days: int = 30
     ) -> Dict[str, Any]:
-        """Haalt gefilterde voice data op en berekent persona, tier, activiteit en dagritme."""
         session = await self._get_session()
         now_ms = int(time.time() * 1000)
         start_ms = now_ms - (days * 24 * 60 * 60 * 1000)
 
-        # 1. Totale voice tijd (gefilterd op normale voice states)
+        # 1. Totale voice tijd
         sums_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/sums"
         sums_params = {
             "start": start_ms,
@@ -37,7 +36,7 @@ class StatbotClient:
             "voice_states[]": "normal",
         }
 
-        # 2. Uurlijkse verdeling over 30 dagen
+        # 2. Uurlijkse series
         series_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/series"
         series_params = {
             "start": start_ms,
@@ -62,39 +61,61 @@ class StatbotClient:
         total_minutes = sums_data.get("count", 0) if isinstance(sums_data, dict) else 0
         total_hours = round(total_minutes / 60, 1)
 
-        hour_bins = [0] * 24
-        weekday_bins = [0] * 7  # 0=Maandag, 6=Zondag
-
+        # Normaliseer series data lijst
+        data_points = []
         if isinstance(series_data, list):
-            for entry in series_data:
-                t_ms = entry.get("time") or entry.get("t")
-                cnt = entry.get("count") or entry.get("c", 0)
-                if t_ms and cnt:
-                    dt = datetime.fromtimestamp(t_ms / 1000, tz=timezone.utc)
+            data_points = series_data
+        elif isinstance(series_data, dict):
+            data_points = series_data.get("data") or series_data.get("series") or []
+
+        hour_bins = [0] * 24
+        weekday_bins = [0] * 7
+
+        for entry in data_points:
+            # Ondersteun verschillende timestamp formaten van Statbot
+            raw_time = entry.get("timestamp") or entry.get("time") or entry.get("t") or entry.get("start")
+            cnt = entry.get("count") or entry.get("c") or entry.get("value") or entry.get("v") or 0
+
+            if raw_time is not None and cnt:
+                try:
+                    if isinstance(raw_time, (int, float)):
+                        # Milliseconden naar seconden conversie
+                        ts = raw_time / 1000 if raw_time > 1e11 else raw_time
+                        dt = datetime.fromtimestamp(ts, tz=timezone.utc).astimezone()
+                    else:
+                        dt = datetime.fromisoformat(str(raw_time).replace("Z", "+00:00")).astimezone()
+
                     hour_bins[dt.hour] += cnt
                     weekday_bins[dt.weekday()] += cnt
+                except Exception:
+                    continue
 
-        # 3. Piekuur & Gewoonte
-        peak_hour = max(range(24), key=lambda h: hour_bins[h]) if total_minutes > 0 else None
-        peak_str = f"{peak_hour:02d}:00 - {(peak_hour + 1) % 24:02d}:00" if peak_hour is not None else "Geen data"
+        has_series_data = sum(hour_bins) > 0
 
+        # Piek uur
+        if has_series_data:
+            peak_hour = max(range(24), key=lambda h: hour_bins[h])
+            peak_str = f"{peak_hour:02d}:00 - {(peak_hour + 1) % 24:02d}:00"
+        else:
+            peak_str = "-"
+
+        # Persona & Patronen
         night_mins = sum(hour_bins[0:6]) + hour_bins[23]
         evening_mins = sum(hour_bins[18:23])
         day_mins = sum(hour_bins[6:18])
         weekend_mins = weekday_bins[4] + weekday_bins[5] + weekday_bins[6]
         weekend_pct = round((weekend_mins / total_minutes) * 100) if total_minutes > 0 else 0
 
-        # 4. Persona
-        if total_hours < 0.5:
+        if total_hours < 0.5 or not has_series_data:
             persona = "Stille Luisteraar"
             activity_label = "Weinig activiteit"
         elif total_hours >= 40:
             persona = "VC Stamgast"
             activity_label = "Dagelijkse aanwezigheid"
-        elif total_minutes > 0 and night_mins > (total_minutes * 0.4):
+        elif night_mins > (total_minutes * 0.4):
             persona = "De Nachtbraker"
             activity_label = "Nachtbraker uren"
-        elif total_minutes > 0 and weekend_pct >= 60:
+        elif weekend_pct >= 60:
             persona = "Weekend Strijder"
             activity_label = "Hoofdzakelijk weekends"
         elif evening_mins > day_mins:
@@ -104,23 +125,21 @@ class StatbotClient:
             persona = "Dagvogel"
             activity_label = "Overdag actief"
 
-        # 5. Voice Tier
+        # Tier
         if total_hours >= 35:
             tier = "Diamant"
         elif total_hours >= 20:
             tier = "Goud"
         elif total_hours >= 8:
             tier = "Zilver"
-        elif total_hours > 0:
+        elif total_hours >= 0.5:
             tier = "Brons"
         else:
             tier = "Geen Tier"
 
-        # 6. Gemiddelde
         daily_avg_mins = round(total_minutes / 30)
         daily_avg_str = f"{daily_avg_mins} min / dag" if daily_avg_mins < 60 else f"{round(total_hours / 30, 1)} uur / dag"
 
-        # 7. Normalisatie voor weekgrafiek
         max_weekday = max(weekday_bins) if max(weekday_bins) > 0 else 1
         weekday_norm = [round(w / max_weekday, 2) for w in weekday_bins]
         weekday_hours = [round(w / 60, 1) for w in weekday_bins]
