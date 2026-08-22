@@ -1,7 +1,11 @@
 import io
 import discord
 from PIL import Image, ImageDraw, ImageFont
+from redbot.core import commands
 from redbot.core.data_manager import bundled_data_path
+
+from .view import UserCardView
+from .statbot_api import StatbotClient
 
 class UserCard(commands.Cog):
     # ... existing __init__ and methods ...
