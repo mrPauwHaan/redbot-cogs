@@ -16,6 +16,7 @@ from redbot.core.data_manager import bundled_data_path
 from frappeclient import FrappeClient
 
 from .view import usercardView, WrappedView
+from .statbot_api import StatbotClient
 
 
 class usercard(Cog):
@@ -53,7 +54,7 @@ class usercard(Cog):
         frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
         self.api_key = frappe_keys.get("username")
         self.api_secret = frappe_keys.get("password")
-        
+
         if self.api_key and self.api_secret:
             self.Frappeclient = FrappeClient("https://shadowzone.nl")
             self.Frappeclient.login(self.api_key, self.api_secret)
@@ -62,7 +63,7 @@ class usercard(Cog):
 
     async def cog_unload(self) -> None:
         self.font_to_remove_unprintable_characters.close()
-        await super().cog_unload() 
+        await super().cog_unload()
 
     def get_frappe_member_data(self, discord_id):
         """Haalt member data op en logt automatisch opnieuw in als de sessie verlopen is."""
@@ -83,7 +84,7 @@ class usercard(Cog):
                         return self.Frappeclient.get_doc("Member", docs[0]['name'])
             except Exception as e2:
                 print(f"[UserCard] Herstel mislukt: {e2}")
-        
+
         return None
 
     def align_text_center(
@@ -166,19 +167,15 @@ class usercard(Cog):
     ) -> typing.Union[Image.Image, discord.File]:
         img: Image.Image = Image.new("RGBA", size, (0, 0, 0, 0))
         try:
-            # Open the background image from the icons dictionary
             image = Image.open(self.icons["background"])
             image = image.convert("RGBA").resize(size)
-            
-            # Create a mask for rounded corners (radius 50)
+
             mask = Image.new("L", size, 0)
             d = ImageDraw.Draw(mask)
             d.rounded_rectangle((0, 0, size[0], size[1]), radius=50, fill=255)
-            
-            # Paste the background image using the mask
+
             img.paste(image, (0, 0), mask=mask)
         except Exception as e:
-            # Fallback to dark gray if background.png is missing or fails
             print(f"Failed to load background: {e}")
             draw_bg = ImageDraw.Draw(img)
             draw_bg.rounded_rectangle(
@@ -187,14 +184,12 @@ class usercard(Cog):
                 fill=(32, 34, 37),
             )
 
-        # Initialize the draw object for the text that follows
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
         align_text_center = functools.partial(self.align_text_center, draw)
 
         member = self.get_frappe_member_data(_object.id)
-        
+
         if member:
-            # Member name & Member avatar.
             image = Image.open(io.BytesIO(_object_display))
             image = image.resize((140, 140))
             mask = Image.new("L", image.size, 0)
@@ -364,9 +359,7 @@ class usercard(Cog):
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
         align_text_center = functools.partial(self.align_text_center, draw)
 
-        # Data.
         if isinstance(_object, (discord.Member)):
-            # FIX: Gebruik de nieuwe slimme functie
             member = self.get_frappe_member_data(_object.id)
 
             if member:
@@ -408,11 +401,10 @@ class usercard(Cog):
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
-                
+
                 # Events
                 events = 0
                 highest_event_value = 0
-                # Veiligheidscheck: custom_events kan soms leeg zijn
                 if member.get("custom_events"):
                     for item in member.get("custom_events"):
                         if item['event_bezocht'] not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
@@ -442,9 +434,7 @@ class usercard(Cog):
                 )
                 align_text_center(
                     (1601 - 125, 712, 1892, 829),
-                    text=(
-                        str(events)
-                    ),
+                    text=str(events),
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
@@ -462,13 +452,13 @@ class usercard(Cog):
                     fill=(255, 255, 255),
                     font=self.font[36],
                 )
-        
-                if not to_file:
-                    return img
-                buffer = io.BytesIO()
-                img.save(buffer, format="png", optimize=True)
-                buffer.seek(0)
-                return discord.File(buffer, filename="image.png")
+
+        if not to_file:
+            return img
+        buffer = io.BytesIO()
+        img.save(buffer, format="png", optimize=True)
+        buffer.seek(0)
+        return discord.File(buffer, filename="image.png")
 
     async def generate_image(
         self,
@@ -479,12 +469,154 @@ class usercard(Cog):
             _object,
             size=(1942, 1096),
             to_file=False,
-        )  # (1940, 1481) / 1942 + 636
+        )
         return await asyncio.to_thread(
             self._generate_image,
             _object,
             to_file=to_file,
             img=img,
+        )
+
+    # --- VOICE STATS / STATBOT CARD GENERATOR ---
+    def _generate_stats_image(
+        self,
+        _object: discord.Member,
+        to_file: bool,
+        img: Image.Image,
+        stats: dict,
+    ) -> typing.Union[Image.Image, discord.File]:
+        draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
+        align_text_center = functools.partial(self.align_text_center, draw)
+
+        total_hours = stats.get("total_hours", 0)
+        top_channels = stats.get("top_channels", [])
+
+        # 1. Bovenste Kaart: Totale Voice Tijd
+        draw.rounded_rectangle((1306 - 125, 204, 1912, 585), radius=15, fill=(47, 49, 54))
+        align_text_center(
+            (1325 - 125, 214, 1325 - 125, 284),
+            text="Voice Activiteit",
+            fill=(255, 255, 255),
+            font=self.bold_font[40],
+        )
+
+        draw.rounded_rectangle((1325 - 125, 301, 1892, 418), radius=15, fill=(32, 34, 37))
+        draw.rounded_rectangle((1325 - 125, 301, 1588 - 125, 418), radius=15, fill=(24, 26, 27))
+        align_text_center(
+            (1326 - 125, 301, 1601 - 125, 418),
+            text="30 Dagen",
+            fill=(255, 255, 255),
+            font=self.bold_font[36],
+        )
+        align_text_center(
+            (1601 - 125, 301, 1892, 418),
+            text=f"{total_hours} uur",
+            fill=(255, 255, 255),
+            font=self.font[36],
+        )
+
+        draw.rounded_rectangle((1325 - 125, 448, 1892, 565), radius=15, fill=(32, 34, 37))
+        draw.rounded_rectangle((1325 - 125, 448, 1601 - 125, 565), radius=15, fill=(24, 26, 27))
+        align_text_center(
+            (1325 - 125, 448, 1601 - 125, 565),
+            text="Status",
+            fill=(255, 255, 255),
+            font=self.bold_font[30],
+        )
+        align_text_center(
+            (1601 - 125, 448, 1892, 565),
+            text="Actief" if total_hours > 0 else "Inactief",
+            fill=(255, 255, 255),
+            font=self.font[36],
+        )
+
+        # 2. Onderste Kaart: Top Kanalen
+        draw.rounded_rectangle((1306 - 125, 615, 1912, 996), radius=15, fill=(47, 49, 54))
+        align_text_center(
+            (1326 - 125, 625, 1326 - 125, 695),
+            text="Top Kanalen",
+            fill=(255, 255, 255),
+            font=self.bold_font[40],
+        )
+
+        # Kanaal 1
+        ch1_name, ch1_hours = "-", "-"
+        if len(top_channels) > 0:
+            ch_id, duration = top_channels[0]
+            channel = _object.guild.get_channel(int(ch_id)) if str(ch_id).isdigit() else None
+            ch1_name = channel.name if channel else f"Kanaal {ch_id}"
+            ch1_hours = f"{round(duration / 3600, 1)} uur"
+
+        draw.rounded_rectangle((1326 - 125, 712, 1892, 829), radius=15, fill=(32, 34, 37))
+        draw.rounded_rectangle((1326 - 125, 712, 1601 - 125, 829), radius=15, fill=(24, 26, 27))
+        align_text_center(
+            (1326 - 125, 712, 1601 - 125, 829),
+            text=(ch1_name[:12] + "...") if len(ch1_name) > 12 else ch1_name,
+            fill=(255, 255, 255),
+            font=self.bold_font[30],
+        )
+        align_text_center(
+            (1601 - 125, 712, 1892, 829),
+            text=ch1_hours,
+            fill=(255, 255, 255),
+            font=self.font[36],
+        )
+
+        # Kanaal 2
+        ch2_name, ch2_hours = "-", "-"
+        if len(top_channels) > 1:
+            ch_id, duration = top_channels[1]
+            channel = _object.guild.get_channel(int(ch_id)) if str(ch_id).isdigit() else None
+            ch2_name = channel.name if channel else f"Kanaal {ch_id}"
+            ch2_hours = f"{round(duration / 3600, 1)} uur"
+
+        draw.rounded_rectangle((1326 - 125, 859, 1892, 976), radius=15, fill=(32, 34, 37))
+        draw.rounded_rectangle((1326 - 125, 859, 1601 - 125, 976), radius=15, fill=(24, 26, 27))
+        align_text_center(
+            (1326 - 125, 859, 1601 - 125, 976),
+            text=(ch2_name[:12] + "...") if len(ch2_name) > 12 else ch2_name,
+            fill=(255, 255, 255),
+            font=self.bold_font[30],
+        )
+        align_text_center(
+            (1601 - 125, 859, 1892, 976),
+            text=ch2_hours,
+            fill=(255, 255, 255),
+            font=self.font[36],
+        )
+
+        if not to_file:
+            return img
+        buffer = io.BytesIO()
+        img.save(buffer, format="png", optimize=True)
+        buffer.seek(0)
+        return discord.File(buffer, filename="image.png")
+
+    async def generate_stats_image(
+        self,
+        _object: discord.Member,
+        to_file: bool = True,
+    ) -> typing.Union[Image.Image, discord.File]:
+        img: Image.Image = await self.generate_prefix_image(
+            _object,
+            size=(1942, 1096),
+            to_file=False,
+        )
+
+        # Haal token op en vraag stats op via StatbotClient
+        api_tokens = await self.bot.get_shared_api_tokens("statbot")
+        api_key = api_tokens.get("api_key", "")
+
+        client = StatbotClient(api_key=api_key)
+        stats = await client.get_user_voice_stats(_object.guild.id, _object.id, days=30)
+        await client.close()
+
+        return await asyncio.to_thread(
+            self._generate_stats_image,
+            _object,
+            to_file=to_file,
+            img=img,
+            stats=stats,
         )
 
     # --- WRAPPED IMAGE GENERATOR ---
@@ -493,36 +625,28 @@ class usercard(Cog):
         _object: discord.Member,
         to_file: bool = True,
     ) -> typing.Union[Image.Image, discord.File]:
-        
-        # 1. Canvas
-        size = (1000, 500) 
+        size = (1000, 500)
         img = Image.new("RGBA", size, (0, 0, 0, 0))
-        
-        # 2. Background
-        # You can eventually use self.icons["wrapped_background"] here
-        draw = ImageDraw.Draw(img)
-        draw.rounded_rectangle((0, 0, size[0], size[1]), radius=20, fill=(25, 20, 20)) # Darker background
 
-        # 3. Text & Stats
+        draw = ImageDraw.Draw(img)
+        draw.rounded_rectangle((0, 0, size[0], size[1]), radius=20, fill=(25, 20, 20))
+
         draw.text((50, 50), "Shadowzone Wrapped", fill=(255, 255, 255), font=self.bold_font[40])
         draw.text((50, 120), _object.display_name, fill=(255, 255, 255), font=self.bold_font[50])
 
-        # Example stat placeholders
         draw.text((50, 250), "Messages: -", fill=(200, 200, 200), font=self.font[36])
         draw.text((50, 300), "Voice Hours: -", fill=(200, 200, 200), font=self.font[36])
 
-        # 4. Avatar (Circular)
         avatar_asset = _object.display_avatar.with_size(128)
         avatar_data = await avatar_asset.read()
         avatar_img = Image.open(io.BytesIO(avatar_data)).resize((150, 150))
-        
+
         mask = Image.new("L", (150, 150), 0)
         draw_mask = ImageDraw.Draw(mask)
         draw_mask.ellipse((0, 0, 150, 150), fill=255)
-        
+
         img.paste(avatar_img, (800, 50), mask=mask)
 
-        # 5. Return
         if not to_file:
             return img
         buffer = io.BytesIO()
@@ -545,7 +669,7 @@ class usercard(Cog):
                 cog=self,
                 _object=member,
             ).start(ctx, command='card')
-        else: 
+        else:
             await ctx.send('Niet mogelijk voor bot')
 
     @commands.guild_only()
@@ -563,9 +687,9 @@ class usercard(Cog):
                 cog=self,
                 _object=member,
             ).start(ctx, command='id')
-        else: 
+        else:
             await ctx.send('Niet mogelijk voor bot')
-    
+
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
     @commands.hybrid_command(name="wrapped", description="Jouw stats van afgelopen jaar")
@@ -581,5 +705,5 @@ class usercard(Cog):
                 cog=self,
                 _object=member,
             ).start(ctx)
-        else: 
+        else:
             await ctx.send('Niet mogelijk voor bot')

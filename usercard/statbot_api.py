@@ -22,12 +22,12 @@ class StatbotClient:
     async def get_user_voice_stats(
         self, guild_id: int, user_id: int, days: int = 30
     ) -> Dict[str, Any]:
-        """Fetches total voice time and top channels for a user over a rolling window."""
+        """Haalt totale voice tijd en top kanalen op voor een gebruiker."""
         session = await self._get_session()
         now_ms = int(time.time() * 1000)
         start_ms = now_ms - (days * 24 * 60 * 60 * 1000)
 
-        # 1. Total voice duration sum
+        # 1. Totale voice tijd
         sums_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/sums"
         sums_params = {
             "start": start_ms,
@@ -36,7 +36,7 @@ class StatbotClient:
             "voice_states[]": "normal",
         }
 
-        # 2. Voice duration breakdown by channel
+        # 2. Kanaal uitsplitsing
         series_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/series"
         series_params = {
             "start": start_ms,
@@ -47,17 +47,13 @@ class StatbotClient:
         }
 
         try:
-            async with session.get(
-                sums_url, headers=self._headers, params=sums_params
-            ) as resp:
+            async with session.get(sums_url, headers=self._headers, params=sums_params) as resp:
                 sums_data = await resp.json() if resp.status == 200 else {}
         except Exception:
             sums_data = {}
 
         try:
-            async with session.get(
-                series_url, headers=self._headers, params=series_params
-            ) as resp:
+            async with session.get(series_url, headers=self._headers, params=series_params) as resp:
                 series_data = await resp.json() if resp.status == 200 else []
         except Exception:
             series_data = []
@@ -72,10 +68,9 @@ class StatbotClient:
         sorted_channels = sorted(channel_totals.items(), key=lambda x: x[1], reverse=True)
 
         return {
-            "timeframe_days": days,
             "total_seconds": total_seconds,
             "total_hours": round(total_seconds / 3600, 1),
-            "top_channels": sorted_channels[:3],
+            "top_channels": sorted_channels[:2],
         }
 
     async def close(self):
