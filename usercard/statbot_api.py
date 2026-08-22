@@ -41,6 +41,7 @@ class StatbotClient:
             ("voice_states[]", "normal"),
             ("whitelist_roles[]", self.WHITELIST_ROLES[0]),
             ("whitelist_roles[]", self.WHITELIST_ROLES[1]),
+            ("limit", "100"),
         ]
 
         try:
@@ -184,23 +185,18 @@ class StatbotClient:
         )
 
         # 8. Gemiddelde per specifieke weekdag berekenen
-        # Tel exact hoeveel maandagen, dinsdagen, etc. er in de afgelopen 30 dagen zaten
         end_dt = datetime.fromtimestamp(now_ms / 1000, tz=timezone.utc).astimezone()
         weekday_occurrences = [0] * 7
         for d in range(days):
             day_dt = end_dt - timedelta(days=d)
             weekday_occurrences[day_dt.weekday()] += 1
 
-        # Bereken het gemiddelde aantal minuten per weekdag
         avg_weekday_mins = [
             (weekday_bins[i] / max(weekday_occurrences[i], 1))
             for i in range(7)
         ]
 
-        # Converteer gemiddelde naar uren (1 decimaal)
         weekday_hours = [round(m / 60, 1) for m in avg_weekday_mins]
-
-        # Normaliseer staafhoogtes op basis van de hoogste gemiddelde dag
         max_avg_val = max(avg_weekday_mins) if max(avg_weekday_mins) > 0 else 1
         weekday_norm = [round(m / max_avg_val, 2) for m in avg_weekday_mins]
 

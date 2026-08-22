@@ -221,21 +221,26 @@ class usercard(Cog):
         member = self.get_frappe_member_data(_object.id)
 
         if member:
-            image = Image.open(io.BytesIO(_object_display))
-            image = image.resize((140, 140))
-            mask = Image.new("L", image.size, 0)
-            d = ImageDraw.Draw(mask)
-            d.rounded_rectangle(
-                (0, 0, image.width, image.height),
-                radius=20,
-                fill=255,
-            )
-            try:
-                img.paste(
-                    image, (30, 478, 170, 618), mask=ImageChops.multiply(mask, image.split()[3])
-                )
-            except IndexError:
-                img.paste(image, (30, 478, 170, 618), mask=mask)
+            if _object_display:
+                try:
+                    image = Image.open(io.BytesIO(_object_display))
+                    image = image.resize((140, 140))
+                    mask = Image.new("L", image.size, 0)
+                    d = ImageDraw.Draw(mask)
+                    d.rounded_rectangle(
+                        (0, 0, image.width, image.height),
+                        radius=20,
+                        fill=255,
+                    )
+                    try:
+                        img.paste(
+                            image, (30, 478, 170, 618), mask=ImageChops.multiply(mask, image.split()[3])
+                        )
+                    except IndexError:
+                        img.paste(image, (30, 478, 170, 618), mask=mask)
+                except Exception:
+                    pass
+
             if (
                 sum(
                     (
@@ -307,9 +312,13 @@ class usercard(Cog):
             )
 
             # Guild name & Guild icon.
-            image = Image.open(self.icons["logo"])
-            image = image.resize((55, 55))
-            img.paste(image, (30, 30, 85, 85), mask=image.split()[3])
+            try:
+                image = Image.open(self.icons["logo"])
+                image = image.resize((55, 55))
+                img.paste(image, (30, 30, 85, 85), mask=image.split()[3])
+            except Exception:
+                pass
+
             draw.text(
                 (105, 30),
                 text='Shadowzone Gaming',
@@ -402,9 +411,13 @@ class usercard(Cog):
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
-                image = Image.open(self.icons["person"])
-                image = image.resize((70, 70))
-                img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
+                try:
+                    image = Image.open(self.icons["person"])
+                    image = image.resize((70, 70))
+                    img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
+                except Exception:
+                    pass
+
                 draw.rounded_rectangle((1325 - 125, 301, 1892, 418), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1325 - 125, 301, 1588 - 125, 418), radius=15, fill=(24, 26, 27))
                 align_text_center(
@@ -441,8 +454,8 @@ class usercard(Cog):
 
                 if member.get("custom_events"):
                     for item in member.get("custom_events"):
-                        event_name = item.get('event_bezocht', '')
-                        if event_name not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
+                        event_name = item.get('event_bezocht') or ''
+                        if event_name and event_name not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
                             events += 1
                             try:
                                 event_value = int(event_name.split()[1].strip(":"))
@@ -459,9 +472,12 @@ class usercard(Cog):
                     fill=(255, 255, 255),
                     font=self.bold_font[40],
                 )
-                image = Image.open(self.icons["game"])
-                image = image.resize((70, 70))
-                img.paste(image, (1822, 625, 1892, 695), mask=image.split()[3])
+                try:
+                    image = Image.open(self.icons["game"])
+                    image = image.resize((70, 70))
+                    img.paste(image, (1822, 625, 1892, 695), mask=image.split()[3])
+                except Exception:
+                    pass
 
                 # Row 1: Totaal
                 draw.rounded_rectangle((1326 - 125, 712, 1892, 829), radius=15, fill=(32, 34, 37))
@@ -514,7 +530,6 @@ class usercard(Cog):
                     if ev_num in attended_events_set:
                         draw.ellipse((dx1, dy1, dx2, dy2), fill=(255, 5, 2))
                     else:
-                        # Niet bezocht: donker rondje met subtiele rand
                         draw.ellipse((dx1, dy1, dx2, dy2), fill=(47, 49, 54), outline=(79, 84, 92), width=2)
 
                 if not to_file:
@@ -618,7 +633,7 @@ class usercard(Cog):
         align_text_center((80, 301, 380, 418), text="Rang", fill=(255, 255, 255), font=self.bold_font[36])
         align_text_center((380, 301, 920, 418), text=stats.get("rank_str", "-"), fill=(255, 255, 255), font=self.bold_font[36])
 
-        # Row 2: Totaal Uren (puur het aantal uren)
+        # Row 2: Totaal Uren
         draw.rounded_rectangle((80, 448, 920, 565), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 448, 380, 565), radius=15, fill=(24, 26, 27))
         align_text_center((80, 448, 380, 565), text="Totaal", fill=(255, 255, 255), font=self.bold_font[30])
