@@ -36,11 +36,11 @@ class usercard(commands.Cog):
         self.bold_font_path: Path = bundled_data_path(self) / "arial_bold.ttf"
         self.font: typing.Dict[int, ImageFont.ImageFont] = {
             size: ImageFont.truetype(str(self.font_path), size=size)
-            for size in {24, 28, 30, 32, 36, 40, 54}
+            for size in {24, 26, 28, 30, 32, 34, 36, 40, 54}
         }
         self.bold_font: typing.Dict[int, ImageFont.ImageFont] = {
             size: ImageFont.truetype(str(self.bold_font_path), size=size)
-            for size in {24, 26, 30, 32, 36, 40, 50, 60}
+            for size in {24, 26, 28, 30, 32, 34, 36, 40, 50, 60}
         }
         self.font_to_remove_unprintable_characters: TTFont = TTFont(self.font_path)
         self.icons: typing.Dict[str, Path] = {
@@ -88,29 +88,21 @@ class usercard(commands.Cog):
             return str(date_str)
 
     def format_membership_duration(self, start_date_str: typing.Optional[str]) -> str:
-        """Berekent het aantal jaren en maanden lidmaatschap of betrokkenheid."""
+        """Berekent het aantal volledige jaren (naar beneden afgerond)."""
         if not start_date_str:
             return ""
         try:
             start_date = datetime.strptime(str(start_date_str).strip(), "%Y-%m-%d").date()
             today = datetime.now().date()
 
-            years = today.year - start_date.year
-            months = today.month - start_date.month
-            if today.day < start_date.day:
-                months -= 1
-            if months < 0:
-                years -= 1
-                months += 12
+            years = today.year - start_date.year - ((today.month, today.day) < (start_date.month, start_date.day))
 
-            if years == 0:
-                if months == 0:
-                    return "< 1 maand"
-                return f"{months} {'maand' if months == 1 else 'maanden'}"
-            elif months == 0:
-                return f"{years} jaar"
+            if years < 1:
+                return "< 1 jaar"
+            elif years == 1:
+                return "1 jaar"
             else:
-                return f"{years} jaar, {months} mnd"
+                return f"{years} jaar"
         except Exception:
             return ""
 
@@ -224,7 +216,7 @@ class usercard(commands.Cog):
         y = int((y2 - y1 - text_size[3]) / 2)
         y = max(y, 0)
         if font in self.bold_font.values():
-            y -= 5
+            y -= 4
         draw.text((x1 + x, y1 + y), text=text, fill=fill, font=font)
         return text_size
 
@@ -279,7 +271,7 @@ class usercard(commands.Cog):
         text_x = start_x + lock_w + gap
         text_y = center_y - int(text_h / 2)
         if use_font in self.bold_font.values():
-            text_y -= 5
+            text_y -= 4
         draw.text((text_x, text_y), text=text, fill=fill, font=use_font)
 
     def remove_unprintable_characters(self, text: str) -> str:
@@ -441,12 +433,12 @@ class usercard(commands.Cog):
             if is_active_member:
                 if start_date_raw:
                     formatted_start_date = self.format_date_nl(start_date_raw)
-                    start_duration_str = f"({self.format_membership_duration(start_date_raw)})"
+                    start_duration = self.format_membership_duration(start_date_raw)
 
-                    # Datum boven
-                    align_text_center((1601 - 125, 308, 1892, 360), text=formatted_start_date, fill=(255, 255, 255), font=self.font[32])
-                    # Duur onder (subtiel grijs)
-                    align_text_center((1601 - 125, 360, 1892, 410), text=start_duration_str, fill=(163, 163, 163), font=self.font[28])
+                    # Duur bovenin in wit
+                    align_text_center((1601 - 125, 308, 1892, 362), text=start_duration, fill=(255, 255, 255), font=self.bold_font[34])
+                    # Sinds datum onderin in subtiel grijs
+                    align_text_center((1601 - 125, 360, 1892, 412), text=f"sinds {formatted_start_date}", fill=(163, 163, 163), font=self.font[26])
                 else:
                     align_text_center((1601 - 125, 301, 1892, 418), text="-", fill=(255, 255, 255), font=self.font[36])
             else:
@@ -460,12 +452,12 @@ class usercard(commands.Cog):
             if is_active_member:
                 if betrokken_date_raw:
                     formatted_betrokken_date = self.format_date_nl(betrokken_date_raw)
-                    betrokken_duration_str = f"({self.format_membership_duration(betrokken_date_raw)})"
+                    betrokken_duration = self.format_membership_duration(betrokken_date_raw)
 
-                    # Datum boven
-                    align_text_center((1601 - 125, 455, 1892, 507), text=formatted_betrokken_date, fill=(255, 255, 255), font=self.font[32])
-                    # Duur onder (subtiel grijs)
-                    align_text_center((1601 - 125, 507, 1892, 557), text=betrokken_duration_str, fill=(163, 163, 163), font=self.font[28])
+                    # Duur bovenin in wit
+                    align_text_center((1601 - 125, 455, 1892, 509), text=betrokken_duration, fill=(255, 255, 255), font=self.bold_font[34])
+                    # Sinds datum onderin in subtiel grijs
+                    align_text_center((1601 - 125, 507, 1892, 559), text=f"sinds {formatted_betrokken_date}", fill=(163, 163, 163), font=self.font[26])
                 else:
                     align_text_center((1601 - 125, 448, 1892, 565), text="-", fill=(255, 255, 255), font=self.font[36])
             else:
@@ -573,7 +565,7 @@ class usercard(commands.Cog):
             img.paste(bg_image, (0, 0), mask=mask)
         except Exception:
             draw_bg = ImageDraw.Draw(img)
-            draw_bg.rounded_rectangle((0, 0, size[0], size[1]), radius=50, fill=(32, 34, 37))
+            draw_bg.rounded_rectangle((0, 0, img.width, img.height), radius=50, fill=(32, 34, 37))
 
         draw = ImageDraw.Draw(img)
         align_text_center = functools.partial(self.align_text_center, draw)
