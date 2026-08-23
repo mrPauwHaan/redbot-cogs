@@ -22,6 +22,8 @@ from .statbot_api import StatbotClient
 class usercard(commands.Cog):
     """A cog to generate user cards, monthly stats, and yearly wrapped images."""
 
+    WHITELIST_ROLES = [724556731564163082, 563348666312687618]
+
     def __init__(self, bot: Red) -> None:
         super().__init__()
         self.bot: Red = bot
@@ -64,6 +66,12 @@ class usercard(commands.Cog):
 
     async def cog_unload(self) -> None:
         self.font_to_remove_unprintable_characters.close()
+
+    def is_member(self, member: discord.Member) -> bool:
+        """Controleert strikt op basis van actieve Discord-rollen of iemand Lid/SZG+ is."""
+        if not isinstance(member, discord.Member):
+            return False
+        return any(role.id in self.WHITELIST_ROLES for role in getattr(member, 'roles', []))
 
     def get_latest_event_number(self, fallback_max: int = 0) -> int:
         """Haalt het hoogste afgelopen eventnummer op uit Frappe 'Beheer events' (1 uur cache)."""
@@ -138,13 +146,13 @@ class usercard(commands.Cog):
 
         return attended_year_events, max(total_year_events, attended_year_events)
 
-    def get_frappe_member_data(self, discord_id):
-        """Haalt member data op en logt automatisch opnieuw in als de sessie verlopen is."""
-        if not self.Frappeclient:
+    def get_frappe_member_data(self, member_obj: discord.Member):
+        """Haalt member data op, maar alleen als de gebruiker daadwerkelijk de actieve Lid/SZG+ rol heeft."""
+        if not self.is_member(member_obj) or not self.Frappeclient:
             return None
 
         try:
-            docs = self.Frappeclient.get_list('Member', fields=['name'], filters={'discord_id': str(discord_id)})
+            docs = self.Frappeclient.get_list('Member', fields=['name'], filters={'discord_id': str(member_obj.id)})
             if docs:
                 return self.Frappeclient.get_doc("Member", docs[0]['name'])
         except Exception as e:
@@ -152,7 +160,7 @@ class usercard(commands.Cog):
             try:
                 if self.api_key and self.api_secret:
                     self.Frappeclient.login(self.api_key, self.api_secret)
-                    docs = self.Frappeclient.get_list('Member', fields=['name'], filters={'discord_id': str(discord_id)})
+                    docs = self.Frappeclient.get_list('Member', fields=['name'], filters={'discord_id': str(member_obj.id)})
                     if docs:
                         return self.Frappeclient.get_doc("Member", docs[0]['name'])
             except Exception as e2:
@@ -216,9 +224,8 @@ class usercard(commands.Cog):
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
         align_text_center = functools.partial(self.align_text_center, draw)
 
-        member = self.get_frappe_member_data(_object.id)
+        member = self.get_frappe_member_data(_object)
 
-        # Avatar
         if _object_display:
             try:
                 image = Image.open(io.BytesIO(_object_display)).resize((140, 140))
@@ -232,11 +239,9 @@ class usercard(commands.Cog):
             except Exception:
                 pass
 
-        # Username
         name_clean = self.remove_unprintable_characters(_object.display_name) or _object.name
         draw.text((190, 478), text=name_clean, fill=(255, 255, 255), font=self.bold_font[50])
 
-        # Rol (Lid / SZG+ of Gast)
         if member and member.get('custom_status') == 'Actief':
             role_text = member.get('membership_type') or 'Lid'
         else:
@@ -244,7 +249,6 @@ class usercard(commands.Cog):
 
         draw.text((190, 553), text=role_text, fill=(163, 163, 163), font=self.font[54])
 
-        # Guild name & Guild icon
         try:
             image = Image.open(self.icons["logo"]).resize((55, 55))
             img.paste(image, (30, 30, 85, 85), mask=image.split()[3])
@@ -306,7 +310,9 @@ class usercard(commands.Cog):
         align_text_center = functools.partial(self.align_text_center, draw)
 
         if isinstance(_object, discord.Member):
-            member = self.get_frappe_member_data(_object.id)
+            member = self.get_frappe_member_data(_object)
+            is_active_member = (member is not None)
+            lock_color = (140, 145, 155)  # Donkergrijze kleur voor gasten
 
             # 1. Bovenste Kaart: Lidmaatschap
             draw.rounded_rectangle((1306 - 125, 204, 1912, 585), radius=15, fill=(47, 49, 54))
@@ -321,32 +327,46 @@ class usercard(commands.Cog):
             draw.rounded_rectangle((1325 - 125, 301, 1588 - 125, 418), radius=15, fill=(24, 26, 27))
             align_text_center((1326 - 125, 301, 1601 - 125, 418), text="Lid", fill=(255, 255, 255), font=self.bold_font[36])
 
-            if member and member.get('custom_start_lidmaatschap') and member.get('custom_status') == 'Actief' and member.get('membership_type') == 'Lid':
+            if is_active_member and member.get('custom_start_lidmaatschap') and member.get('custom_status') == 'Actief' and member.get('membership_type') == 'Lid':
                 lid_datum = datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y')
-            elif member:
+                lid_fill = (255, 255, 255)
+                lid_font = self.font[36]
+            elif is_active_member:
                 lid_datum = "-"
+                lid_fill = (255, 255, 255)
+                lid_font = self.font[36]
             else:
-                lid_datum = "Gast (Niet geregistreerd)"
+                lid_datum = "🔒 Lidmaatschap vereist"
+                lid_fill = lock_color
+                lid_font = self.font[30]
 
-            align_text_center((1601 - 125, 301, 1892, 418), text=lid_datum, fill=(255, 255, 255), font=self.font[30 if not member else 36])
+            align_text_center((1601 - 125, 301, 1892, 418), text=lid_datum, fill=lid_fill, font=lid_font)
 
             draw.rounded_rectangle((1325 - 125, 448, 1892, 565), radius=15, fill=(32, 34, 37))
             draw.rounded_rectangle((1325 - 125, 448, 1601 - 125, 565), radius=15, fill=(24, 26, 27))
             align_text_center((1325 - 125, 448, 1601 - 125, 565), text="Betrokken", fill=(255, 255, 255), font=self.bold_font[30])
 
-            if member and member.get('custom_begin_datum'):
+            if is_active_member and member.get('custom_begin_datum'):
                 betrokken_datum = datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y')
-            else:
+                betrokken_fill = (255, 255, 255)
+                betrokken_font = self.font[36]
+            elif is_active_member:
                 betrokken_datum = "-"
+                betrokken_fill = (255, 255, 255)
+                betrokken_font = self.font[36]
+            else:
+                betrokken_datum = "🔒 Lidmaatschap vereist"
+                betrokken_fill = lock_color
+                betrokken_font = self.font[30]
 
-            align_text_center((1601 - 125, 448, 1892, 565), text=betrokken_datum, fill=(255, 255, 255), font=self.font[36])
+            align_text_center((1601 - 125, 448, 1892, 565), text=betrokken_datum, fill=betrokken_fill, font=betrokken_font)
 
             # 2. Onderste Kaart: Events
             events = 0
             highest_event_value = 0
             attended_events_set = set()
 
-            if member and member.get("custom_events"):
+            if is_active_member and member.get("custom_events"):
                 for item in member.get("custom_events"):
                     event_name = item.get('event_bezocht') or ''
                     if event_name and event_name not in ('Qmusic Foute Party: 24 - 26 juni 2022', 'Vakantie: 11-18 augustus 2023'):
@@ -371,14 +391,26 @@ class usercard(commands.Cog):
             draw.rounded_rectangle((1326 - 125, 712, 1892, 829), radius=15, fill=(32, 34, 37))
             draw.rounded_rectangle((1326 - 125, 712, 1601 - 125, 829), radius=15, fill=(24, 26, 27))
             align_text_center((1326 - 125, 712, 1601 - 125, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36])
-            align_text_center((1601 - 125, 712, 1892, 829), text=str(events) if member else "-", fill=(255, 255, 255), font=self.font[36])
+            total_events_str = str(events) if is_active_member else "🔒 Lidmaatschap vereist"
+            total_events_fill = (255, 255, 255) if is_active_member else lock_color
+            total_events_font = self.font[36] if is_active_member else self.font[30]
+            align_text_center((1601 - 125, 712, 1892, 829), text=total_events_str, fill=total_events_fill, font=total_events_font)
 
             # Row 2: Laatste Event + 10 Bolletjes
             draw.rounded_rectangle((1326 - 125, 859, 1892, 976), radius=15, fill=(32, 34, 37))
             draw.rounded_rectangle((1326 - 125, 859, 1601 - 125, 976), radius=15, fill=(24, 26, 27))
             align_text_center((1326 - 125, 859, 1601 - 125, 976), text="Laatste", fill=(255, 255, 255), font=self.bold_font[36])
-            last_event_str = f"Event {highest_event_value}" if highest_event_value > 0 else "-"
-            align_text_center((1601 - 125, 863, 1892, 915), text=last_event_str, fill=(255, 255, 255), font=self.bold_font[30])
+
+            if is_active_member:
+                last_event_str = f"Event {highest_event_value}" if highest_event_value > 0 else "-"
+                last_event_fill = (255, 255, 255)
+                last_event_font = self.bold_font[30]
+            else:
+                last_event_str = "🔒 Lidmaatschap vereist"
+                last_event_fill = lock_color
+                last_event_font = self.font[30]
+
+            align_text_center((1601 - 125, 863, 1892, 915), text=last_event_str, fill=last_event_fill, font=last_event_font)
 
             latest_global_event = max(self.get_latest_event_number(highest_event_value), highest_event_value, 10)
             last_10_events = list(range(latest_global_event - 9, latest_global_event + 1))
@@ -394,7 +426,7 @@ class usercard(commands.Cog):
                 dy1 = dot_y
                 dx2 = dx1 + dot_diameter
                 dy2 = dy1 + dot_diameter
-                if ev_num in attended_events_set:
+                if is_active_member and ev_num in attended_events_set:
                     draw.ellipse((dx1, dy1, dx2, dy2), fill=(255, 5, 2))
                 else:
                     draw.ellipse((dx1, dy1, dx2, dy2), fill=(47, 49, 54), outline=(79, 84, 92), width=2)
@@ -564,13 +596,19 @@ class usercard(commands.Cog):
         self,
         _object: discord.Member,
         to_file: bool = True,
-    ) -> typing.Union[Image.Image, discord.File]:
+    ) -> typing.Union[discord.File, str]:
         api_tokens = await self.bot.get_shared_api_tokens("statbot")
         api_key = api_tokens.get("api_key", "")
 
         client = StatbotClient(api_key=api_key)
         stats = await client.get_user_voice_stats(_object.guild.id, _object.id, days=30)
         await client.close()
+
+        # Drempel: minimaal 60 minuten nodig
+        total_minutes = stats.get("total_minutes", 0)
+        if total_minutes < 60:
+            needed = 60 - total_minutes
+            return f"⏳ **Nog {needed} {'minuut' if needed == 1 else 'minuten'}** in voice om dit te ontgrendelen! *(Minimaal 1 uur activiteit vereist in de afgelopen 30 dagen)*"
 
         avatar_bytes = await _object.display_avatar.read()
         return await asyncio.to_thread(
@@ -609,6 +647,7 @@ class usercard(commands.Cog):
         align_text_center = functools.partial(self.align_text_center, draw)
 
         year = stats.get("year", datetime.now().year - 1)
+        lock_color = (140, 145, 155)
 
         # 1. Header: Avatar
         if _object_display:
@@ -691,9 +730,13 @@ class usercard(commands.Cog):
         align_text_center((80, 859, 430, 976), text="SZG Events", fill=(255, 255, 255), font=self.bold_font[32])
         if is_frappe_member:
             event_str = f"{attended_events} van de {total_events} bezocht" if total_events > 0 else (f"{attended_events} bezocht" if attended_events > 0 else "-")
+            event_fill = (255, 255, 255)
+            event_font = self.font[36]
         else:
-            event_str = "- (Lidmaatschap vereist)"
-        align_text_center((430, 859, 920, 976), text=event_str, fill=(255, 255, 255), font=self.font[32 if not is_frappe_member else 36])
+            event_str = "🔒 Lidmaatschap vereist"
+            event_fill = lock_color
+            event_font = self.font[30]
+        align_text_center((430, 859, 920, 976), text=event_str, fill=event_fill, font=event_font)
 
         # --- BOX 3 (TOP RECHTS): RITME & SEIZOENEN ---
         draw.rounded_rectangle((1000, 204, 1880, 585), radius=15, fill=(47, 49, 54))
@@ -758,7 +801,7 @@ class usercard(commands.Cog):
         self,
         _object: discord.Member,
         to_file: bool = True,
-    ) -> typing.Union[Image.Image, discord.File]:
+    ) -> typing.Union[discord.File, str]:
         target_year = datetime.now().year - 1
         api_tokens = await self.bot.get_shared_api_tokens("statbot")
         api_key = api_tokens.get("api_key", "")
@@ -767,7 +810,12 @@ class usercard(commands.Cog):
         stats = await client.get_user_wrapped_stats(_object.guild.id, _object.id, year=target_year)
         await client.close()
 
-        member = self.get_frappe_member_data(_object.id)
+        # Drempel: minimaal 60 minuten nodig
+        total_minutes = stats.get("total_minutes", 0)
+        if total_minutes < 60:
+            return f"🔒 **Niet genoeg voice activiteit** in {target_year} om een Wrapped te ontgrendelen *(minimaal 1 uur activiteit vereist in dat jaar)*."
+
+        member = self.get_frappe_member_data(_object)
         attended_events, total_events = self.get_frappe_year_events(member, target_year)
         avatar_bytes = await _object.display_avatar.read()
 

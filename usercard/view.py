@@ -14,15 +14,16 @@ class usercardView(discord.ui.View):
         self._object: discord.Member = _object
         self._message: discord.Message = None
 
-        # Link knop om direct lid te worden
-        self.add_item(
-            discord.ui.Button(
-                label="Word Lid",
-                url="https://www.shadowzone.nl/shadowzoner-worden",
-                style=discord.ButtonStyle.link,
-                emoji="🌐",
+        # Voeg 'Word Lid' knop ALLEEN toe voor gasten
+        if not self.cog.is_member(self._object):
+            self.add_item(
+                discord.ui.Button(
+                    label="Word Lid",
+                    url="https://www.shadowzone.nl/shadowzoner-worden",
+                    style=discord.ButtonStyle.link,
+                    emoji="🔓",
+                )
             )
-        )
 
     async def start(
         self,
@@ -38,8 +39,11 @@ class usercardView(discord.ui.View):
             else:
                 self._message = await self.ctx.send("Kon profiel niet laden.")
         elif command == "wrapped":
-            file = await self.cog.generate_wrapped_image(self._object, to_file=True)
-            self._message = await self.ctx.send(file=file, view=self)
+            res = await self.cog.generate_wrapped_image(self._object, to_file=True)
+            if isinstance(res, discord.File):
+                self._message = await self.ctx.send(file=res, view=self)
+            else:
+                self._message = await self.ctx.send(content=res, view=self)
         elif command == "id":
             file = await self.cog.generate_image(self._object, to_file=True)
             if file:
@@ -82,16 +86,22 @@ class usercardView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(thinking=False)
-        file: discord.File = await self.cog.generate_stats_image(self._object, to_file=True)
-        await self._message.edit(content="", attachments=[file])
+        res = await self.cog.generate_stats_image(self._object, to_file=True)
+        if isinstance(res, discord.File):
+            await self._message.edit(content="", attachments=[res])
+        else:
+            await self._message.edit(content=res, attachments=[])
 
     @discord.ui.button(emoji="🎁", custom_id="wrapped_page", style=discord.ButtonStyle.secondary)
     async def wrapped_page(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(thinking=False)
-        file: discord.File = await self.cog.generate_wrapped_image(self._object, to_file=True)
-        await self._message.edit(content="", attachments=[file])
+        res = await self.cog.generate_wrapped_image(self._object, to_file=True)
+        if isinstance(res, discord.File):
+            await self._message.edit(content="", attachments=[res])
+        else:
+            await self._message.edit(content=res, attachments=[])
 
     @discord.ui.button(emoji="🆔", custom_id="id_page", style=discord.ButtonStyle.secondary)
     async def id_page(
