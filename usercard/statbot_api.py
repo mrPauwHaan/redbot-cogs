@@ -8,7 +8,6 @@ class StatbotClient:
     BASE_URL = "https://api.statbot.net/v1"
     # Cache opgeslagen per uniek tijdsvenster (guild_id, start_ms, end_ms)
     _top_cache: Dict[Tuple[int, int, int], Tuple[float, List[Dict[str, Any]]]] = {}
-    WHITELIST_ROLES = ["724556731564163082", "563348666312687618"]
 
     def __init__(self, api_key: str, session: Optional[aiohttp.ClientSession] = None):
         self.api_key = api_key
@@ -27,13 +26,13 @@ class StatbotClient:
     async def get_top_voice_members(
         self, guild_id: int, start_ms: int, end_ms: int
     ) -> List[Dict[str, Any]]:
-        """Haalt alle actieve voice leden op gefilterd op Lid/SZG+ rollen voor een specifiek tijdvak (15 min cache)."""
+        """Haalt de top 100 actieve voice leden op van de hele server (15 min cache)."""
         now = time.time()
         cache_key = (guild_id, start_ms, end_ms)
 
         if cache_key in self._top_cache:
             cache_time, cache_data = self._top_cache[cache_key]
-            if now - cache_time < 900:  # 15 minuten cache
+            if now - cache_time < 900:
                 return cache_data
 
         session = await self._get_session()
@@ -42,8 +41,6 @@ class StatbotClient:
             ("start", str(start_ms)),
             ("end", str(end_ms)),
             ("voice_states[]", "normal"),
-            ("whitelist_roles[]", self.WHITELIST_ROLES[0]),
-            ("whitelist_roles[]", self.WHITELIST_ROLES[1]),
             ("limit", "100"),
         ]
 
@@ -103,10 +100,9 @@ class StatbotClient:
         total_minutes = sums_data.get("count", 0) if isinstance(sums_data, dict) else 0
         total_hours = round(total_minutes / 60, 1)
 
-        # 3. Positie bepalen binnen de Lid/SZG+ pool
+        # 3. Server-brede positie bepalen (top 100 of #100+)
         top_members = await self.get_top_voice_members(guild_id, start_ms, now_ms)
         rank = None
-        total_active_members = len(top_members)
         user_id_str = str(user_id)
 
         for idx, entry in enumerate(top_members, start=1):
@@ -118,12 +114,10 @@ class StatbotClient:
                     total_hours = round(total_minutes / 60, 1)
                 break
 
-        if rank is not None and total_active_members > 0:
-            rank_str = f"#{rank} van {total_active_members}"
-        elif total_active_members > 0 and total_hours > 0:
-            rank_str = f">{total_active_members}"
+        if rank is not None:
+            rank_str = f"#{rank}"
         elif total_hours > 0:
-            rank_str = "Actief"
+            rank_str = "#100+"
         else:
             rank_str = "-"
 
@@ -231,7 +225,7 @@ class StatbotClient:
     async def get_user_wrapped_stats(
         self, guild_id: int, user_id: int, year: int
     ) -> Dict[str, Any]:
-        """Haalt alle statistieken, vergelijkingen en records op voor een specifiek kalenderjaar."""
+        """Haalt alle statistieken, vergelijkingen en records op voor het recente kalenderjaar."""
         session = await self._get_session()
 
         start_dt = datetime(year, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
@@ -302,10 +296,9 @@ class StatbotClient:
         else:
             prev_diff_str = None
 
-        # 4. Jaarrang bepalen (met unieke start_ms/end_ms cache key)
+        # 4. Server-brede jaarrang bepalen
         top_members = await self.get_top_voice_members(guild_id, start_ms, end_ms)
         rank = None
-        total_active_members = len(top_members)
         user_id_str = str(user_id)
 
         for idx, entry in enumerate(top_members, start=1):
@@ -318,12 +311,10 @@ class StatbotClient:
                     total_days_vc = round(total_hours / 24, 1)
                 break
 
-        if rank is not None and total_active_members > 0:
-            rank_str = f"#{rank} van {total_active_members}"
-        elif total_active_members > 0 and total_hours > 0:
-            rank_str = f">{total_active_members}"
+        if rank is not None:
+            rank_str = f"#{rank}"
         elif total_hours > 0:
-            rank_str = "Actief"
+            rank_str = "#100+"
         else:
             rank_str = "-"
 

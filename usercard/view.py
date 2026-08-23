@@ -1,7 +1,5 @@
 from redbot.core import commands
 import discord
-import typing
-from datetime import datetime
 
 
 class usercardView(discord.ui.View):
@@ -9,33 +7,38 @@ class usercardView(discord.ui.View):
         self,
         cog: commands.Cog,
         _object: discord.Member,
-        year: typing.Optional[int] = None,
     ) -> None:
         super().__init__(timeout=60 * 60)
         self.cog: commands.Cog = cog
         self.ctx: commands.Context = None
         self._object: discord.Member = _object
         self._message: discord.Message = None
-        self.year: int = year or (datetime.now().year - 1)
+
+        # Link knop om direct lid te worden
+        self.add_item(
+            discord.ui.Button(
+                label="Word Lid",
+                url="https://www.shadowzone.nl/shadowzoner-worden",
+                style=discord.ButtonStyle.link,
+                emoji="🌐",
+            )
+        )
 
     async def start(
         self,
         ctx: commands.Context,
         command: str,
-        year: typing.Optional[int] = None,
     ) -> discord.Message:
         self.ctx = ctx
-        if year:
-            self.year = year
 
         if command == "card":
             file = await self.cog.generate_image(self._object, to_file=True)
             if file:
                 self._message = await self.ctx.send(file=file, view=self)
             else:
-                self._message = await self.ctx.send("Gebruiker niet gevonden in database")
+                self._message = await self.ctx.send("Kon profiel niet laden.")
         elif command == "wrapped":
-            file = await self.cog.generate_wrapped_image(self._object, year=self.year, to_file=True)
+            file = await self.cog.generate_wrapped_image(self._object, to_file=True)
             self._message = await self.ctx.send(file=file, view=self)
         elif command == "id":
             file = await self.cog.generate_image(self._object, to_file=True)
@@ -73,8 +76,6 @@ class usercardView(discord.ui.View):
         file = await self.cog.generate_image(self._object, to_file=True)
         if file:
             await self._message.edit(content="", attachments=[file])
-        else:
-            await self._message.edit(content="Gebruiker niet gevonden in database", attachments=[])
 
     @discord.ui.button(emoji="📊", custom_id="stats_page", style=discord.ButtonStyle.secondary)
     async def stats_page(
@@ -89,7 +90,7 @@ class usercardView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(thinking=False)
-        file: discord.File = await self.cog.generate_wrapped_image(self._object, year=self.year, to_file=True)
+        file: discord.File = await self.cog.generate_wrapped_image(self._object, to_file=True)
         await self._message.edit(content="", attachments=[file])
 
     @discord.ui.button(emoji="🆔", custom_id="id_page", style=discord.ButtonStyle.secondary)
