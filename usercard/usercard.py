@@ -23,7 +23,8 @@ class usercard(commands.Cog):
     """A cog to generate images"""
 
     def __init__(self, bot: Red) -> None:
-        super().__init__(bot=bot)
+        super().__init__()
+        self.bot = bot
         self.Frappeclient = None
         self.api_key = None
         self.api_secret = None
