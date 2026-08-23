@@ -151,94 +151,150 @@ class automatedevents(commands.Cog):
             if str(birthdaymember.id) not in today_birthdays_discord_ids:
                 await birthdaymember.remove_roles(role, reason="Verjaardag voorbij")
 
+    def _add_one_year(dt: datetime.datetime) -> datetime.datetime:
+        """Voegt veilig 1 jaar toe en vangt 29 februari op bij schrikkeljaren."""
+        try:
+            return dt.replace(year=dt.year + 1)
+        except ValueError:
+            # 29 februari in een schrikkeljaar -> val terug op 28 februari volgend jaar
+            return dt.replace(year=dt.year + 1, day=28)
+
     async def _serverevents(self, ctx: commands.Context = None):
         """Maak server events gepland via de database"""
-        response = self.Frappeclient.get_list('Discord events', fields = ['*'], filters = {'concept': 0}, limit_page_length=float('inf'))
-        if response:
-            guild = self.bot.get_guild(self.target_guild_id)
-            image_data = None
-            for event in response:
-                if event['end_time'] and datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S') >= datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S'):
-                    self.log.error(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
-                    doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
-                    doc_to_update['status'] = 'Starttijd moet voor eindtijd zijn'
-                    self.Frappeclient.update(doc_to_update)
-                    continue
+        # Haal lijst op (eventueel via asyncio.to_thread als Frappeclient synchroon is)
+        response = self.Frappeclient.get_list(
+            'Discord events', 
+            fields=['*'], 
+            filters={'concept': 0}, 
+            limit_page_length=float('inf')
+        )
+        if not response:
+            return
+
+        guild = self.bot.get_guild(self.target_guild_id)
+        if not guild:
+            self.log.error(f"Guild met ID {self.target_guild_id} niet gevonden.")
+            return
+
+        now_local = datetime.datetime.now(self.local_timezone)
+        date_format = '%Y-%m-%d %H:%M:%S'
+
+        for event in response:
+            # 1. Parse datums eenmalig
+            try:
+                dt_start_naive = datetime.datetime.strptime(event['start_time'], date_format)
+                dt_start_local = self.local_timezone.localize(dt_start_naive)
+            except (ValueError, TypeError, KeyError) as e:
+                self.log.error(f"[{event.get('title', 'Onbekend')}] Ongeldige start_time: {e}")
+                continue
+
+            dt_end_local = None
+            if event.get('end_time'):
+                try:
+                    dt_end_naive = datetime.datetime.strptime(event['end_time'], date_format)
+                    dt_end_local = self.local_timezone.localize(dt_end_naive)
+                except ValueError:
+                    pass
+
+            # 2. Validatie start- en eindtijd
+            if dt_end_local and dt_start_local >= dt_end_local:
+                self.log.error(f"[{event['title']}] Starttijd moet voor eindtijd zijn")
+                doc = self.Frappeclient.get_doc('Discord events', event['name'])
+                doc['status'] = 'Starttijd moet voor eindtijd zijn'
+                self.Frappeclient.update(doc)
+                continue
+
+            if dt_start_local <= now_local:
+                doc = self.Frappeclient.get_doc('Discord events', event['name'])
+                doc['status'] = 'Starttijd moet in de toekomst zijn'
+                self.Frappeclient.update(doc)
+                self.log.error(f"[{event['title']}] Starttijd van nieuwe events kan niet in het verleden liggen")
+                continue
+
+            # 3. Controleer creatiedatum
+            if event.get('date_create'):
+                try:
+                    dt_create_naive = datetime.datetime.strptime(event['date_create'], date_format)
+                    dt_create_local = self.local_timezone.localize(dt_create_naive)
+                    if dt_create_local > now_local:
+                        continue  # Nog niet publiceren
+                except ValueError:
+                    pass
+
+            # 4. Stel Discord event payload samen
+            event_args = {
+                "name": event['title'],
+                "description": event.get('description') or '',
+                "start_time": dt_start_local.astimezone(datetime.timezone.utc),
+                "end_time": dt_end_local.astimezone(datetime.timezone.utc) if dt_end_local else None,
+                "privacy_level": discord.PrivacyLevel.guild_only,
+            }
+
+            # Afbeelding downloaden indien aanwezig
+            if event.get('image'):
+                image_url = "http://shadowzone.nl/" + event['image']
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(image_url) as resp:
+                        if resp.status == 200:
+                            event_args["image"] = await resp.read()
+                        else:
+                            self.log.error(f"[{event['title']}] Kan afbeelding niet downloaden (HTTP {resp.status})")
+                            doc = self.Frappeclient.get_doc('Discord events', event['name'])
+                            doc['status'] = 'Kan afbeelding niet downloaden'
+                            self.Frappeclient.update(doc)
+                            continue
+
+            # Kanaal- / Externe locatie-logica
+            location_raw = event.get('location')
+            if location_raw:
+                target_channel = None
+                if str(location_raw).isdigit():
+                    target_channel = guild.get_channel(int(location_raw))
+
+                if target_channel and isinstance(target_channel, (discord.VoiceChannel, discord.StageChannel)):
+                    event_args["channel"] = target_channel
+                else:
+                    event_args["entity_type"] = discord.EntityType.external
+                    event_args["location"] = str(location_raw)
+            else:
+                # Fallback als er geen kanaal/locatie is opgegeven
+                event_args["entity_type"] = discord.EntityType.external
+                event_args["location"] = "Online"
+
+            # Discord vereist altijd een end_time voor external events
+            if event_args.get("entity_type") == discord.EntityType.external and not event_args.get("end_time"):
+                event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
+                self.log.info(f"[{event['title']}] Eindtijd automatisch ingesteld op 1 uur na starttijd voor external event")
+
+            # 5. Event aanmaken in Discord
+            try:
+                await guild.create_scheduled_event(**event_args)
+            except discord.HTTPException as e:
+                self.log.error(f"[{event['title']}] Fout bij aanmaken Discord event: {e}")
+                continue
+
+            # 6. Afhandeling jaarlijks vs eenmalig
+            is_yearly = str(event.get('jaarlijks', '0')).lower() in ('1', 'true')
+
+            if is_yearly:
+                doc = self.Frappeclient.get_doc('Discord events', event['name'])
                 
-                start_time_local = self.local_timezone.localize(datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S'))
-                if start_time_local <= datetime.datetime.now(self.local_timezone):
-                    doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
-                    doc_to_update['status'] = 'Starttijd moet in de toekomst zijn'
-                    self.Frappeclient.update(doc_to_update)
-                    self.log.error(f"[{event['title']}] Starttijd van nieuwe events kan niet in het verleden liggen")
-                    continue
+                # Starttijd + 1 jaar
+                doc['start_time'] = _add_one_year(dt_start_naive).strftime(date_format)
 
-                if datetime.datetime.strptime(event['date_create'], '%Y-%m-%d %H:%M:%S') <= datetime.datetime.now():
-                    event_args = {
-                        "name": event['title'],
-                        "description": event['description'],
-                        "start_time": self.local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc),
-                        "end_time": self.local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None,
-                        "privacy_level": discord.PrivacyLevel.guild_only,
-                    }
+                # Eindtijd + 1 jaar (indien aanwezig)
+                if event.get('end_time'):
+                    dt_end_orig = datetime.datetime.strptime(event['end_time'], date_format)
+                    doc['end_time'] = _add_one_year(dt_end_orig).strftime(date_format)
 
-                    if event['image']:
-                        image = "http://shadowzone.nl/" + event['image']
-                        async with aiohttp.ClientSession() as session:
-                            async with session.get(image) as resp:
-                                if resp.status == 200:
-                                    image_data = await resp.read()
-                                    event_args["image"] = image_data
-                                else:
-                                    self.log.error(f"[{event['title']}] Kan afbeelding niet downloaden")
-                                    doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
-                                    doc_to_update['status'] = 'Kan afbeelding niet downloaden'
-                                    self.Frappeclient.update(doc_to_update)
-                                    continue
+                # Creatiedatum + 1 jaar (indien aanwezig)
+                if event.get('date_create'):
+                    dt_create_orig = datetime.datetime.strptime(event['date_create'], date_format)
+                    doc['date_create'] = _add_one_year(dt_create_orig).strftime(date_format)
 
-                    if 'location' in event and event['location']:
-                        try:
-                            int(event['location'])
-                            if guild.get_channel(int(event['location'])):
-                                event_args["channel"] = guild.get_channel(int(event['location']))
-                            else:
-                                event_args["entity_type"] = discord.EntityType.external
-                                event_args["location"] = event['location']
-                        except ValueError:
-                            event_args["entity_type"] = discord.EntityType.external
-                            event_args["location"] = event['location']
-
-                    if 'entity_type' in event_args and event_args["entity_type"] == discord.EntityType.external:
-                        if not event_args["end_time"] and event['override_check'] == 1: 
-                            event_args["end_time"] = event_args["start_time"] + datetime.timedelta(hours=1)
-                            self.log.error(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
-
-                    await guild.create_scheduled_event(**event_args)
-
-                    # Controleer of het event jaarlijks is
-                    is_yearly = event.get('jaarlijks', 0) == 1
-
-                    if is_yearly:
-                        # Parse datums en tel er 1 jaar bij op
-                        dt_start = datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S')
-                        dt_start_next = dt_start.replace(year=dt_start.year + 1)
-                        
-                        doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
-                        doc_to_update['start_time'] = dt_start_next.strftime('%Y-%m-%d %H:%M:%S')
-
-                        if event['end_time']:
-                            dt_end = datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S')
-                            dt_end_next = dt_end.replace(year=dt_end.year + 1)
-                            doc_to_update['end_time'] = dt_end_next.strftime('%Y-%m-%d %H:%M:%S')
-
-                        if event.get('date_create'):
-                            dt_create = datetime.datetime.strptime(event['date_create'], '%Y-%m-%d %H:%M:%S')
-                            dt_create_next = dt_create.replace(year=dt_create.year + 1)
-                            doc_to_update['date_create'] = dt_create_next.strftime('%Y-%m-%d %H:%M:%S')
-
-                        doc_to_update['status'] = 'Jaarlijks event verzet naar volgend jaar'
-                        self.Frapleclient_update = self.Frappeclient.update(doc_to_update)
-                        self.log.info(f"[{event['title']}] Jaarlijks event bijgewerkt naar volgend jaar.")
-                    else:
-                        # Niet jaarlijks, dus verwijderen uit Frappe
-                        self.Frappeclient.delete('Discord events', event['name'])
+                doc['status'] = 'Jaarlijks event verzet naar volgend jaar'
+                self.Frappeclient.update(doc)
+                self.log.info(f"[{event['title']}] Jaarlijks event succesvol doorgeschoven naar volgend jaar")
+            else:
+                self.Frappeclient.delete('Discord events', event['name'])
+                self.log.info(f"[{event['title']}] Eenmalig event verwijderd uit Frappe")
