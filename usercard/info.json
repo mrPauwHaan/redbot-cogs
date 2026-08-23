@@ -1,14 +1,13 @@
 {
-    "author": ["mrPauwHaan","Inspired by AAA3A"],
-    "name": "Usercard",
-    "install_msg": "Thank you for installing Usercard",
+    "author": ["AAA3A", "mrPauwHaan"],
+    "name": "GuildStats",
+    "install_msg": "Thank you for installing GuildStats",
     "short": "A cog to generate images",
     "description": "A cog to generate user profile and voice statistics cards",
     "tags": ["member", "usercard", "stats"],
     "requirements": [
         "pillow",
         "fonttools",
-        "git+https://github.com/frappe/frappe-client.git",
         "aiohttp"
     ],
     "min_bot_version": "3.5.3",
