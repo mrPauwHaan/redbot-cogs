@@ -1,7 +1,5 @@
-from redbot.core import commands  # isort:skip
-import discord  # isort:skip
-
-import asyncio
+from redbot.core import commands
+import discord
 
 
 class usercardView(discord.ui.View):
@@ -13,30 +11,25 @@ class usercardView(discord.ui.View):
         super().__init__(timeout=60 * 60)
         self.cog: commands.Cog = cog
         self.ctx: commands.Context = None
-
         self._object: discord.Member = _object
-
         self._message: discord.Message = None
-        self._ready: asyncio.Event = asyncio.Event()
 
     async def start(self, ctx: commands.Context, command: str) -> discord.Message:
-        self.ctx: commands.Context = ctx
+        self.ctx = ctx
         file = await self.cog.generate_image(
             self._object,
             to_file=True,
         )
         if file and command == "card":
-            self._message: discord.Message = await self.ctx.send(file=file, view=self)
+            self._message = await self.ctx.send(file=file, view=self)
         elif file and command == "id":
-            self._message: discord.Message = await self.ctx.send(str(self._object.id), view=self)
+            self._message = await self.ctx.send(str(self._object.id), view=self)
         elif command == "id":
-            self._message: discord.Message = await self.ctx.send(str(self._object.id))
+            self._message = await self.ctx.send(str(self._object.id))
         else:
-            self._message: discord.Message = await self.ctx.send("Gebruiker niet gevonden in database")
+            self._message = await self.ctx.send("Gebruiker niet gevonden in database")
             return self._message
 
-        self.cog.views[self._message] = self
-        await self._ready.wait()
         return self._message
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -49,16 +42,14 @@ class usercardView(discord.ui.View):
 
     async def on_timeout(self) -> None:
         for child in self.children:
-            child: discord.ui.Item
             if hasattr(child, "disabled") and not (
                 isinstance(child, discord.ui.Button) and child.style == discord.ButtonStyle.url
             ):
                 child.disabled = True
-            try:
-                await self._message.edit(view=self)
-            except discord.HTTPException:
-                pass
-        self._ready.set()
+        try:
+            await self._message.edit(view=self)
+        except discord.HTTPException:
+            pass
 
     @discord.ui.button(emoji="👤", custom_id="reload_page", style=discord.ButtonStyle.secondary)
     async def reload_page(

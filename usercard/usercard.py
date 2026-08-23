@@ -1,4 +1,3 @@
-from AAA3A_utils import Cog  # isort:skip
 from redbot.core import commands  # isort:skip
 from redbot.core.bot import Red  # isort:skip
 import discord  # isort:skip
@@ -20,7 +19,7 @@ from .view import usercardView
 from .statbot_api import StatbotClient
 
 
-class usercard(Cog):
+class usercard(commands.Cog):
     """A cog to generate images"""
 
     def __init__(self, bot: Red) -> None:
