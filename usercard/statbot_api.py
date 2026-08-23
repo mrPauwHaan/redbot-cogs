@@ -141,41 +141,54 @@ class StatbotClient:
                 except Exception:
                     continue
 
-        # 5. Piekuur
+        # 5. Piekuur bepalen
         if sum(hour_bins) > 0:
             peak_hour = max(range(24), key=lambda h: hour_bins[h])
             peak_str = f"{peak_hour:02d}:00 - {(peak_hour + 1) % 24:02d}:00"
         else:
+            peak_hour = None
             peak_str = "-"
 
-        # 6. Weekend percentage
-        weekend_mins = weekday_bins[4] + weekday_bins[5] + weekday_bins[6]
+        # 6. Tijdstipvakken & Verhoudingen
         tracked_mins = sum(weekday_bins) or total_minutes or 1
+        night_mins = sum(hour_bins[0:6]) + hour_bins[23]  # 23:00 - 06:00
+        day_mins = sum(hour_bins[6:18])                   # 06:00 - 18:00
+        evening_mins = sum(hour_bins[18:23])              # 18:00 - 23:00
+        weekend_mins = weekday_bins[4] + weekday_bins[5] + weekday_bins[6]  # Vr, Za, Zo
+
         weekend_pct = round((weekend_mins / tracked_mins) * 100)
+        night_pct = night_mins / tracked_mins
+        day_pct = day_mins / tracked_mins
+        evening_pct = evening_mins / tracked_mins
 
-        # 7. Persona
-        night_mins = sum(hour_bins[0:6]) + hour_bins[23]
-        evening_mins = sum(hour_bins[18:23])
-        day_mins = sum(hour_bins[6:18])
+        # Tel op hoeveel dagen iemand minimaal 5% van zijn tijd spendeert (spreiding)
+        active_days_count = sum(1 for w in weekday_bins if w >= (tracked_mins * 0.05))
 
-        if total_hours < 0.5:
+        # 7. Dynamische Persona Bepaling
+        if total_hours < 1:
             persona = "Stille Luisteraar"
             activity_label = "Weinig activiteit"
-        elif total_hours >= 40:
-            persona = "VC Stamgast"
-            activity_label = "Dagelijks aanwezig"
-        elif night_mins > (tracked_mins * 0.4):
+        elif night_pct >= 0.35 or (night_pct >= 0.25 and peak_hour in [23, 0, 1, 2, 3, 4, 5]):
             persona = "De Nachtbraker"
             activity_label = "Vooral 's nachts"
-        elif weekend_pct >= 60:
+        elif weekend_pct >= 65:
             persona = "Weekend Strijder"
             activity_label = "Vooral weekends"
-        elif evening_mins > day_mins:
+        elif active_days_count >= 5 and total_hours >= 30:
+            persona = "VC Stamgast"
+            activity_label = "Dagelijks aanwezig"
+        elif evening_pct >= 0.45 or (evening_mins > day_mins * 1.4):
             persona = "Prime-Time Prater"
             activity_label = "Avondspits"
-        else:
+        elif day_pct >= 0.45:
             persona = "Dagvogel"
             activity_label = "Overdag actief"
+        elif total_hours >= 40:
+            persona = "VC Stamgast"
+            activity_label = "Vaste waarde"
+        else:
+            persona = "Gezelligheidsdier"
+            activity_label = "Wisselend aanwezig"
 
         daily_avg_mins = round(total_minutes / 30)
         daily_avg_str = (
