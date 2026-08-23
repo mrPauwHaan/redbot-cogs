@@ -16,7 +16,6 @@ class usercardView(discord.ui.View):
         self.ctx: commands.Context = None
         self._object: discord.Member = _object
         self._message: discord.Message = None
-        # Standaard het vorige, volledig afgeronde kalenderjaar
         self.year: int = year or (datetime.now().year - 1)
 
     async def start(

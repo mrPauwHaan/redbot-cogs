@@ -22,6 +22,8 @@ from .statbot_api import StatbotClient
 class usercard(commands.Cog):
     """A cog to generate user cards, monthly stats, and yearly wrapped images."""
 
+    WHITELIST_ROLES = [724556731564163082, 563348666312687618]
+
     def __init__(self, bot: Red) -> None:
         super().__init__()
         self.bot: Red = bot
@@ -64,6 +66,12 @@ class usercard(commands.Cog):
 
     async def cog_unload(self) -> None:
         self.font_to_remove_unprintable_characters.close()
+
+    def is_valid_member(self, member: discord.Member) -> bool:
+        """Controleert of een lid de Lid of SZG+ rol heeft."""
+        if not isinstance(member, discord.Member):
+            return False
+        return any(r.id in self.WHITELIST_ROLES for r in getattr(member, 'roles', []))
 
     def get_latest_event_number(self, fallback_max: int = 0) -> int:
         """Haalt het hoogste afgelopen eventnummer op uit Frappe 'Beheer events' (1 uur cache)."""
@@ -648,10 +656,20 @@ class usercard(commands.Cog):
         align_text_center((80, 301, 380, 418), text="Jaarrang", fill=(255, 255, 255), font=self.bold_font[36])
         align_text_center((380, 301, 920, 418), text=stats.get("rank_str", "-"), fill=(255, 255, 255), font=self.bold_font[36])
 
+        # Row 2: Totaal VC in Dagen
         draw.rounded_rectangle((80, 448, 920, 565), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 448, 380, 565), radius=15, fill=(24, 26, 27))
         align_text_center((80, 448, 380, 565), text="Totaal VC", fill=(255, 255, 255), font=self.bold_font[30])
-        total_vc_str = f"{stats.get('total_hours', 0)} Uur ({stats.get('prev_comp_str', '-')})"
+
+        total_days = stats.get('total_days_vc', 0)
+        total_hrs = stats.get('total_hours', 0)
+        prev_diff = stats.get('prev_diff_str')
+
+        if prev_diff:
+            total_vc_str = f"{total_days} Dagen ({total_hrs}u | {prev_diff})"
+        else:
+            total_vc_str = f"{total_days} Dagen ({total_hrs} Uur)"
+
         align_text_center((380, 448, 920, 565), text=total_vc_str, fill=(255, 255, 255), font=self.font[32])
 
         # --- BOX 2 (BOTTOM LINKS): HOOGTEPUNTEN & EVENTS ---
@@ -685,14 +703,12 @@ class usercard(commands.Cog):
         active_str = f"{stats.get('active_days_count', 0)} van {stats.get('total_days_in_year', 365)} ({stats.get('active_pct', 0)}%)"
         align_text_center((1370, 301, 1860, 418), text=active_str, fill=(255, 255, 255), font=self.font[36])
 
-        # Populairste weekdag & Top seizoen
+        # Piekdag & Top Seizoen gecombineerd met |
         draw.rounded_rectangle((1020, 448, 1860, 565), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((1020, 448, 1370, 565), radius=15, fill=(24, 26, 27))
-        align_text_center((1020, 448, 1370, 565), text="Piekdag", fill=(255, 255, 255), font=self.bold_font[32])
-        piekdag_display = f"{stats.get('peak_weekday', '-')}"
-        if stats.get('top_season') and stats.get('top_season') != "-":
-            piekdag_display += f" (Top: {stats.get('top_season')})"
-        align_text_center((1370, 448, 1860, 565), text=piekdag_display, fill=(255, 255, 255), font=self.font[36])
+        align_text_center((1020, 448, 1370, 565), text="Piekdag & Seizoen", fill=(255, 255, 255), font=self.bold_font[30])
+        combo_str = f"{stats.get('peak_weekday', '-')} | {stats.get('top_season', '-')}"
+        align_text_center((1370, 448, 1860, 565), text=combo_str, fill=(255, 255, 255), font=self.font[36])
 
         # --- BOX 4 (BOTTOM RECHTS): 12-MAANDEN GRAFIEK ---
         draw.rounded_rectangle((1000, 615, 1880, 996), radius=15, fill=(47, 49, 54))
@@ -776,10 +792,15 @@ class usercard(commands.Cog):
         member: discord.Member = commands.Author,
     ) -> None:
         """Krijg profiel van gebruiker"""
-        if not member.bot:
-            await usercardView(cog=self, _object=member).start(ctx, command='card')
-        else:
+        if member.bot:
             await ctx.send('Niet mogelijk voor bot')
+            return
+
+        if not self.is_valid_member(member):
+            await ctx.send("❌ Dit profiel/overzicht is alleen beschikbaar voor geregistreerde leden (Lid / SZG+).")
+            return
+
+        await usercardView(cog=self, _object=member).start(ctx, command='card')
 
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
@@ -796,10 +817,13 @@ class usercard(commands.Cog):
             await ctx.send('Niet mogelijk voor bot')
             return
 
+        if not self.is_valid_member(member):
+            await ctx.send("❌ Dit profiel/overzicht is alleen beschikbaar voor geregistreerde leden (Lid / SZG+).")
+            return
+
         current_year = datetime.now().year
         target_year = year or (current_year - 1)
 
-        # Controleer of het opgevraagde jaar al volledig is afgelopen
         if target_year >= current_year:
             await ctx.send(
                 f"⚠️ Het jaar **{target_year}** is nog bezig! Je kunt een Wrapped over {target_year} pas vanaf **1 januari {target_year + 1}** bekijken.\n"

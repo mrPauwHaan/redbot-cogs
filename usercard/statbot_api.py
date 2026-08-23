@@ -245,7 +245,7 @@ class StatbotClient:
             "voice_states[]": "normal",
         }
 
-        # 2. Dagelijkse serie voor het hele jaar (365/366 dagen)
+        # 2. Dagelijkse serie voor het hele jaar
         series_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/series"
         series_params = {
             "start": start_ms,
@@ -291,15 +291,12 @@ class StatbotClient:
         prev_total_minutes = prev_sums_data.get("count", 0) if isinstance(prev_sums_data, dict) else 0
         prev_total_hours = round(prev_total_minutes / 60, 1)
 
-        # Vergelijkingstekst met het voorgaande jaar
+        # Verschil t.o.v. vorig jaar
         if prev_total_hours > 0:
             diff_hours = round(total_hours - prev_total_hours, 1)
-            diff_str = f"+{diff_hours}u" if diff_hours > 0 else f"{diff_hours}u"
-            prev_comp_str = f"{diff_str} vs {prev_year}"
-        elif total_hours > 0:
-            prev_comp_str = f"{total_days_vc} Dagen VC"
+            prev_diff_str = f"+{diff_hours}u" if diff_hours > 0 else f"{diff_hours}u"
         else:
-            prev_comp_str = "-"
+            prev_diff_str = None
 
         # 4. Jaarrang bepalen
         top_members = await self.get_top_voice_members(guild_id, start_ms, end_ms)
@@ -415,7 +412,7 @@ class StatbotClient:
             "total_minutes": total_minutes,
             "total_hours": total_hours,
             "total_days_vc": total_days_vc,
-            "prev_comp_str": prev_comp_str,
+            "prev_diff_str": prev_diff_str,
             "rank_str": rank_str,
             "persona": persona,
             "marathon_hours": marathon_hours,
