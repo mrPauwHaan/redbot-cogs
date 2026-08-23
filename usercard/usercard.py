@@ -73,6 +73,47 @@ class usercard(commands.Cog):
             return False
         return any(role.id in self.WHITELIST_ROLES for role in getattr(member, 'roles', []))
 
+    def format_date_nl(self, date_str: typing.Optional[str]) -> str:
+        """Formatteert YYYY-MM-DD naar 'D MMMM YYYY' in het Nederlands."""
+        if not date_str:
+            return "-"
+        try:
+            dt = datetime.strptime(str(date_str).strip(), "%Y-%m-%d")
+            months = [
+                "januari", "februari", "maart", "april", "mei", "juni",
+                "juli", "augustus", "september", "oktober", "november", "december"
+            ]
+            return f"{dt.day} {months[dt.month - 1]} {dt.year}"
+        except Exception:
+            return str(date_str)
+
+    def format_membership_duration(self, start_date_str: typing.Optional[str]) -> str:
+        """Berekent het aantal jaren en maanden lidmaatschap of betrokkenheid."""
+        if not start_date_str:
+            return ""
+        try:
+            start_date = datetime.strptime(str(start_date_str).strip(), "%Y-%m-%d").date()
+            today = datetime.now().date()
+
+            years = today.year - start_date.year
+            months = today.month - start_date.month
+            if today.day < start_date.day:
+                months -= 1
+            if months < 0:
+                years -= 1
+                months += 12
+
+            if years == 0:
+                if months == 0:
+                    return "< 1 maand"
+                return f"{months} {'maand' if months == 1 else 'maanden'}"
+            elif months == 0:
+                return f"{years} jaar"
+            else:
+                return f"{years} jaar, {months} mnd"
+        except Exception:
+            return ""
+
     def get_latest_event_number(self, fallback_max: int = 0) -> int:
         """Haalt het hoogste afgelopen eventnummer op uit Frappe 'Beheer events' (1 uur cache)."""
         now = time.time()
@@ -365,7 +406,23 @@ class usercard(commands.Cog):
 
         if isinstance(_object, discord.Member):
             member = self.get_frappe_member_data(_object)
-            is_active_member = (member is not None)
+            is_active_member = (member is not None and member.get('custom_status') == 'Actief')
+
+            # Bepaal of het lidmaatschaptype 'SZG+' of 'Lid' is
+            is_szg_plus = is_active_member and (
+                member.get('membership_type') == 'SZG+' or
+                (member.get('custom_startdatum_donateur') and not member.get('custom_start_lidmaatschap'))
+            )
+
+            if is_szg_plus:
+                row1_label = "SZG+"
+                start_date_raw = member.get('custom_startdatum_donateur')
+            else:
+                row1_label = "Lid"
+                start_date_raw = member.get('custom_start_lidmaatschap') if is_active_member else None
+
+            # Betrokken datum: gebruikt custom_begin_datum of valt terug op de startdatum van lid/donateur
+            betrokken_date_raw = (member.get('custom_begin_datum') if is_active_member else None) or start_date_raw
 
             # 1. Bovenste Kaart: Lidmaatschap
             draw.rounded_rectangle((1306 - 125, 204, 1912, 585), radius=15, fill=(47, 49, 54))
@@ -376,17 +433,22 @@ class usercard(commands.Cog):
             except Exception:
                 pass
 
-            # Rij 1: Lid
+            # Rij 1: Lid / SZG+
             draw.rounded_rectangle((1325 - 125, 301, 1892, 418), radius=15, fill=(32, 34, 37))
             draw.rounded_rectangle((1325 - 125, 301, 1588 - 125, 418), radius=15, fill=(24, 26, 27))
-            align_text_center((1326 - 125, 301, 1601 - 125, 418), text="Lid", fill=(255, 255, 255), font=self.bold_font[36])
+            align_text_center((1326 - 125, 301, 1601 - 125, 418), text=row1_label, fill=(255, 255, 255), font=self.bold_font[36])
 
             if is_active_member:
-                if member.get('custom_start_lidmaatschap') and member.get('custom_status') == 'Actief' and member.get('membership_type') == 'Lid':
-                    lid_datum = datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y')
+                if start_date_raw:
+                    formatted_start_date = self.format_date_nl(start_date_raw)
+                    start_duration_str = f"({self.format_membership_duration(start_date_raw)})"
+
+                    # Datum boven
+                    align_text_center((1601 - 125, 308, 1892, 360), text=formatted_start_date, fill=(255, 255, 255), font=self.font[32])
+                    # Duur onder (subtiel grijs)
+                    align_text_center((1601 - 125, 360, 1892, 410), text=start_duration_str, fill=(163, 163, 163), font=self.font[28])
                 else:
-                    lid_datum = "-"
-                align_text_center((1601 - 125, 301, 1892, 418), text=lid_datum, fill=(255, 255, 255), font=self.font[36])
+                    align_text_center((1601 - 125, 301, 1892, 418), text="-", fill=(255, 255, 255), font=self.font[36])
             else:
                 self.draw_locked_placeholder(draw, (1601 - 125, 301, 1892, 418))
 
@@ -396,8 +458,16 @@ class usercard(commands.Cog):
             align_text_center((1325 - 125, 448, 1601 - 125, 565), text="Betrokken", fill=(255, 255, 255), font=self.bold_font[30])
 
             if is_active_member:
-                betrokken_datum = datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_begin_datum') else "-"
-                align_text_center((1601 - 125, 448, 1892, 565), text=betrokken_datum, fill=(255, 255, 255), font=self.font[36])
+                if betrokken_date_raw:
+                    formatted_betrokken_date = self.format_date_nl(betrokken_date_raw)
+                    betrokken_duration_str = f"({self.format_membership_duration(betrokken_date_raw)})"
+
+                    # Datum boven
+                    align_text_center((1601 - 125, 455, 1892, 507), text=formatted_betrokken_date, fill=(255, 255, 255), font=self.font[32])
+                    # Duur onder (subtiel grijs)
+                    align_text_center((1601 - 125, 507, 1892, 557), text=betrokken_duration_str, fill=(163, 163, 163), font=self.font[28])
+                else:
+                    align_text_center((1601 - 125, 448, 1892, 565), text="-", fill=(255, 255, 255), font=self.font[36])
             else:
                 self.draw_locked_placeholder(draw, (1601 - 125, 448, 1892, 565))
 
@@ -590,7 +660,7 @@ class usercard(commands.Cog):
 
         # BOX 4 (BOTTOM RECHTS): WEKELIJKSE ACTIVITEIT
         draw.rounded_rectangle((1000, 615, 1880, 996), radius=15, fill=(47, 49, 54))
-        align_text_center((1020, 625, 1860, 695), text="Wekelijke Activiteit", fill=(255, 255, 255), font=self.bold_font[40])
+        align_text_center((1020, 625, 1860, 695), text="Wekelijkse Activiteit", fill=(255, 255, 255), font=self.bold_font[40])
         draw.rounded_rectangle((1020, 712, 1860, 976), radius=15, fill=(32, 34, 37))
 
         day_labels = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"]
@@ -819,6 +889,8 @@ class usercard(commands.Cog):
                 h_x = bx + int((bar_w - (h_box[2] - h_box[0])) / 2)
                 draw.text((h_x, 905 - bar_h - 28), text=h_str, fill=(200, 200, 200), font=self.font[24])
 
+        draw.text((200, 1025), text=f"* Shadowzone Gaming Wrapped {year}", fill=(150, 155, 165), font=self.font[30])
+
         if not to_file:
             return img
         buffer = io.BytesIO()
@@ -887,7 +959,7 @@ class usercard(commands.Cog):
     )
     @discord.app_commands.describe(
         member="Het lid waarvan je de Wrapped wilt bekijken (standaard jezelf)",
-        year="Het kalenderjaar (bijv. 2024, standaard het meest recente jaar)"
+        year="Het kalenderjaar (bijv. 2025, standaard het meest recente jaar)"
     )
     async def wrapped(
         self,
