@@ -6,7 +6,8 @@ import aiohttp
 
 class StatbotClient:
     BASE_URL = "https://api.statbot.net/v1"
-    _top_cache: Dict[int, Tuple[float, List[Dict[str, Any]]]] = {}
+    # Cache opgeslagen per uniek tijdsvenster (guild_id, start_ms, end_ms)
+    _top_cache: Dict[Tuple[int, int, int], Tuple[float, List[Dict[str, Any]]]] = {}
     WHITELIST_ROLES = ["724556731564163082", "563348666312687618"]
 
     def __init__(self, api_key: str, session: Optional[aiohttp.ClientSession] = None):
@@ -26,11 +27,13 @@ class StatbotClient:
     async def get_top_voice_members(
         self, guild_id: int, start_ms: int, end_ms: int
     ) -> List[Dict[str, Any]]:
-        """Haalt alle actieve voice leden op gefilterd op Lid/SZG+ rollen (15 min cache)."""
+        """Haalt alle actieve voice leden op gefilterd op Lid/SZG+ rollen voor een specifiek tijdvak (15 min cache)."""
         now = time.time()
-        if guild_id in self._top_cache:
-            cache_time, cache_data = self._top_cache[guild_id]
-            if now - cache_time < 900:
+        cache_key = (guild_id, start_ms, end_ms)
+
+        if cache_key in self._top_cache:
+            cache_time, cache_data = self._top_cache[cache_key]
+            if now - cache_time < 900:  # 15 minuten cache
                 return cache_data
 
         session = await self._get_session()
@@ -49,7 +52,7 @@ class StatbotClient:
                 if resp.status == 200:
                     data = await resp.json()
                     members = data if isinstance(data, list) else data.get("data", [])
-                    self._top_cache[guild_id] = (now, members)
+                    self._top_cache[cache_key] = (now, members)
                     return members
                 else:
                     print(f"[UserCard Statbot] Top Voice API fout {resp.status}: {await resp.text()}")
@@ -82,6 +85,7 @@ class StatbotClient:
             "whitelist_members[]": str(user_id),
             "voice_states[]": "normal",
             "interval": "hour",
+            "limit": 1000,
         }
 
         try:
@@ -253,9 +257,10 @@ class StatbotClient:
             "whitelist_members[]": str(user_id),
             "voice_states[]": "normal",
             "interval": "day",
+            "limit": 400,
         }
 
-        # 3. Totale tijd van het voorgaande jaar (voor vergelijking)
+        # 3. Totale tijd van het voorgaande jaar
         prev_year = year - 1
         prev_start_dt = datetime(prev_year, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
         prev_end_dt = datetime(prev_year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
@@ -291,14 +296,13 @@ class StatbotClient:
         prev_total_minutes = prev_sums_data.get("count", 0) if isinstance(prev_sums_data, dict) else 0
         prev_total_hours = round(prev_total_minutes / 60, 1)
 
-        # Verschil t.o.v. vorig jaar
         if prev_total_hours > 0:
             diff_hours = round(total_hours - prev_total_hours, 1)
             prev_diff_str = f"+{diff_hours}u" if diff_hours > 0 else f"{diff_hours}u"
         else:
             prev_diff_str = None
 
-        # 4. Jaarrang bepalen
+        # 4. Jaarrang bepalen (met unieke start_ms/end_ms cache key)
         top_members = await self.get_top_voice_members(guild_id, start_ms, end_ms)
         rank = None
         total_active_members = len(top_members)
@@ -374,7 +378,6 @@ class StatbotClient:
 
         top_season = max(season_bins, key=season_bins.get) if sum(season_bins.values()) > 0 else "-"
 
-        # Populairste weekdag (Piekdag)
         if sum(weekday_bins) > 0:
             peak_weekday_idx = max(range(7), key=lambda w: weekday_bins[w])
             peak_weekday = weekday_names[peak_weekday_idx]

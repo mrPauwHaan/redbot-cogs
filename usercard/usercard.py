@@ -744,8 +744,6 @@ class usercard(commands.Cog):
                 h_x = bx + int((bar_w - (h_box[2] - h_box[0])) / 2)
                 draw.text((h_x, 905 - bar_h - 28), text=h_str, fill=(200, 200, 200), font=self.font[24])
 
-        draw.text((200, 1025), text=f"* Shadowzone Gaming Wrapped {year}", fill=(150, 155, 165), font=self.font[30])
-
         if not to_file:
             return img
         buffer = io.BytesIO()
