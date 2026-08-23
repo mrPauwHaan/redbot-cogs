@@ -1,7 +1,7 @@
-from redbot.core import commands  # isort:skip
-from redbot.core.bot import Red  # isort:skip
-import discord  # isort:skip
-import typing  # isort:skip
+from redbot.core import commands
+from redbot.core.bot import Red
+import discord
+import typing
 
 import asyncio
 import functools
@@ -20,11 +20,11 @@ from .statbot_api import StatbotClient
 
 
 class usercard(commands.Cog):
-    """A cog to generate images"""
+    """A cog to generate user cards, monthly stats, and yearly wrapped images."""
 
     def __init__(self, bot: Red) -> None:
         super().__init__()
-        self.bot = bot
+        self.bot: Red = bot
         self.Frappeclient = None
         self.api_key = None
         self.api_secret = None
@@ -34,11 +34,11 @@ class usercard(commands.Cog):
         self.bold_font_path: Path = bundled_data_path(self) / "arial_bold.ttf"
         self.font: typing.Dict[int, ImageFont.ImageFont] = {
             size: ImageFont.truetype(str(self.font_path), size=size)
-            for size in {28, 30, 36, 40, 54}
+            for size in {24, 28, 30, 36, 40, 54}
         }
         self.bold_font: typing.Dict[int, ImageFont.ImageFont] = {
             size: ImageFont.truetype(str(self.bold_font_path), size=size)
-            for size in {30, 32, 36, 40, 50, 60}
+            for size in {24, 26, 30, 32, 36, 40, 50, 60}
         }
         self.font_to_remove_unprintable_characters: TTFont = TTFont(self.font_path)
         self.icons: typing.Dict[str, Path] = {
@@ -52,7 +52,6 @@ class usercard(commands.Cog):
         }
 
     async def cog_load(self):
-        await super().cog_load()
         frappe_keys = await self.bot.get_shared_api_tokens("frappelogin")
         self.api_key = frappe_keys.get("username")
         self.api_secret = frappe_keys.get("password")
@@ -65,7 +64,6 @@ class usercard(commands.Cog):
 
     async def cog_unload(self) -> None:
         self.font_to_remove_unprintable_characters.close()
-        await super().cog_unload()
 
     def get_latest_event_number(self, fallback_max: int = 0) -> int:
         """Haalt het hoogste afgelopen eventnummer op uit Frappe 'Beheer events' (1 uur cache)."""
@@ -104,6 +102,41 @@ class usercard(commands.Cog):
             print(f"[UserCard] Fout bij ophalen Beheer events: {e}")
 
         return fallback_max
+
+    def get_frappe_year_events(self, member: dict, year: int) -> typing.Tuple[int, int]:
+        """Haalt (bezocht_in_jaar, totaal_in_jaar) op uit Frappe 'Beheer events'."""
+        year_str = str(year)
+        total_year_events = 0
+        attended_year_events = 0
+        attended_names = set()
+
+        if member and member.get("custom_events"):
+            for item in member.get("custom_events"):
+                event_name = item.get("event_bezocht") or ""
+                if event_name:
+                    attended_names.add(event_name.strip())
+                    if year_str in event_name:
+                        attended_year_events += 1
+
+        if self.Frappeclient:
+            try:
+                docs = self.Frappeclient.get_list(
+                    'Beheer events',
+                    fields=['event_name', 'name'],
+                    filters={'afgelopen': 1},
+                    limit_page_length=200
+                )
+                if docs:
+                    for doc in docs:
+                        ev_name = (doc.get('event_name') or doc.get('name') or '').strip()
+                        if ev_name and year_str in ev_name:
+                            total_year_events += 1
+                            if ev_name in attended_names and attended_year_events == 0:
+                                attended_year_events += 1
+            except Exception:
+                pass
+
+        return attended_year_events, max(total_year_events, attended_year_events)
 
     def get_frappe_member_data(self, discord_id):
         """Haalt member data op en logt automatisch opnieuw in als de sessie verlopen is."""
@@ -161,43 +194,6 @@ class usercard(commands.Cog):
             .strip()
         )
 
-    def get_member_display(self, member: discord.Member) -> str:
-        return (
-            self.remove_unprintable_characters(member.display_name)
-            if (
-                sum(
-                    (
-                        1
-                        if ord(char) in self.font_to_remove_unprintable_characters.getBestCmap()
-                        else 0
-                    )
-                    for char in member.display_name
-                )
-                / len(member.display_name)
-                > 0.8
-            )
-            and len(self.remove_unprintable_characters(member.display_name)) >= 5
-            else (
-                self.remove_unprintable_characters(member.global_name)
-                if member.global_name is not None
-                and (
-                    sum(
-                        (
-                            1
-                            if ord(char)
-                            in self.font_to_remove_unprintable_characters.getBestCmap()
-                            else 0
-                        )
-                        for char in member.global_name
-                    )
-                    / len(member.global_name)
-                    > 0.8
-                )
-                and len(self.remove_unprintable_characters(member.global_name)) >= 5
-                else member.name
-            )
-        )
-
     def _generate_prefix_image(
         self,
         _object: discord.Member,
@@ -207,22 +203,15 @@ class usercard(commands.Cog):
     ) -> typing.Union[Image.Image, discord.File]:
         img: Image.Image = Image.new("RGBA", size, (0, 0, 0, 0))
         try:
-            image = Image.open(self.icons["background"])
-            image = image.convert("RGBA").resize(size)
-
+            image = Image.open(self.icons["background"]).convert("RGBA").resize(size)
             mask = Image.new("L", size, 0)
             d = ImageDraw.Draw(mask)
             d.rounded_rectangle((0, 0, size[0], size[1]), radius=50, fill=255)
-
             img.paste(image, (0, 0), mask=mask)
         except Exception as e:
             print(f"Failed to load background: {e}")
             draw_bg = ImageDraw.Draw(img)
-            draw_bg.rounded_rectangle(
-                (0, 0, img.width, img.height),
-                radius=50,
-                fill=(32, 34, 37),
-            )
+            draw_bg.rounded_rectangle((0, 0, img.width, img.height), radius=50, fill=(32, 34, 37))
 
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
         align_text_center = functools.partial(self.align_text_center, draw)
@@ -232,85 +221,19 @@ class usercard(commands.Cog):
         if member:
             if _object_display:
                 try:
-                    image = Image.open(io.BytesIO(_object_display))
-                    image = image.resize((140, 140))
+                    image = Image.open(io.BytesIO(_object_display)).resize((140, 140))
                     mask = Image.new("L", image.size, 0)
                     d = ImageDraw.Draw(mask)
-                    d.rounded_rectangle(
-                        (0, 0, image.width, image.height),
-                        radius=20,
-                        fill=255,
-                    )
+                    d.rounded_rectangle((0, 0, image.width, image.height), radius=20, fill=255)
                     try:
-                        img.paste(
-                            image, (30, 478, 170, 618), mask=ImageChops.multiply(mask, image.split()[3])
-                        )
+                        img.paste(image, (30, 478, 170, 618), mask=ImageChops.multiply(mask, image.split()[3]))
                     except IndexError:
                         img.paste(image, (30, 478, 170, 618), mask=mask)
                 except Exception:
                     pass
 
-            if (
-                sum(
-                    (
-                        1
-                        if ord(char) in self.font_to_remove_unprintable_characters.getBestCmap()
-                        else 0
-                    )
-                    for char in _object.display_name
-                )
-                / len(_object.display_name)
-                > 0.8
-            ) and len(self.remove_unprintable_characters(_object.display_name)) >= 5:
-                draw.text(
-                    (190, 478),
-                    text=self.remove_unprintable_characters(_object.display_name),
-                    fill=(255, 255, 255),
-                    font=self.bold_font[50],
-                )
-                display_name_size = self.bold_font[50].getbbox(_object.display_name)
-                if (
-                    display_name_size[2]
-                    + 25
-                    + self.font[40].getbbox(_object.global_name or _object.name)[2]
-                ) <= 1000:
-                    draw.text(
-                        (190 + display_name_size[2] + 25, 496),
-                        text=(
-                            self.remove_unprintable_characters(_object.global_name)
-                            if _object.global_name is not None
-                            else _object.name
-                        ),
-                        fill=(163, 163, 163),
-                        font=self.font[40],
-                    )
-            elif (
-                _object.global_name is not None
-                and (
-                    sum(
-                        (
-                            1
-                            if ord(char)
-                            in self.font_to_remove_unprintable_characters.getBestCmap()
-                            else 0
-                        )
-                        for char in _object.global_name
-                    )
-                    / len(_object.global_name)
-                    > 0.8
-                )
-                and len(self.remove_unprintable_characters(_object.global_name)) >= 5
-            ):
-                draw.text(
-                    (190, 478),
-                    text=self.remove_unprintable_characters(_object.global_name),
-                    fill=(255, 255, 255),
-                    font=self.bold_font[50],
-                )
-            else:
-                draw.text(
-                    (190, 478), text=_object.name, fill=(255, 255, 255), font=self.bold_font[50]
-                )
+            name_clean = self.remove_unprintable_characters(_object.display_name) or _object.name
+            draw.text((190, 478), text=name_clean, fill=(255, 255, 255), font=self.bold_font[50])
 
             # Rol
             draw.text(
@@ -320,20 +243,14 @@ class usercard(commands.Cog):
                 font=self.font[54],
             )
 
-            # Guild name & Guild icon.
+            # Guild name & Guild icon
             try:
-                image = Image.open(self.icons["logo"])
-                image = image.resize((55, 55))
+                image = Image.open(self.icons["logo"]).resize((55, 55))
                 img.paste(image, (30, 30, 85, 85), mask=image.split()[3])
             except Exception:
                 pass
 
-            draw.text(
-                (105, 30),
-                text='Shadowzone Gaming',
-                fill=(163, 163, 163),
-                font=self.font[54],
-            )
+            draw.text((105, 30), text='Shadowzone Gaming', fill=(163, 163, 163), font=self.font[54])
 
             # `created_on`
             draw.rounded_rectangle((1200, 75, 1545, 175), radius=15, fill=(47, 49, 54))
@@ -344,12 +261,8 @@ class usercard(commands.Cog):
                 font=self.font[36],
             )
             draw.rounded_rectangle((1220, 30, 1476, 90), radius=15, fill=(79, 84, 92))
-            align_text_center(
-                (1220, 30, 1476, 90),
-                text="Op Discord",
-                fill=(255, 255, 255),
-                font=self.bold_font[30],
-            )
+            align_text_center((1220, 30, 1476, 90), text="Op Discord", fill=(255, 255, 255), font=self.bold_font[30])
+
             # `joined_on`
             draw.rounded_rectangle((1200 + 365, 75, 1545 + 365, 175), radius=15, fill=(47, 49, 54))
             align_text_center(
@@ -359,12 +272,7 @@ class usercard(commands.Cog):
                 font=self.font[36],
             )
             draw.rounded_rectangle((1220 + 365, 30, 1476 + 365, 90), radius=15, fill=(79, 84, 92))
-            align_text_center(
-                (1220 + 365, 30, 1476 + 365, 90),
-                text="In server",
-                fill=(255, 255, 255),
-                font=self.bold_font[30],
-            )
+            align_text_center((1220 + 365, 30, 1476 + 365, 90), text="In server", fill=(255, 255, 255), font=self.bold_font[30])
 
         if not to_file:
             return img
@@ -379,24 +287,12 @@ class usercard(commands.Cog):
         size: typing.Tuple[int, int] = (1942, 1026),
         to_file: bool = True,
     ) -> typing.Union[Image.Image, discord.File]:
-        if isinstance(_object, typing.Tuple):
-            _object, _type = _object
-        else:
-            _type = None
         return await asyncio.to_thread(
             self._generate_prefix_image,
-            _object=_object if _type is None else (_object, _type),
+            _object=_object,
             size=size,
             to_file=to_file,
-            _object_display=(
-                (await _object.display_avatar.read())
-                if isinstance(_object, discord.Member)
-                else (
-                    (await _object.display_icon.read())
-                    if isinstance(_object, discord.Role) and _object.display_icon is not None
-                    else None
-                )
-            ),
+            _object_display=((await _object.display_avatar.read()) if isinstance(_object, discord.Member) else None),
         )
 
     def _generate_image(
@@ -408,33 +304,22 @@ class usercard(commands.Cog):
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(img)
         align_text_center = functools.partial(self.align_text_center, draw)
 
-        if isinstance(_object, (discord.Member)):
+        if isinstance(_object, discord.Member):
             member = self.get_frappe_member_data(_object.id)
 
             if member:
                 # 1. Bovenste Kaart: Lidmaatschap
                 draw.rounded_rectangle((1306 - 125, 204, 1912, 585), radius=15, fill=(47, 49, 54))
-                align_text_center(
-                    (1325 - 125, 214, 1325 - 125, 284),
-                    text="Lidmaatschap",
-                    fill=(255, 255, 255),
-                    font=self.bold_font[40],
-                )
+                align_text_center((1325 - 125, 214, 1325 - 125, 284), text="Lidmaatschap", fill=(255, 255, 255), font=self.bold_font[40])
                 try:
-                    image = Image.open(self.icons["person"])
-                    image = image.resize((70, 70))
+                    image = Image.open(self.icons["person"]).resize((70, 70))
                     img.paste(image, (1822, 214, 1892, 284), mask=image.split()[3])
                 except Exception:
                     pass
 
                 draw.rounded_rectangle((1325 - 125, 301, 1892, 418), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1325 - 125, 301, 1588 - 125, 418), radius=15, fill=(24, 26, 27))
-                align_text_center(
-                    (1326 - 125, 301, 1601 - 125, 418),
-                    text="Lid",
-                    fill=(255, 255, 255),
-                    font=self.bold_font[36],
-                )
+                align_text_center((1326 - 125, 301, 1601 - 125, 418), text="Lid", fill=(255, 255, 255), font=self.bold_font[36])
                 align_text_center(
                     (1601 - 125, 301, 1892, 418),
                     text=f"{datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_start_lidmaatschap') and member.get('custom_status') == 'Actief' and member.get('membership_type') == 'Lid' else '-'}",
@@ -443,12 +328,7 @@ class usercard(commands.Cog):
                 )
                 draw.rounded_rectangle((1325 - 125, 448, 1892, 565), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1325 - 125, 448, 1601 - 125, 565), radius=15, fill=(24, 26, 27))
-                align_text_center(
-                    (1325 - 125, 448, 1601 - 125, 565),
-                    text="Betrokken",
-                    fill=(255, 255, 255),
-                    font=self.bold_font[30],
-                )
+                align_text_center((1325 - 125, 448, 1601 - 125, 565), text="Betrokken", fill=(255, 255, 255), font=self.bold_font[30])
                 align_text_center(
                     (1601 - 125, 448, 1892, 565),
                     text=f"{datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_begin_datum') else '-'}",
@@ -475,15 +355,9 @@ class usercard(commands.Cog):
                                 continue
 
                 draw.rounded_rectangle((1306 - 125, 615, 1912, 996), radius=15, fill=(47, 49, 54))
-                align_text_center(
-                    (1326 - 125, 625, 1326 - 125, 695),
-                    text="Events",
-                    fill=(255, 255, 255),
-                    font=self.bold_font[40],
-                )
+                align_text_center((1326 - 125, 625, 1326 - 125, 695), text="Events", fill=(255, 255, 255), font=self.bold_font[40])
                 try:
-                    image = Image.open(self.icons["game"])
-                    image = image.resize((70, 70))
+                    image = Image.open(self.icons["game"]).resize((70, 70))
                     img.paste(image, (1822, 625, 1892, 695), mask=image.split()[3])
                 except Exception:
                     pass
@@ -491,36 +365,15 @@ class usercard(commands.Cog):
                 # Row 1: Totaal
                 draw.rounded_rectangle((1326 - 125, 712, 1892, 829), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1326 - 125, 712, 1601 - 125, 829), radius=15, fill=(24, 26, 27))
-                align_text_center(
-                    (1326 - 125, 712, 1601 - 125, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36]
-                )
-                align_text_center(
-                    (1601 - 125, 712, 1892, 829),
-                    text=str(events),
-                    fill=(255, 255, 255),
-                    font=self.font[36],
-                )
+                align_text_center((1326 - 125, 712, 1601 - 125, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36])
+                align_text_center((1601 - 125, 712, 1892, 829), text=str(events), fill=(255, 255, 255), font=self.font[36])
 
                 # Row 2: Laatste Event + 10 Bolletjes
                 draw.rounded_rectangle((1326 - 125, 859, 1892, 976), radius=15, fill=(32, 34, 37))
                 draw.rounded_rectangle((1326 - 125, 859, 1601 - 125, 976), radius=15, fill=(24, 26, 27))
-                align_text_center(
-                    (1326 - 125, 859, 1601 - 125, 976),
-                    text="Laatste",
-                    fill=(255, 255, 255),
-                    font=self.bold_font[36],
-                )
+                align_text_center((1326 - 125, 859, 1601 - 125, 976), text="Laatste", fill=(255, 255, 255), font=self.bold_font[36])
+                align_text_center((1601 - 125, 863, 1892, 915), text=f"Event {highest_event_value}" if highest_event_value > 0 else "-", fill=(255, 255, 255), font=self.bold_font[30])
 
-                # Tekst: "Event X" (het laatst bezochte event van dit lid)
-                last_event_str = f"Event {highest_event_value}" if highest_event_value > 0 else "-"
-                align_text_center(
-                    (1601 - 125, 863, 1892, 915),
-                    text=last_event_str,
-                    fill=(255, 255, 255),
-                    font=self.bold_font[30],
-                )
-
-                # Bepaal het hoogste afgelopen event van de hele community (via Beheer events)
                 latest_global_event = max(self.get_latest_event_number(highest_event_value), highest_event_value, 10)
                 last_10_events = list(range(latest_global_event - 9, latest_global_event + 1))
 
@@ -535,12 +388,9 @@ class usercard(commands.Cog):
                     dy1 = dot_y
                     dx2 = dx1 + dot_diameter
                     dy2 = dy1 + dot_diameter
-
                     if ev_num in attended_events_set:
-                        # Bezocht door dit lid
                         draw.ellipse((dx1, dy1, dx2, dy2), fill=(255, 5, 2))
                     else:
-                        # Niet bezocht door dit lid
                         draw.ellipse((dx1, dy1, dx2, dy2), fill=(47, 49, 54), outline=(79, 84, 92), width=2)
 
                 if not to_file:
@@ -557,19 +407,10 @@ class usercard(commands.Cog):
         _object: discord.Member,
         to_file: bool = True,
     ) -> typing.Optional[typing.Union[Image.Image, discord.File]]:
-        img: Image.Image = await self.generate_prefix_image(
-            _object,
-            size=(1942, 1096),
-            to_file=False,
-        )
-        return await asyncio.to_thread(
-            self._generate_image,
-            _object,
-            to_file=to_file,
-            img=img,
-        )
+        img: Image.Image = await self.generate_prefix_image(_object, size=(1942, 1096), to_file=False)
+        return await asyncio.to_thread(self._generate_image, _object, to_file=to_file, img=img)
 
-    # --- VOICE IDENTITY & HABITS DASHBOARD (4-QUADRANT FULL-PAGE DESIGN) ---
+    # --- 30-DAGEN DASHBOARD ---
     def _generate_stats_image(
         self,
         _object: discord.Member,
@@ -580,7 +421,6 @@ class usercard(commands.Cog):
         size = (1942, 1096)
         img = Image.new("RGBA", size, (0, 0, 0, 0))
 
-        # 1. Base Background
         try:
             bg_image = Image.open(self.icons["background"]).convert("RGBA").resize(size)
             mask = Image.new("L", size, 0)
@@ -594,7 +434,6 @@ class usercard(commands.Cog):
         draw = ImageDraw.Draw(img)
         align_text_center = functools.partial(self.align_text_center, draw)
 
-        # 2. Header: Avatar
         if _object_display:
             try:
                 avatar = Image.open(io.BytesIO(_object_display)).resize((140, 140))
@@ -608,7 +447,6 @@ class usercard(commands.Cog):
             except Exception:
                 pass
 
-        # 3. Header: Username & Persona Badge
         name_str = self.remove_unprintable_characters(_object.display_name) or _object.name
         draw.text((225, 45), text=name_str, fill=(255, 255, 255), font=self.bold_font[50])
 
@@ -617,7 +455,6 @@ class usercard(commands.Cog):
         draw.rounded_rectangle((225, 120, 245 + persona_w + 20, 180), radius=12, fill=(255, 5, 2))
         draw.text((235, 130), text=persona_str, fill=(255, 255, 255), font=self.bold_font[30])
 
-        # 4. Header: Server Logo & Name
         try:
             logo = Image.open(self.icons["logo"]).resize((55, 55))
             img.paste(logo, (1320, 50, 1375, 105), mask=logo.split()[3])
@@ -625,11 +462,7 @@ class usercard(commands.Cog):
             pass
         draw.text((1390, 50), text="Shadowzone Gaming", fill=(163, 163, 163), font=self.font[54])
 
-        # ==================== 4-QUADRANT DASHBOARD ====================
-        # Links: x=60 -> 940 (breedte 880)
-        # Rechts: x=1000 -> 1880 (breedte 880)
-
-        # --- BOX 1 (TOP LINKS): VOICE STATUS & SERVER RANG ---
+        # BOX 1 (TOP LINKS): VOICE STATUS & SERVER RANG
         draw.rounded_rectangle((60, 204, 940, 585), radius=15, fill=(47, 49, 54))
         align_text_center((80, 214, 920, 284), text="Voice Status & Rang", fill=(255, 255, 255), font=self.bold_font[40])
         try:
@@ -638,19 +471,17 @@ class usercard(commands.Cog):
         except Exception:
             pass
 
-        # Row 1: Server Rang (#X van Y)
         draw.rounded_rectangle((80, 301, 920, 418), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 301, 380, 418), radius=15, fill=(24, 26, 27))
         align_text_center((80, 301, 380, 418), text="Rang", fill=(255, 255, 255), font=self.bold_font[36])
         align_text_center((380, 301, 920, 418), text=stats.get("rank_str", "-"), fill=(255, 255, 255), font=self.bold_font[36])
 
-        # Row 2: Totaal Uren
         draw.rounded_rectangle((80, 448, 920, 565), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 448, 380, 565), radius=15, fill=(24, 26, 27))
         align_text_center((80, 448, 380, 565), text="Totaal", fill=(255, 255, 255), font=self.bold_font[30])
         align_text_center((380, 448, 920, 565), text=f"{stats.get('total_hours', 0)} Uur", fill=(255, 255, 255), font=self.font[36])
 
-        # --- BOX 2 (BOTTOM LINKS): TIJDSBESTEDING ---
+        # BOX 2 (BOTTOM LINKS): TIJDSBESTEDING
         draw.rounded_rectangle((60, 615, 940, 996), radius=15, fill=(47, 49, 54))
         align_text_center((80, 625, 920, 695), text="Tijdsbesteding", fill=(255, 255, 255), font=self.bold_font[40])
         try:
@@ -669,7 +500,7 @@ class usercard(commands.Cog):
         align_text_center((80, 859, 430, 976), text="Weekend Aandeel", fill=(255, 255, 255), font=self.bold_font[30])
         align_text_center((430, 859, 920, 976), text=f"{stats.get('weekend_pct', 0)}% van voice tijd", fill=(255, 255, 255), font=self.font[36])
 
-        # --- BOX 3 (TOP RECHTS): GEWOONTES & PIEKTIJD ---
+        # BOX 3 (TOP RECHTS): GEWOONTES & PIEKTIJD
         draw.rounded_rectangle((1000, 204, 1880, 585), radius=15, fill=(47, 49, 54))
         align_text_center((1020, 214, 1860, 284), text="Gewoontes & Piektijd", fill=(255, 255, 255), font=self.bold_font[40])
 
@@ -683,10 +514,9 @@ class usercard(commands.Cog):
         align_text_center((1020, 448, 1370, 565), text="Patroon", fill=(255, 255, 255), font=self.bold_font[30])
         align_text_center((1370, 448, 1860, 565), text=stats.get("activity_label", "-"), fill=(255, 255, 255), font=self.font[36])
 
-        # --- BOX 4 (BOTTOM RECHTS): WEKELIJKSE ACTIVITEIT (7-DAGEN GRAFIEK) ---
+        # BOX 4 (BOTTOM RECHTS): WEKELIJKSE ACTIVITEIT
         draw.rounded_rectangle((1000, 615, 1880, 996), radius=15, fill=(47, 49, 54))
         align_text_center((1020, 625, 1860, 695), text="Wekelijkse Activiteit", fill=(255, 255, 255), font=self.bold_font[40])
-
         draw.rounded_rectangle((1020, 712, 1860, 976), radius=15, fill=(32, 34, 37))
 
         day_labels = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"]
@@ -704,26 +534,18 @@ class usercard(commands.Cog):
             bar_color = (255, 5, 2) if is_peak else (79, 84, 92)
             draw.rounded_rectangle((bx, 905 - bar_h, bx + 65, 905), radius=6, fill=bar_color)
 
-            # Daglabel
             lbl = day_labels[i]
             lbl_box = self.bold_font[30].getbbox(lbl)
             lbl_x = bx + int((65 - (lbl_box[2] - lbl_box[0])) / 2)
             draw.text((lbl_x, 920), text=lbl, fill=(255, 255, 255) if is_peak else (160, 160, 160), font=self.bold_font[30])
 
-            # Uur-aantal boven de staaf
             if hours[i] > 0:
                 h_str = f"{hours[i]}u"
                 h_box = self.font[28].getbbox(h_str)
                 h_x = bx + int((65 - (h_box[2] - h_box[0])) / 2)
                 draw.text((h_x, 905 - bar_h - 32), text=h_str, fill=(200, 200, 200), font=self.font[28])
 
-        # Voetnoot linksonderin
-        draw.text(
-            (200, 1025),
-            text="* Op basis van de afgelopen 30 dagen",
-            fill=(150, 155, 165),
-            font=self.font[30],
-        )
+        draw.text((200, 1025), text="* Op basis van de afgelopen 30 dagen", fill=(150, 155, 165), font=self.font[30])
 
         if not to_file:
             return img
@@ -745,7 +567,6 @@ class usercard(commands.Cog):
         await client.close()
 
         avatar_bytes = await _object.display_avatar.read()
-
         return await asyncio.to_thread(
             self._generate_stats_image,
             _object,
@@ -754,6 +575,194 @@ class usercard(commands.Cog):
             _object_display=avatar_bytes,
         )
 
+    # --- WRAPPED JAAROVERZICHT DASHBOARD ---
+    def _generate_wrapped_image(
+        self,
+        _object: discord.Member,
+        to_file: bool,
+        stats: dict,
+        _object_display: typing.Optional[bytes],
+        attended_events: int,
+        total_events: int,
+    ) -> typing.Union[Image.Image, discord.File]:
+        size = (1942, 1096)
+        img = Image.new("RGBA", size, (0, 0, 0, 0))
+
+        try:
+            bg_image = Image.open(self.icons["background"]).convert("RGBA").resize(size)
+            mask = Image.new("L", size, 0)
+            d = ImageDraw.Draw(mask)
+            d.rounded_rectangle((0, 0, size[0], size[1]), radius=50, fill=255)
+            img.paste(bg_image, (0, 0), mask=mask)
+        except Exception:
+            draw_bg = ImageDraw.Draw(img)
+            draw_bg.rounded_rectangle((0, 0, size[0], size[1]), radius=50, fill=(32, 34, 37))
+
+        draw = ImageDraw.Draw(img)
+        align_text_center = functools.partial(self.align_text_center, draw)
+
+        year = stats.get("year", datetime.now().year)
+
+        # 1. Header: Avatar
+        if _object_display:
+            try:
+                avatar = Image.open(io.BytesIO(_object_display)).resize((140, 140))
+                mask_av = Image.new("L", avatar.size, 0)
+                d_av = ImageDraw.Draw(mask_av)
+                d_av.rounded_rectangle((0, 0, avatar.width, avatar.height), radius=20, fill=255)
+                try:
+                    img.paste(avatar, (60, 45, 200, 185), mask=ImageChops.multiply(mask_av, avatar.split()[3]))
+                except IndexError:
+                    img.paste(avatar, (60, 45, 200, 185), mask=mask_av)
+            except Exception:
+                pass
+
+        # 2. Header: Username & Wrapped Title Badge
+        name_str = self.remove_unprintable_characters(_object.display_name) or _object.name
+        draw.text((225, 45), text=name_str, fill=(255, 255, 255), font=self.bold_font[50])
+
+        badge_str = f"Wrapped {year}: {stats.get('persona', 'Gezelligheidsdier')}"
+        badge_w = self.bold_font[30].getbbox(badge_str)[2]
+        draw.rounded_rectangle((225, 120, 245 + badge_w + 20, 180), radius=12, fill=(255, 5, 2))
+        draw.text((235, 130), text=badge_str, fill=(255, 255, 255), font=self.bold_font[30])
+
+        # 3. Header: Server Logo & Wrapped Jaar
+        try:
+            logo = Image.open(self.icons["logo"]).resize((55, 55))
+            img.paste(logo, (1320, 50, 1375, 105), mask=logo.split()[3])
+        except Exception:
+            pass
+        draw.text((1390, 50), text=f"WRAPPED {year}", fill=(255, 5, 2), font=self.bold_font[50])
+
+        # --- BOX 1 (TOP LINKS): JAARPRESTATIES ---
+        draw.rounded_rectangle((60, 204, 940, 585), radius=15, fill=(47, 49, 54))
+        align_text_center((80, 214, 920, 284), text=f"Jaarprestaties {year}", fill=(255, 255, 255), font=self.bold_font[40])
+        try:
+            icon_p = Image.open(self.icons["person"]).resize((65, 65))
+            img.paste(icon_p, (855, 214), mask=icon_p.split()[3])
+        except Exception:
+            pass
+
+        draw.rounded_rectangle((80, 301, 920, 418), radius=15, fill=(32, 34, 37))
+        draw.rounded_rectangle((80, 301, 380, 418), radius=15, fill=(24, 26, 27))
+        align_text_center((80, 301, 380, 418), text="Jaarrang", fill=(255, 255, 255), font=self.bold_font[36])
+        align_text_center((380, 301, 920, 418), text=stats.get("rank_str", "-"), fill=(255, 255, 255), font=self.bold_font[36])
+
+        draw.rounded_rectangle((80, 448, 920, 565), radius=15, fill=(32, 34, 37))
+        draw.rounded_rectangle((80, 448, 380, 565), radius=15, fill=(24, 26, 27))
+        align_text_center((80, 448, 380, 565), text="Totaal VC", fill=(255, 255, 255), font=self.bold_font[30])
+        total_vc_str = f"{stats.get('total_hours', 0)} Uur ({stats.get('total_days_vc', 0)} Dagen)"
+        align_text_center((380, 448, 920, 565), text=total_vc_str, fill=(255, 255, 255), font=self.font[36])
+
+        # --- BOX 2 (BOTTOM LINKS): HOOGTEPUNTEN & EVENTS ---
+        draw.rounded_rectangle((60, 615, 940, 996), radius=15, fill=(47, 49, 54))
+        align_text_center((80, 625, 920, 695), text="Hoogtepunten & Events", fill=(255, 255, 255), font=self.bold_font[40])
+        try:
+            icon_g = Image.open(self.icons["game"]).resize((65, 65))
+            img.paste(icon_g, (855, 625), mask=icon_g.split()[3])
+        except Exception:
+            pass
+
+        draw.rounded_rectangle((80, 712, 920, 829), radius=15, fill=(32, 34, 37))
+        draw.rounded_rectangle((80, 712, 430, 829), radius=15, fill=(24, 26, 27))
+        align_text_center((80, 712, 430, 829), text="Marathondag", fill=(255, 255, 255), font=self.bold_font[32])
+        marathon_str = f"{stats.get('marathon_hours', 0)}u op {stats.get('marathon_date', '-')}" if stats.get('marathon_hours', 0) > 0 else "-"
+        align_text_center((430, 712, 920, 829), text=marathon_str, fill=(255, 255, 255), font=self.font[36])
+
+        draw.rounded_rectangle((80, 859, 920, 976), radius=15, fill=(32, 34, 37))
+        draw.rounded_rectangle((80, 859, 430, 976), radius=15, fill=(24, 26, 27))
+        align_text_center((80, 859, 430, 976), text="SZG Events", fill=(255, 255, 255), font=self.bold_font[32])
+        event_str = f"{attended_events} van de {total_events} bezocht" if total_events > 0 else (f"{attended_events} bezocht" if attended_events > 0 else "-")
+        align_text_center((430, 859, 920, 976), text=event_str, fill=(255, 255, 255), font=self.font[36])
+
+        # --- BOX 3 (TOP RECHTS): RITME & SEIZOENEN ---
+        draw.rounded_rectangle((1000, 204, 1880, 585), radius=15, fill=(47, 49, 54))
+        align_text_center((1020, 214, 1860, 284), text="Ritme & Seizoenen", fill=(255, 255, 255), font=self.bold_font[40])
+
+        draw.rounded_rectangle((1020, 301, 1860, 418), radius=15, fill=(32, 34, 37))
+        draw.rounded_rectangle((1020, 301, 1370, 418), radius=15, fill=(24, 26, 27))
+        align_text_center((1020, 301, 1370, 418), text="Actieve Dagen", fill=(255, 255, 255), font=self.bold_font[32])
+        active_str = f"{stats.get('active_days_count', 0)} van {stats.get('total_days_in_year', 365)} ({stats.get('active_pct', 0)}%)"
+        align_text_center((1370, 301, 1860, 418), text=active_str, fill=(255, 255, 255), font=self.font[36])
+
+        draw.rounded_rectangle((1020, 448, 1860, 565), radius=15, fill=(32, 34, 37))
+        draw.rounded_rectangle((1020, 448, 1370, 565), radius=15, fill=(24, 26, 27))
+        align_text_center((1020, 448, 1370, 565), text="Top Seizoen", fill=(255, 255, 255), font=self.bold_font[32])
+        season_str = f"{stats.get('top_season', '-')} ({stats.get('weekend_pct', 0)}% in weekend)"
+        align_text_center((1370, 448, 1860, 565), text=season_str, fill=(255, 255, 255), font=self.font[36])
+
+        # --- BOX 4 (BOTTOM RECHTS): 12-MAANDEN GRAFIEK ---
+        draw.rounded_rectangle((1000, 615, 1880, 996), radius=15, fill=(47, 49, 54))
+        align_text_center((1020, 625, 1860, 695), text=f"Maandelijkse Activiteit ({year})", fill=(255, 255, 255), font=self.bold_font[40])
+        draw.rounded_rectangle((1020, 712, 1860, 976), radius=15, fill=(32, 34, 37))
+
+        months = ["Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"]
+        m_norms = stats.get("month_norm", [0] * 12)
+        m_hours = stats.get("month_hours", [0] * 12)
+
+        start_x = 1050
+        bar_w = 44
+        gap = 22
+        max_bar_h = 135
+
+        for i in range(12):
+            bx = start_x + (i * (bar_w + gap))
+            val = m_norms[i] if i < len(m_norms) else 0
+            bar_h = max(int(val * max_bar_h), 6) if stats.get("total_minutes", 0) > 0 else 6
+            is_peak = (val == 1.0 and stats.get("total_minutes", 0) > 0)
+
+            bar_color = (255, 5, 2) if is_peak else (79, 84, 92)
+            draw.rounded_rectangle((bx, 905 - bar_h, bx + bar_w, 905), radius=5, fill=bar_color)
+
+            lbl = months[i]
+            lbl_box = self.bold_font[26].getbbox(lbl)
+            lbl_x = bx + int((bar_w - (lbl_box[2] - lbl_box[0])) / 2)
+            draw.text((lbl_x, 920), text=lbl, fill=(255, 255, 255) if is_peak else (160, 160, 160), font=self.bold_font[26])
+
+            if m_hours[i] > 0:
+                h_str = f"{int(round(m_hours[i]))}u"
+                h_box = self.font[24].getbbox(h_str)
+                h_x = bx + int((bar_w - (h_box[2] - h_box[0])) / 2)
+                draw.text((h_x, 905 - bar_h - 28), text=h_str, fill=(200, 200, 200), font=self.font[24])
+
+        draw.text((200, 1025), text=f"* Shadowzone Gaming Wrapped {year}", fill=(150, 155, 165), font=self.font[30])
+
+        if not to_file:
+            return img
+        buffer = io.BytesIO()
+        img.save(buffer, format="png", optimize=True)
+        buffer.seek(0)
+        return discord.File(buffer, filename="wrapped_image.png")
+
+    async def generate_wrapped_image(
+        self,
+        _object: discord.Member,
+        year: typing.Optional[int] = None,
+        to_file: bool = True,
+    ) -> typing.Union[Image.Image, discord.File]:
+        target_year = year or datetime.now().year
+        api_tokens = await self.bot.get_shared_api_tokens("statbot")
+        api_key = api_tokens.get("api_key", "")
+
+        client = StatbotClient(api_key=api_key)
+        stats = await client.get_user_wrapped_stats(_object.guild.id, _object.id, year=target_year)
+        await client.close()
+
+        member = self.get_frappe_member_data(_object.id)
+        attended_events, total_events = self.get_frappe_year_events(member, target_year)
+        avatar_bytes = await _object.display_avatar.read()
+
+        return await asyncio.to_thread(
+            self._generate_wrapped_image,
+            _object,
+            to_file=to_file,
+            stats=stats,
+            _object_display=avatar_bytes,
+            attended_events=attended_events,
+            total_events=total_events,
+        )
+
+    # --- COMMANDS ---
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
     @commands.hybrid_command(name="lid", description="Krijg profiel van gebruiker")
@@ -765,10 +774,24 @@ class usercard(commands.Cog):
     ) -> None:
         """Krijg profiel van gebruiker"""
         if not member.bot:
-            await usercardView(
-                cog=self,
-                _object=member,
-            ).start(ctx, command='card')
+            await usercardView(cog=self, _object=member).start(ctx, command='card')
+        else:
+            await ctx.send('Niet mogelijk voor bot')
+
+    @commands.guild_only()
+    @commands.bot_has_permissions(attach_files=True)
+    @commands.hybrid_command(name="wrapped", description="Krijg het jaaroverzicht (Wrapped) van een gebruiker")
+    async def wrapped(
+        self,
+        ctx: commands.Context,
+        year: typing.Optional[int] = None,
+        *,
+        member: discord.Member = commands.Author,
+    ) -> None:
+        """Krijg het jaaroverzicht (Wrapped) van een gebruiker"""
+        if not member.bot:
+            target_year = year or datetime.now().year
+            await usercardView(cog=self, _object=member, year=target_year).start(ctx, command='wrapped', year=target_year)
         else:
             await ctx.send('Niet mogelijk voor bot')
 
@@ -783,9 +806,6 @@ class usercard(commands.Cog):
     ) -> None:
         """Krijg Discord ID van gebruiker"""
         if not member.bot:
-            await usercardView(
-                cog=self,
-                _object=member,
-            ).start(ctx, command='id')
+            await usercardView(cog=self, _object=member).start(ctx, command='id')
         else:
             await ctx.send('Niet mogelijk voor bot')
