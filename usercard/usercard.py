@@ -590,7 +590,7 @@ class usercard(commands.Cog):
 
         # BOX 4 (BOTTOM RECHTS): WEKELIJKSE ACTIVITEIT
         draw.rounded_rectangle((1000, 615, 1880, 996), radius=15, fill=(47, 49, 54))
-        align_text_center((1020, 625, 1860, 695), text="Wekelijkse Activiteit", fill=(255, 255, 255), font=self.bold_font[40])
+        align_text_center((1020, 625, 1860, 695), text="Wekelijke Activiteit", fill=(255, 255, 255), font=self.bold_font[40])
         draw.rounded_rectangle((1020, 712, 1860, 976), radius=15, fill=(32, 34, 37))
 
         day_labels = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"]
@@ -831,9 +831,10 @@ class usercard(commands.Cog):
     async def generate_wrapped_image(
         self,
         _object: discord.Member,
+        year: typing.Optional[int] = None,
         to_file: bool = True,
     ) -> typing.Union[discord.File, str]:
-        target_year = datetime.now().year - 1
+        target_year = year or (datetime.now().year - 1)
         api_tokens = await self.bot.get_shared_api_tokens("statbot")
         api_key = api_tokens.get("api_key", "")
 
@@ -882,18 +883,37 @@ class usercard(commands.Cog):
 
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
-    @commands.hybrid_command(name="wrapped", description="Krijg het meest recente jaaroverzicht (Wrapped) van een gebruiker")
+    @commands.hybrid_command(
+        name="wrapped",
+        description="Krijg het jaaroverzicht (Wrapped) van een gebruiker",
+    )
+    @discord.app_commands.describe(
+        member="Het lid waarvan je de Wrapped wilt bekijken (standaard jezelf)",
+        year="Het kalenderjaar (bijv. 2025, standaard het afgelopen jaar)"
+    )
     async def wrapped(
         self,
         ctx: commands.Context,
-        *,
-        member: discord.Member = commands.Author,
+        member: typing.Optional[discord.Member] = None,
+        year: typing.Optional[int] = None,
     ) -> None:
-        """Krijg het meest recente jaaroverzicht (Wrapped) van een gebruiker"""
-        if not member.bot:
-            await usercardView(cog=self, _object=member).start(ctx, command='wrapped')
-        else:
+        """Krijg het jaaroverzicht (Wrapped) van een gebruiker"""
+        target_member = member or ctx.author
+        if target_member.bot:
             await ctx.send('Niet mogelijk voor bot')
+            return
+
+        current_year = datetime.now().year
+        target_year = year or (current_year - 1)
+
+        if target_year >= current_year:
+            await ctx.send(
+                f"⚠️ Het jaar **{target_year}** is nog bezig! Je kunt een Wrapped over {target_year} pas vanaf **1 januari {target_year + 1}** bekijken.\n"
+                f"*(Standaard wordt **{current_year - 1}** getoond met `/wrapped`)*"
+            )
+            return
+
+        await usercardView(cog=self, _object=target_member, year=target_year).start(ctx, command='wrapped', year=target_year)
 
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
