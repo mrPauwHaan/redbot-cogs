@@ -819,8 +819,6 @@ class usercard(commands.Cog):
                 h_x = bx + int((bar_w - (h_box[2] - h_box[0])) / 2)
                 draw.text((h_x, 905 - bar_h - 28), text=h_str, fill=(200, 200, 200), font=self.font[24])
 
-        draw.text((200, 1025), text=f"* Shadowzone Gaming Wrapped {year}", fill=(150, 155, 165), font=self.font[30])
-
         if not to_file:
             return img
         buffer = io.BytesIO()
@@ -889,7 +887,7 @@ class usercard(commands.Cog):
     )
     @discord.app_commands.describe(
         member="Het lid waarvan je de Wrapped wilt bekijken (standaard jezelf)",
-        year="Het kalenderjaar (bijv. 2025, standaard het afgelopen jaar)"
+        year="Het kalenderjaar (bijv. 2024, standaard het meest recente jaar)"
     )
     async def wrapped(
         self,
@@ -904,14 +902,25 @@ class usercard(commands.Cog):
             return
 
         current_year = datetime.now().year
-        target_year = year or (current_year - 1)
+        recent_wrapped_year = current_year - 1
+        target_year = year or recent_wrapped_year
 
+        # 1. Huidig / toekomstig jaar blokkeren
         if target_year >= current_year:
             await ctx.send(
                 f"⚠️ Het jaar **{target_year}** is nog bezig! Je kunt een Wrapped over {target_year} pas vanaf **1 januari {target_year + 1}** bekijken.\n"
-                f"*(Standaard wordt **{current_year - 1}** getoond met `/wrapped`)*"
+                f"*(Standaard wordt **{recent_wrapped_year}** getoond met `/wrapped`)*"
             )
             return
+
+        # 2. Eerdere jaargangen (Archief) exclusief voor Leden / SZG+
+        if target_year < recent_wrapped_year:
+            if not self.is_member(target_member) or not self.is_member(ctx.author):
+                await ctx.send(
+                    f"🔒 Het opvragen van eerdere jaargangen (zoals **{target_year}**) is een exclusief archiefvoordeel voor **Leden** en **SZG+**!\n"
+                    f"*(Gasten kunnen uitsluitend de meest recente Wrapped van **{recent_wrapped_year}** bekijken)*"
+                )
+                return
 
         await usercardView(cog=self, _object=target_member, year=target_year).start(ctx, command='wrapped', year=target_year)
 
