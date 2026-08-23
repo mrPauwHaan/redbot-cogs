@@ -8,7 +8,7 @@
     "requirements": [
         "pillow",
         "fonttools",
-        "frappeclient",
+        "git+https://github.com/frappe/frappe-client.git",
         "aiohttp"
     ],
     "min_bot_version": "3.5.3",
