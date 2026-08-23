@@ -227,15 +227,11 @@ class StatbotClient:
     async def get_user_wrapped_stats(
         self, guild_id: int, user_id: int, year: int
     ) -> Dict[str, Any]:
-        """Haalt alle statistieken en records op voor een specifiek kalenderjaar."""
+        """Haalt alle statistieken, vergelijkingen en records op voor een specifiek kalenderjaar."""
         session = await self._get_session()
-        now_utc = datetime.now(timezone.utc)
 
         start_dt = datetime(year, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-        if year == now_utc.year:
-            end_dt = now_utc
-        else:
-            end_dt = datetime(year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+        end_dt = datetime(year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
 
         start_ms = int(start_dt.timestamp() * 1000)
         end_ms = int(end_dt.timestamp() * 1000)
@@ -249,7 +245,7 @@ class StatbotClient:
             "voice_states[]": "normal",
         }
 
-        # 2. Dagelijkse serie voor het hele jaar (365 datapunten)
+        # 2. Dagelijkse serie voor het hele jaar (365/366 dagen)
         series_url = f"{self.BASE_URL}/guilds/{guild_id}/voice/series"
         series_params = {
             "start": start_ms,
@@ -257,6 +253,17 @@ class StatbotClient:
             "whitelist_members[]": str(user_id),
             "voice_states[]": "normal",
             "interval": "day",
+        }
+
+        # 3. Totale tijd van het voorgaande jaar (voor vergelijking)
+        prev_year = year - 1
+        prev_start_dt = datetime(prev_year, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        prev_end_dt = datetime(prev_year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+        prev_sums_params = {
+            "start": int(prev_start_dt.timestamp() * 1000),
+            "end": int(prev_end_dt.timestamp() * 1000),
+            "whitelist_members[]": str(user_id),
+            "voice_states[]": "normal",
         }
 
         try:
@@ -271,11 +278,30 @@ class StatbotClient:
         except Exception:
             series_data = []
 
+        try:
+            async with session.get(sums_url, headers=self._headers, params=prev_sums_params) as resp:
+                prev_sums_data = await resp.json() if resp.status == 200 else {}
+        except Exception:
+            prev_sums_data = {}
+
         total_minutes = sums_data.get("count", 0) if isinstance(sums_data, dict) else 0
         total_hours = round(total_minutes / 60, 1)
         total_days_vc = round(total_hours / 24, 1)
 
-        # 3. Jaarrang bepalen
+        prev_total_minutes = prev_sums_data.get("count", 0) if isinstance(prev_sums_data, dict) else 0
+        prev_total_hours = round(prev_total_minutes / 60, 1)
+
+        # Vergelijkingstekst met het voorgaande jaar
+        if prev_total_hours > 0:
+            diff_hours = round(total_hours - prev_total_hours, 1)
+            diff_str = f"+{diff_hours}u" if diff_hours > 0 else f"{diff_hours}u"
+            prev_comp_str = f"{diff_str} vs {prev_year}"
+        elif total_hours > 0:
+            prev_comp_str = f"{total_days_vc} Dagen VC"
+        else:
+            prev_comp_str = "-"
+
+        # 4. Jaarrang bepalen
         top_members = await self.get_top_voice_members(guild_id, start_ms, end_ms)
         rank = None
         total_active_members = len(top_members)
@@ -300,12 +326,13 @@ class StatbotClient:
         else:
             rank_str = "-"
 
-        # 4. Dagelijkse data aggregeren per maand, seizoen & marathon
+        # 5. Dagelijkse data aggregeren per maand, weekdag, seizoen & marathon
         data_points = series_data if isinstance(series_data, list) else series_data.get("data", [])
-        month_bins = [0] * 12  # 0=Jan t/m 11=Dec
+        month_bins = [0] * 12
         weekday_bins = [0] * 7
         season_bins = {"Winter": 0, "Lente": 0, "Zomer": 0, "Herfst": 0}
         month_dutch = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"]
+        weekday_names = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"]
 
         marathon_mins = 0
         marathon_date = "-"
@@ -350,7 +377,14 @@ class StatbotClient:
 
         top_season = max(season_bins, key=season_bins.get) if sum(season_bins.values()) > 0 else "-"
 
-        # 5. Wrapped Persona / Jaartitel
+        # Populairste weekdag (Piekdag)
+        if sum(weekday_bins) > 0:
+            peak_weekday_idx = max(range(7), key=lambda w: weekday_bins[w])
+            peak_weekday = weekday_names[peak_weekday_idx]
+        else:
+            peak_weekday = "-"
+
+        # 6. Wrapped Persona / Jaartitel
         if total_hours < 2:
             persona = "Nieuwsgierige Bezoeker"
         elif total_hours >= 350:
@@ -381,6 +415,7 @@ class StatbotClient:
             "total_minutes": total_minutes,
             "total_hours": total_hours,
             "total_days_vc": total_days_vc,
+            "prev_comp_str": prev_comp_str,
             "rank_str": rank_str,
             "persona": persona,
             "marathon_hours": marathon_hours,
@@ -390,6 +425,7 @@ class StatbotClient:
             "active_pct": active_pct,
             "weekend_pct": weekend_pct,
             "top_season": top_season,
+            "peak_weekday": peak_weekday,
             "month_hours": month_hours,
             "month_norm": month_norm,
         }

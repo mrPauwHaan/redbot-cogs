@@ -34,7 +34,7 @@ class usercard(commands.Cog):
         self.bold_font_path: Path = bundled_data_path(self) / "arial_bold.ttf"
         self.font: typing.Dict[int, ImageFont.ImageFont] = {
             size: ImageFont.truetype(str(self.font_path), size=size)
-            for size in {24, 28, 30, 36, 40, 54}
+            for size in {24, 28, 30, 32, 36, 40, 54}
         }
         self.bold_font: typing.Dict[int, ImageFont.ImageFont] = {
             size: ImageFont.truetype(str(self.bold_font_path), size=size)
@@ -601,7 +601,7 @@ class usercard(commands.Cog):
         draw = ImageDraw.Draw(img)
         align_text_center = functools.partial(self.align_text_center, draw)
 
-        year = stats.get("year", datetime.now().year)
+        year = stats.get("year", datetime.now().year - 1)
 
         # 1. Header: Avatar
         if _object_display:
@@ -651,8 +651,8 @@ class usercard(commands.Cog):
         draw.rounded_rectangle((80, 448, 920, 565), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 448, 380, 565), radius=15, fill=(24, 26, 27))
         align_text_center((80, 448, 380, 565), text="Totaal VC", fill=(255, 255, 255), font=self.bold_font[30])
-        total_vc_str = f"{stats.get('total_hours', 0)} Uur ({stats.get('total_days_vc', 0)} Dagen)"
-        align_text_center((380, 448, 920, 565), text=total_vc_str, fill=(255, 255, 255), font=self.font[36])
+        total_vc_str = f"{stats.get('total_hours', 0)} Uur ({stats.get('prev_comp_str', '-')})"
+        align_text_center((380, 448, 920, 565), text=total_vc_str, fill=(255, 255, 255), font=self.font[32])
 
         # --- BOX 2 (BOTTOM LINKS): HOOGTEPUNTEN & EVENTS ---
         draw.rounded_rectangle((60, 615, 940, 996), radius=15, fill=(47, 49, 54))
@@ -681,15 +681,18 @@ class usercard(commands.Cog):
 
         draw.rounded_rectangle((1020, 301, 1860, 418), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((1020, 301, 1370, 418), radius=15, fill=(24, 26, 27))
-        align_text_center((1020, 301, 1370, 418), text="Actieve Dagen", fill=(255, 255, 255), font=self.bold_font[32])
+        align_text_center((1020, 301, 1370, 418), text="Actieve Dagen", fill=(255, 255, 255), font=self.bold_font[30])
         active_str = f"{stats.get('active_days_count', 0)} van {stats.get('total_days_in_year', 365)} ({stats.get('active_pct', 0)}%)"
         align_text_center((1370, 301, 1860, 418), text=active_str, fill=(255, 255, 255), font=self.font[36])
 
+        # Populairste weekdag & Top seizoen
         draw.rounded_rectangle((1020, 448, 1860, 565), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((1020, 448, 1370, 565), radius=15, fill=(24, 26, 27))
-        align_text_center((1020, 448, 1370, 565), text="Top Seizoen", fill=(255, 255, 255), font=self.bold_font[32])
-        season_str = f"{stats.get('top_season', '-')} ({stats.get('weekend_pct', 0)}% in weekend)"
-        align_text_center((1370, 448, 1860, 565), text=season_str, fill=(255, 255, 255), font=self.font[36])
+        align_text_center((1020, 448, 1370, 565), text="Piekdag", fill=(255, 255, 255), font=self.bold_font[32])
+        piekdag_display = f"{stats.get('peak_weekday', '-')}"
+        if stats.get('top_season') and stats.get('top_season') != "-":
+            piekdag_display += f" (Top: {stats.get('top_season')})"
+        align_text_center((1370, 448, 1860, 565), text=piekdag_display, fill=(255, 255, 255), font=self.font[36])
 
         # --- BOX 4 (BOTTOM RECHTS): 12-MAANDEN GRAFIEK ---
         draw.rounded_rectangle((1000, 615, 1880, 996), radius=15, fill=(47, 49, 54))
@@ -740,7 +743,7 @@ class usercard(commands.Cog):
         year: typing.Optional[int] = None,
         to_file: bool = True,
     ) -> typing.Union[Image.Image, discord.File]:
-        target_year = year or datetime.now().year
+        target_year = year or (datetime.now().year - 1)
         api_tokens = await self.bot.get_shared_api_tokens("statbot")
         api_key = api_tokens.get("api_key", "")
 
@@ -789,11 +792,22 @@ class usercard(commands.Cog):
         member: discord.Member = commands.Author,
     ) -> None:
         """Krijg het jaaroverzicht (Wrapped) van een gebruiker"""
-        if not member.bot:
-            target_year = year or datetime.now().year
-            await usercardView(cog=self, _object=member, year=target_year).start(ctx, command='wrapped', year=target_year)
-        else:
+        if member.bot:
             await ctx.send('Niet mogelijk voor bot')
+            return
+
+        current_year = datetime.now().year
+        target_year = year or (current_year - 1)
+
+        # Controleer of het opgevraagde jaar al volledig is afgelopen
+        if target_year >= current_year:
+            await ctx.send(
+                f"⚠️ Het jaar **{target_year}** is nog bezig! Je kunt een Wrapped over {target_year} pas vanaf **1 januari {target_year + 1}** bekijken.\n"
+                f"*(Standaard wordt **{current_year - 1}** getoond met `/wrapped`)*"
+            )
+            return
+
+        await usercardView(cog=self, _object=member, year=target_year).start(ctx, command='wrapped', year=target_year)
 
     @commands.guild_only()
     @commands.bot_has_permissions(attach_files=True)
