@@ -187,6 +187,60 @@ class usercard(commands.Cog):
         draw.text((x1 + x, y1 + y), text=text, fill=fill, font=font)
         return text_size
 
+    def draw_locked_placeholder(
+        self,
+        draw: ImageDraw.Draw,
+        xy: typing.Tuple[int, int, int, int],
+        text: str = "Lidmaatschap vereist",
+        font: typing.Optional[ImageFont.ImageFont] = None,
+        fill: typing.Tuple[int, int, int] = (140, 145, 155),
+    ) -> None:
+        """Tekent een scherp vector slot-icoon inclusief tekst voor niet-leden."""
+        use_font = font or self.font[30]
+        x1, y1, x2, y2 = xy
+
+        bbox = use_font.getbbox(text)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+
+        lock_w = 18
+        lock_h = 22
+        gap = 10
+
+        total_w = lock_w + gap + text_w
+        start_x = x1 + int((x2 - x1 - total_w) / 2)
+        center_y = y1 + int((y2 - y1) / 2)
+
+        lock_x = start_x
+        lock_y = center_y - int(lock_h / 2)
+
+        # Slotbeugel
+        draw.arc(
+            (lock_x + 3, lock_y, lock_x + lock_w - 3, lock_y + 14),
+            start=180,
+            end=0,
+            fill=fill,
+            width=3,
+        )
+        # Slotkast
+        draw.rounded_rectangle(
+            (lock_x, lock_y + 8, lock_x + lock_w, lock_y + lock_h),
+            radius=3,
+            fill=fill,
+        )
+        # Sleutelgat
+        draw.rectangle(
+            (lock_x + 8, lock_y + 12, lock_x + 10, lock_y + 16),
+            fill=(24, 26, 27),
+        )
+
+        # Tekst
+        text_x = start_x + lock_w + gap
+        text_y = center_y - int(text_h / 2)
+        if use_font in self.bold_font.values():
+            text_y -= 5
+        draw.text((text_x, text_y), text=text, fill=fill, font=use_font)
+
     def remove_unprintable_characters(self, text: str) -> str:
         return (
             "".join(
@@ -312,7 +366,6 @@ class usercard(commands.Cog):
         if isinstance(_object, discord.Member):
             member = self.get_frappe_member_data(_object)
             is_active_member = (member is not None)
-            lock_color = (140, 145, 155)  # Donkergrijze kleur voor gasten
 
             # 1. Bovenste Kaart: Lidmaatschap
             draw.rounded_rectangle((1306 - 125, 204, 1912, 585), radius=15, fill=(47, 49, 54))
@@ -323,43 +376,30 @@ class usercard(commands.Cog):
             except Exception:
                 pass
 
+            # Rij 1: Lid
             draw.rounded_rectangle((1325 - 125, 301, 1892, 418), radius=15, fill=(32, 34, 37))
             draw.rounded_rectangle((1325 - 125, 301, 1588 - 125, 418), radius=15, fill=(24, 26, 27))
             align_text_center((1326 - 125, 301, 1601 - 125, 418), text="Lid", fill=(255, 255, 255), font=self.bold_font[36])
 
-            if is_active_member and member.get('custom_start_lidmaatschap') and member.get('custom_status') == 'Actief' and member.get('membership_type') == 'Lid':
-                lid_datum = datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y')
-                lid_fill = (255, 255, 255)
-                lid_font = self.font[36]
-            elif is_active_member:
-                lid_datum = "-"
-                lid_fill = (255, 255, 255)
-                lid_font = self.font[36]
+            if is_active_member:
+                if member.get('custom_start_lidmaatschap') and member.get('custom_status') == 'Actief' and member.get('membership_type') == 'Lid':
+                    lid_datum = datetime.strptime(member.get('custom_start_lidmaatschap'), '%Y-%m-%d').strftime('%d %B %Y')
+                else:
+                    lid_datum = "-"
+                align_text_center((1601 - 125, 301, 1892, 418), text=lid_datum, fill=(255, 255, 255), font=self.font[36])
             else:
-                lid_datum = "🔒 Lidmaatschap vereist"
-                lid_fill = lock_color
-                lid_font = self.font[30]
+                self.draw_locked_placeholder(draw, (1601 - 125, 301, 1892, 418))
 
-            align_text_center((1601 - 125, 301, 1892, 418), text=lid_datum, fill=lid_fill, font=lid_font)
-
+            # Rij 2: Betrokken
             draw.rounded_rectangle((1325 - 125, 448, 1892, 565), radius=15, fill=(32, 34, 37))
             draw.rounded_rectangle((1325 - 125, 448, 1601 - 125, 565), radius=15, fill=(24, 26, 27))
             align_text_center((1325 - 125, 448, 1601 - 125, 565), text="Betrokken", fill=(255, 255, 255), font=self.bold_font[30])
 
-            if is_active_member and member.get('custom_begin_datum'):
-                betrokken_datum = datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y')
-                betrokken_fill = (255, 255, 255)
-                betrokken_font = self.font[36]
-            elif is_active_member:
-                betrokken_datum = "-"
-                betrokken_fill = (255, 255, 255)
-                betrokken_font = self.font[36]
+            if is_active_member:
+                betrokken_datum = datetime.strptime(member.get('custom_begin_datum'), '%Y-%m-%d').strftime('%d %B %Y') if member.get('custom_begin_datum') else "-"
+                align_text_center((1601 - 125, 448, 1892, 565), text=betrokken_datum, fill=(255, 255, 255), font=self.font[36])
             else:
-                betrokken_datum = "🔒 Lidmaatschap vereist"
-                betrokken_fill = lock_color
-                betrokken_font = self.font[30]
-
-            align_text_center((1601 - 125, 448, 1892, 565), text=betrokken_datum, fill=betrokken_fill, font=betrokken_font)
+                self.draw_locked_placeholder(draw, (1601 - 125, 448, 1892, 565))
 
             # 2. Onderste Kaart: Events
             events = 0
@@ -391,10 +431,11 @@ class usercard(commands.Cog):
             draw.rounded_rectangle((1326 - 125, 712, 1892, 829), radius=15, fill=(32, 34, 37))
             draw.rounded_rectangle((1326 - 125, 712, 1601 - 125, 829), radius=15, fill=(24, 26, 27))
             align_text_center((1326 - 125, 712, 1601 - 125, 829), text="Totaal", fill=(255, 255, 255), font=self.bold_font[36])
-            total_events_str = str(events) if is_active_member else "🔒 Lidmaatschap vereist"
-            total_events_fill = (255, 255, 255) if is_active_member else lock_color
-            total_events_font = self.font[36] if is_active_member else self.font[30]
-            align_text_center((1601 - 125, 712, 1892, 829), text=total_events_str, fill=total_events_fill, font=total_events_font)
+
+            if is_active_member:
+                align_text_center((1601 - 125, 712, 1892, 829), text=str(events), fill=(255, 255, 255), font=self.font[36])
+            else:
+                self.draw_locked_placeholder(draw, (1601 - 125, 712, 1892, 829))
 
             # Row 2: Laatste Event + 10 Bolletjes
             draw.rounded_rectangle((1326 - 125, 859, 1892, 976), radius=15, fill=(32, 34, 37))
@@ -403,14 +444,9 @@ class usercard(commands.Cog):
 
             if is_active_member:
                 last_event_str = f"Event {highest_event_value}" if highest_event_value > 0 else "-"
-                last_event_fill = (255, 255, 255)
-                last_event_font = self.bold_font[30]
+                align_text_center((1601 - 125, 863, 1892, 915), text=last_event_str, fill=(255, 255, 255), font=self.bold_font[30])
             else:
-                last_event_str = "🔒 Lidmaatschap vereist"
-                last_event_fill = lock_color
-                last_event_font = self.font[30]
-
-            align_text_center((1601 - 125, 863, 1892, 915), text=last_event_str, fill=last_event_fill, font=last_event_font)
+                self.draw_locked_placeholder(draw, (1601 - 125, 863, 1892, 915), font=self.font[28])
 
             latest_global_event = max(self.get_latest_event_number(highest_event_value), highest_event_value, 10)
             last_10_events = list(range(latest_global_event - 9, latest_global_event + 1))
@@ -604,7 +640,6 @@ class usercard(commands.Cog):
         stats = await client.get_user_voice_stats(_object.guild.id, _object.id, days=30)
         await client.close()
 
-        # Drempel: minimaal 60 minuten nodig
         total_minutes = stats.get("total_minutes", 0)
         if total_minutes < 60:
             needed = 60 - total_minutes
@@ -647,7 +682,6 @@ class usercard(commands.Cog):
         align_text_center = functools.partial(self.align_text_center, draw)
 
         year = stats.get("year", datetime.now().year - 1)
-        lock_color = (140, 145, 155)
 
         # 1. Header: Avatar
         if _object_display:
@@ -728,15 +762,12 @@ class usercard(commands.Cog):
         draw.rounded_rectangle((80, 859, 920, 976), radius=15, fill=(32, 34, 37))
         draw.rounded_rectangle((80, 859, 430, 976), radius=15, fill=(24, 26, 27))
         align_text_center((80, 859, 430, 976), text="SZG Events", fill=(255, 255, 255), font=self.bold_font[32])
+
         if is_frappe_member:
             event_str = f"{attended_events} van de {total_events} bezocht" if total_events > 0 else (f"{attended_events} bezocht" if attended_events > 0 else "-")
-            event_fill = (255, 255, 255)
-            event_font = self.font[36]
+            align_text_center((430, 859, 920, 976), text=event_str, fill=(255, 255, 255), font=self.font[36])
         else:
-            event_str = "🔒 Lidmaatschap vereist"
-            event_fill = lock_color
-            event_font = self.font[30]
-        align_text_center((430, 859, 920, 976), text=event_str, fill=event_fill, font=event_font)
+            self.draw_locked_placeholder(draw, (430, 859, 920, 976), font=self.font[30])
 
         # --- BOX 3 (TOP RECHTS): RITME & SEIZOENEN ---
         draw.rounded_rectangle((1000, 204, 1880, 585), radius=15, fill=(47, 49, 54))
@@ -810,7 +841,6 @@ class usercard(commands.Cog):
         stats = await client.get_user_wrapped_stats(_object.guild.id, _object.id, year=target_year)
         await client.close()
 
-        # Drempel: minimaal 60 minuten nodig
         total_minutes = stats.get("total_minutes", 0)
         if total_minutes < 60:
             return f"🔒 **Niet genoeg voice activiteit** in {target_year} om een Wrapped te ontgrendelen *(minimaal 1 uur activiteit vereist in dat jaar)*."
