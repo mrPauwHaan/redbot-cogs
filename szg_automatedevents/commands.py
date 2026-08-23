@@ -164,6 +164,7 @@ class automatedevents(commands.Cog):
                     doc_to_update['status'] = 'Starttijd moet voor eindtijd zijn'
                     self.Frappeclient.update(doc_to_update)
                     continue
+                
                 start_time_local = self.local_timezone.localize(datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S'))
                 if start_time_local <= datetime.datetime.now(self.local_timezone):
                     doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
@@ -171,16 +172,16 @@ class automatedevents(commands.Cog):
                     self.Frappeclient.update(doc_to_update)
                     self.log.error(f"[{event['title']}] Starttijd van nieuwe events kan niet in het verleden liggen")
                     continue
-                
+
                 if datetime.datetime.strptime(event['date_create'], '%Y-%m-%d %H:%M:%S') <= datetime.datetime.now():
                     event_args = {
-                    "name": event['title'],
-                    "description": event['description'],
-                    "start_time": self.local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc),
-                    "end_time": self.local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None,
-                    "privacy_level": discord.PrivacyLevel.guild_only,
+                        "name": event['title'],
+                        "description": event['description'],
+                        "start_time": self.local_timezone.localize(datetime.datetime.strptime(event['start_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc),
+                        "end_time": self.local_timezone.localize(datetime.datetime.strptime(event['end_time'], "%Y-%m-%d %H:%M:%S")).astimezone(datetime.timezone.utc) if event['end_time'] else None,
+                        "privacy_level": discord.PrivacyLevel.guild_only,
                     }
-                    
+
                     if event['image']:
                         image = "http://shadowzone.nl/" + event['image']
                         async with aiohttp.ClientSession() as session:
@@ -213,4 +214,31 @@ class automatedevents(commands.Cog):
                             self.log.error(f"[{event['title']}] Moet een eindtijd hebben, is automatisch gezet op 1 uur later")
 
                     await guild.create_scheduled_event(**event_args)
-                    self.Frappeclient.delete('Discord events', event['name'])
+
+                    # Controleer of het event jaarlijks is
+                    is_yearly = event.get('jaarlijks', 0) == 1
+
+                    if is_yearly:
+                        # Parse datums en tel er 1 jaar bij op
+                        dt_start = datetime.datetime.strptime(event['start_time'], '%Y-%m-%d %H:%M:%S')
+                        dt_start_next = dt_start.replace(year=dt_start.year + 1)
+                        
+                        doc_to_update = self.Frappeclient.get_doc('Discord events', event['name'])
+                        doc_to_update['start_time'] = dt_start_next.strftime('%Y-%m-%d %H:%M:%S')
+
+                        if event['end_time']:
+                            dt_end = datetime.datetime.strptime(event['end_time'], '%Y-%m-%d %H:%M:%S')
+                            dt_end_next = dt_end.replace(year=dt_end.year + 1)
+                            doc_to_update['end_time'] = dt_end_next.strftime('%Y-%m-%d %H:%M:%S')
+
+                        if event.get('date_create'):
+                            dt_create = datetime.datetime.strptime(event['date_create'], '%Y-%m-%d %H:%M:%S')
+                            dt_create_next = dt_create.replace(year=dt_create.year + 1)
+                            doc_to_update['date_create'] = dt_create_next.strftime('%Y-%m-%d %H:%M:%S')
+
+                        doc_to_update['status'] = 'Jaarlijks event verzet naar volgend jaar'
+                        self.Frapleclient_update = self.Frappeclient.update(doc_to_update)
+                        self.log.info(f"[{event['title']}] Jaarlijks event bijgewerkt naar volgend jaar.")
+                    else:
+                        # Niet jaarlijks, dus verwijderen uit Frappe
+                        self.Frappeclient.delete('Discord events', event['name'])
