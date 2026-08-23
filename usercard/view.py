@@ -1,5 +1,7 @@
 from redbot.core import commands
 import discord
+import typing
+from datetime import datetime
 
 
 class usercardView(discord.ui.View):
@@ -7,15 +9,19 @@ class usercardView(discord.ui.View):
         self,
         cog: commands.Cog,
         _object: discord.Member,
+        year: typing.Optional[int] = None,
+        *args,
+        **kwargs,
     ) -> None:
         super().__init__(timeout=60 * 60)
         self.cog: commands.Cog = cog
         self.ctx: commands.Context = None
         self._object: discord.Member = _object
         self._message: discord.Message = None
+        self.year: int = year or (datetime.now().year - 1)
 
         # Voeg 'Word Lid' knop ALLEEN toe voor gasten
-        if not self.cog.is_member(self._object):
+        if hasattr(self.cog, "is_member") and not self.cog.is_member(self._object):
             self.add_item(
                 discord.ui.Button(
                     label="Word Lid",
@@ -29,8 +35,11 @@ class usercardView(discord.ui.View):
         self,
         ctx: commands.Context,
         command: str,
+        year: typing.Optional[int] = None,
     ) -> discord.Message:
         self.ctx = ctx
+        if year is not None:
+            self.year = year
 
         if command == "card":
             file = await self.cog.generate_image(self._object, to_file=True)
@@ -39,7 +48,7 @@ class usercardView(discord.ui.View):
             else:
                 self._message = await self.ctx.send("Kon profiel niet laden.")
         elif command == "wrapped":
-            res = await self.cog.generate_wrapped_image(self._object, to_file=True)
+            res = await self.cog.generate_wrapped_image(self._object, year=self.year, to_file=True)
             if isinstance(res, discord.File):
                 self._message = await self.ctx.send(file=res, view=self)
             else:
@@ -97,7 +106,7 @@ class usercardView(discord.ui.View):
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.defer(thinking=False)
-        res = await self.cog.generate_wrapped_image(self._object, to_file=True)
+        res = await self.cog.generate_wrapped_image(self._object, year=self.year, to_file=True)
         if isinstance(res, discord.File):
             await self._message.edit(content="", attachments=[res])
         else:
