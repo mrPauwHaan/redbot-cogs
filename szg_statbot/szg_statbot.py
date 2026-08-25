@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 import discord
 from discord.ext import tasks
 import logging
@@ -10,6 +10,13 @@ from .statbot_api import StatbotClient, format_category_name
 
 log = logging.getLogger("red.szg_statbot")
 
+# Definieer 24 vaste tijdstippen exact op minuut :00 in de lokale tijdzone
+LOCAL_TZ = pytz.timezone("Europe/Amsterdam")
+HOURLY_TIMES = [
+    datetime.time(hour=h, minute=0, second=0, tzinfo=LOCAL_TZ)
+    for h in range(24)
+]
+
 
 class SZGStatbot(commands.Cog):
     """Beheert live voice-gamification via Statbot v1 sums API en Discord categorieën."""
@@ -17,7 +24,7 @@ class SZGStatbot(commands.Cog):
     def __init__(self, bot: Red) -> None:
         self.bot = bot
         self.config = Config.get_conf(self, identifier=9812471923, force_registration=True)
-        self.local_timezone = pytz.timezone("Europe/Amsterdam")
+        self.local_timezone = LOCAL_TZ
 
         default_guild = {
             "tracked_category_id": None,
@@ -36,9 +43,9 @@ class SZGStatbot(commands.Cog):
         tokens = await self.bot.get_shared_api_tokens("statbot")
         return tokens.get("api_key", "")
 
-    @tasks.loop(minutes=60.0)
+    @tasks.loop(time=HOURLY_TIMES)
     async def hourly_voice_tracker(self) -> None:
-        """Update ieder uur de voortgang en vernieuwt om 00:00 lokale tijd de 30-daagse baseline."""
+        """Triggert exact om :00 elk uur in Europe/Amsterdam tijd."""
         api_key = await self._get_api_key()
         if not api_key:
             return
@@ -53,9 +60,9 @@ class SZGStatbot(commands.Cog):
                 continue
 
             client = StatbotClient(api_key=api_key, guild_id=guild.id, timezone_name="Europe/Amsterdam")
-            now_local = datetime.now(self.local_timezone)
+            now_local = datetime.datetime.now(self.local_timezone)
 
-            # 1. Baseline vernieuwen om 00:00 lokale tijd
+            # 1. Baseline vernieuwen bij de overgang naar een nieuwe dag (00:00)
             last_day = await self.config.guild(guild).last_target_update_day()
             target_hours = await self.config.guild(guild).cached_30d_target()
 
@@ -65,7 +72,7 @@ class SZGStatbot(commands.Cog):
                     target_hours = fresh_target
                     await self.config.guild(guild).cached_30d_target.set(target_hours)
                 await self.config.guild(guild).last_target_update_day.set(now_local.day)
-                log.info(f"[{guild.name}] Nieuw 30-daags gemiddelde berekend: {target_hours}u")
+                log.info(f"[{guild.name}] Nieuw 30-daags gemiddelde berekend om middernacht: {target_hours}u")
 
             # 2. Huidige daguren ophalen
             current_hours = await client.get_today_voice_hours()
@@ -120,7 +127,7 @@ class SZGStatbot(commands.Cog):
             target_hours = await client.get_30_day_daily_average_hours()
             current_hours = await client.get_today_voice_hours()
 
-            now_local = datetime.now(self.local_timezone)
+            now_local = datetime.datetime.now(self.local_timezone)
             if target_hours > 0:
                 await self.config.guild(ctx.guild).cached_30d_target.set(target_hours)
             await self.config.guild(ctx.guild).last_target_update_day.set(now_local.day)
@@ -147,5 +154,6 @@ class SZGStatbot(commands.Cog):
         embed.add_field(name="API Key Ingesteld", value="✅ Ja" if api_key else "❌ Nee (`[p]set api statbot api_key,<TOKEN>`)", inline=False)
         embed.add_field(name="Gekoppelde Categorie", value=f"{category.name} (`{category.id}`)" if category else "Geen", inline=False)
         embed.add_field(name="Gecached 30d Gemiddelde", value=f"{target} uur", inline=False)
+        embed.add_field(name="Volgende Geplande Run", value="Exact op het hele uur (:00)", inline=False)
 
         await ctx.send(embed=embed)
