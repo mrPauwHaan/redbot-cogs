@@ -1,0 +1,12 @@
+{
+  "author": ["mrPauwHaan"],
+  "name": "szg_statbot",
+  "short": "Statbot Voice Gamification & Category Tracker",
+  "description": "Tracks daily Discord voice activity via Statbot API v2 and visualizes server progress in category names.",
+  "tags": ["statbot", "voice", "tracking", "gamification"],
+  "requirements": ["aiohttp"],
+  "min_bot_version": "3.5.0",
+  "hidden": false,
+  "disabled": false,
+  "type": "COG"
+}
