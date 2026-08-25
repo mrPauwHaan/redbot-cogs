@@ -7,79 +7,73 @@ log = logging.getLogger("red.szg_statbot.api")
 
 
 class StatbotClient:
-    BASE_URL = "https://api.statbot.net/v2"
+    BASE_URL = "https://api.statbot.net/v1"
 
     def __init__(self, api_key: str, guild_id: int):
         self.api_key = api_key
         self.guild_id = guild_id
+        auth_header = api_key if api_key.startswith("Bearer ") else f"Bearer {api_key}"
         self.headers = {
-            "Authorization": self.api_key,
-            "Content-Type": "application/json"
+            "Authorization": auth_header,
+            "Accept": "application/json"
         }
 
-    async def _fetch(self, endpoint: str, params: dict) -> Optional[dict]:
-        url = f"{self.BASE_URL}/guilds/{self.guild_id}/{endpoint}"
+    async def _fetch_voice_sums(self, params: dict) -> Optional[dict]:
+        url = f"{self.BASE_URL}/guilds/{self.guild_id}/voice/sums"
         try:
             async with aiohttp.ClientSession(headers=self.headers) as session:
                 async with session.get(url, params=params, timeout=15) as resp:
                     if resp.status == 200:
                         return await resp.json()
-                    log.error(f"Statbot API error ({resp.status}): {await resp.text()}")
+                    log.error(f"Statbot API fout ({resp.status}): {await resp.text()}")
                     return None
         except Exception as e:
-            log.exception(f"Exception connecting to Statbot API: {e}")
+            log.exception(f"Fout bij verbinden met Statbot API: {e}")
             return None
 
     async def get_30_day_daily_average_hours(self) -> float:
-        """Berekent het gemiddelde aantal voice-uren per dag over de afgelopen 30 dagen."""
+        """
+        Haalt het totale aantal voice-minuten over de afgelopen 30 dagen op
+        en berekent het gemiddelde aantal uren per dag.
+        """
         now = datetime.now(timezone.utc)
-        start_date = (now - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
-        end_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_dt = (now - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
         params = {
-            "stat": "voice",
-            "interval": "day",
-            "after": start_date.isoformat(),
-            "before": end_date.isoformat()
+            "start": int(start_dt.timestamp() * 1000),
+            "end": int(end_dt.timestamp() * 1000),
+            "bot": "false"
         }
 
-        data = await self._fetch("stats", params)
-        if not data or "data" not in data:
+        data = await self._fetch_voice_sums(params)
+        if not data or "count" not in data:
             return 0.0
 
-        daily_points = data.get("data", [])
-        if not daily_points:
-            return 0.0
-
-        total_seconds = sum(point.get("value", 0) for point in daily_points)
-        days_count = max(len(daily_points), 1)
-        return round((total_seconds / 3600) / days_count, 1)
+        total_minutes = data.get("count", 0)
+        daily_average_hours = (total_minutes / 60) / 30
+        return round(daily_average_hours, 1)
 
     async def get_today_voice_hours(self) -> float:
-        """Haalt het cumulatieve aantal voice-uren op sinds 00:00 UTC vandaag."""
+        """Haalt het totale aantal voice-minuten op sinds 00:00 UTC vandaag."""
         now = datetime.now(timezone.utc)
         start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
         params = {
-            "stat": "voice",
-            "interval": "hour",
-            "after": start_of_day.isoformat()
+            "start": int(start_of_day.timestamp() * 1000),
+            "bot": "false"
         }
 
-        data = await self._fetch("stats", params)
-        if not data or "data" not in data:
+        data = await self._fetch_voice_sums(params)
+        if not data or "count" not in data:
             return 0.0
 
-        hourly_points = data.get("data", [])
-        total_seconds = sum(point.get("value", 0) for point in hourly_points)
-        return round(total_seconds / 3600, 1)
+        today_minutes = data.get("count", 0)
+        return round(today_minutes / 60, 1)
 
 
 def format_category_name(current_hours: float, target_hours: float) -> str:
-    """
-    Formatteert de categorienaam met progressieblokken (Optie A, max ~20 tekens).
-    Voorbeeld: ██░░ [ 4/12u ] ░░░░
-    """
+    """Formatteert de categorienaam met progressieblokken (max ~20 tekens)."""
     total_blocks = 8
 
     if target_hours <= 0:

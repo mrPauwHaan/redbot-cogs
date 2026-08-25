@@ -11,14 +11,13 @@ log = logging.getLogger("red.szg_statbot")
 
 
 class SZGStatbot(commands.Cog):
-    """Beheert Statbot API integratie en live voice-gamification via categorieën."""
+    """Beheert live voice-gamification via Statbot v1 sums API en Discord categorieën."""
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
         self.config = Config.get_conf(self, identifier=9812471923, force_registration=True)
 
         default_guild = {
-            "statbot_api_key": "",
             "tracked_category_id": None,
             "cached_30d_target": 10.0,
             "last_target_update_day": -1
@@ -31,14 +30,21 @@ class SZGStatbot(commands.Cog):
     async def cog_unload(self) -> None:
         self.hourly_voice_tracker.cancel()
 
+    async def _get_api_key(self) -> str:
+        """Haalt de Statbot API-sleutel op uit de gedeelde Red bot tokens."""
+        tokens = await self.bot.get_shared_api_tokens("statbot")
+        return tokens.get("api_key", "")
+
     @tasks.loop(minutes=60.0)
     async def hourly_voice_tracker(self) -> None:
-        """Update elk uur de categorienaam en vernieuwt om 00:00 UTC de 30-daagse baseline."""
-        for guild in self.bot.guilds:
-            api_key = await self.config.guild(guild).statbot_api_key()
-            category_id = await self.config.guild(guild).tracked_category_id()
+        """Update ieder uur de voortgang en vernieuwt om 00:00 UTC de 30-daagse baseline."""
+        api_key = await self._get_api_key()
+        if not api_key:
+            return
 
-            if not api_key or not category_id:
+        for guild in self.bot.guilds:
+            category_id = await self.config.guild(guild).tracked_category_id()
+            if not category_id:
                 continue
 
             category = guild.get_channel(category_id)
@@ -58,21 +64,21 @@ class SZGStatbot(commands.Cog):
                     target_hours = fresh_target
                     await self.config.guild(guild).cached_30d_target.set(target_hours)
                 await self.config.guild(guild).last_target_update_day.set(now.day)
-                log.info(f"[{guild.name}] Nieuw 30-daags voice-gemiddelde vastgezet: {target_hours}u")
+                log.info(f"[{guild.name}] Nieuw 30-daags gemiddelde berekend: {target_hours}u")
 
-            # 2. Haal cumulatieve uren van vandaag op
+            # 2. Haal actuele voice-uren van vandaag op
             current_hours = await client.get_today_voice_hours()
 
-            # 3. Categorienaam wijzigen bij verandering
+            # 3. Categorienaam bijwerken indien gewijzigd
             new_name = format_category_name(current_hours, target_hours)
             if category.name != new_name:
                 try:
-                    await category.edit(name=new_name, reason="Statbot Voice Progress Update")
-                    log.info(f"[{guild.name}] Categorienaam geüpdatet naar: {new_name}")
+                    await category.edit(name=new_name, reason="Statbot Voice Progress Tracker")
+                    log.info(f"[{guild.name}] Categorie gewijzigd naar: {new_name}")
                 except discord.Forbidden:
-                    log.warning(f"[{guild.name}] Geen rechten om categorienaam te wijzigen.")
+                    log.warning(f"[{guild.name}] Ontbrekende rechten om categorie te hernoemen.")
                 except discord.HTTPException as e:
-                    log.warning(f"[{guild.name}] HTTP fout bij wijzigen van categorie: {e}")
+                    log.warning(f"[{guild.name}] HTTP fout bij wijzigen categorie: {e}")
 
     @hourly_voice_tracker.before_loop
     async def before_tracker(self) -> None:
@@ -84,42 +90,29 @@ class SZGStatbot(commands.Cog):
     @commands.guild_only()
     @checks.admin_or_permissions(manage_guild=True)
     async def statbotset(self, ctx: commands.Context) -> None:
-        """Beheerinstellingen voor Statbot tracking en categorie visualisatie."""
+        """Beheerinstellingen voor Statbot voice progressie tracking."""
         pass
-
-    @statbotset.command(name="apikey")
-    async def set_api_key(self, ctx: commands.Context, api_key: str) -> None:
-        """Stel de Statbot API-sleutel in voor deze server."""
-        await self.config.guild(ctx.guild).statbot_api_key.set(api_key)
-        try:
-            await ctx.message.delete()
-        except discord.HTTPException:
-            pass
-        await ctx.send("✅ Statbot API-sleutel opgeslagen.", delete_after=10)
 
     @statbotset.command(name="category")
     async def set_category(self, ctx: commands.Context, category: discord.CategoryChannel) -> None:
-        """Koppel de spraakcategorie die de progressiebalk moet tonen."""
+        """Koppel de spraakcategorie die de progressiebalk weergeeft."""
         await self.config.guild(ctx.guild).tracked_category_id.set(category.id)
-        await ctx.send(f"✅ Voice tracking gekoppeld aan: **{category.name}** (`{category.id}`)")
+        await ctx.send(f"✅ Voice tracking gekoppeld aan categorie: **{category.name}** (`{category.id}`)")
 
     @statbotset.command(name="forcesync")
     async def force_sync(self, ctx: commands.Context) -> None:
-        """Forceer direct een herberekening van baseline en live uren."""
-        api_key = await self.config.guild(ctx.guild).statbot_api_key()
-        category_id = await self.config.guild(ctx.guild).tracked_category_id()
-
+        """Forceer direct een herberekening van de 30-daagse baseline en urenvoortgang."""
+        api_key = await self._get_api_key()
         if not api_key:
-            await ctx.send("❌ Geen API-sleutel gevonden. Gebruik `[p]statbotset apikey`.")
-            return
+            return await ctx.send("❌ Geen Statbot API-sleutel gevonden. Stel deze in via `[p]set api statbot api_key,<JOUW_TOKEN>`.")
+
+        category_id = await self.config.guild(ctx.guild).tracked_category_id()
         if not category_id:
-            await ctx.send("❌ Geen categorie gekoppeld. Gebruik `[p]statbotset category`.")
-            return
+            return await ctx.send("❌ Geen categorie gekoppeld. Gebruik `[p]statbotset category <categorie>`.")
 
         category = ctx.guild.get_channel(category_id)
         if not isinstance(category, discord.CategoryChannel):
-            await ctx.send("❌ Gekoppelde categorie is niet meer vindbaar.")
-            return
+            return await ctx.send("❌ Gekoppelde categorie niet gevonden.")
 
         async with ctx.typing():
             client = StatbotClient(api_key=api_key, guild_id=ctx.guild.id)
@@ -132,26 +125,26 @@ class SZGStatbot(commands.Cog):
             await self.config.guild(ctx.guild).last_target_update_day.set(now.day)
 
             new_name = format_category_name(current_hours, target_hours)
-            await category.edit(name=new_name, reason="Handmatige Statbot Sync")
+            await category.edit(name=new_name, reason="Handmatige Statbot Voice Sync")
 
         await ctx.send(
-            f"🔄 **Sync voltooid:**\n"
+            f"🔄 **Sync Voltooid:**\n"
             f"• 30-daags gemiddelde: **{target_hours}u**\n"
-            f"• Vandaag behaald: **{current_hours}u**\n"
+            f"• Vandaag geregistreerd: **{current_hours}u**\n"
             f"• Nieuwe weergave: `{new_name}`"
         )
 
     @statbotset.command(name="status")
     async def show_status(self, ctx: commands.Context) -> None:
-        """Toont de actuele instellingen en gecachte metrics."""
+        """Toont de actuele instellingen en status van de koppeling."""
+        api_key = await self._get_api_key()
         category_id = await self.config.guild(ctx.guild).tracked_category_id()
         target = await self.config.guild(ctx.guild).cached_30d_target()
-        has_key = bool(await self.config.guild(ctx.guild).statbot_api_key())
         category = ctx.guild.get_channel(category_id) if category_id else None
 
-        embed = discord.Embed(title="Statbot Tracker Status", color=discord.Color.green())
-        embed.add_field(name="API Key Geconfigureerd", value="Ja" if has_key else "Nee", inline=True)
-        embed.add_field(name="Gekoppelde Categorie", value=category.name if category else "Geen", inline=True)
-        embed.add_field(name="Actueel Doel (30d Gemiddelde)", value=f"{target}u", inline=True)
+        embed = discord.Embed(title="Statbot Voice Tracker Status", color=discord.Color.blurple())
+        embed.add_field(name="API Key Ingesteld", value="✅ Ja" if api_key else "❌ Nee (`[p]set api statbot api_key,<TOKEN>`)", inline=False)
+        embed.add_field(name="Gekoppelde Categorie", value=f"{category.name} (`{category.id}`)" if category else "Geen", inline=False)
+        embed.add_field(name="Gecached 30d Gemiddelde", value=f"{target} uur", inline=False)
 
         await ctx.send(embed=embed)
