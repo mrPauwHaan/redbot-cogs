@@ -73,24 +73,38 @@ class StatbotClient:
 
 
 def format_category_name(current_hours: float, target_hours: float) -> str:
-    """Formatteert de categorienaam met progressieblokken (max ~20 tekens)."""
+    """
+    Formatteert de categorienaam met afgeronde glyphs (Optie 4) en dubbele cijfers:
+    - 0 uur:       ▱▱▱▱[ GEM: 12u ]▱▱▱▱ (Lege blokjes + daggemiddelde)
+    - 1-11 uur:    ▰▰▱▱[ 03/12u ]▱▱▱▱
+    - 12u+ (100%): 🔥🔥[ 14/12u ]🔥🔥 (Overdrive / doel behaald)
+    """
     total_blocks = 8
 
     if target_hours <= 0:
-        return "░░░░ [ SPRAAK ] ░░░░"
+        return "▱▱▱▱[ SPRAAK ]▱▱▱▱"
 
+    tar_int = min(int(round(target_hours)), 99)
+    tar_str = f"{tar_int:02d}"
+
+    # 1. Bij 0 uur activiteit: toon lege blokjes rond het daggemiddelde
+    if current_hours <= 0.0:
+        return f"▱▱▱▱[ GEM: {tar_str}u ]▱▱▱▱"
+
+    # 2. Vanaf activiteit: bereken en render gevulde en lege blokken
     ratio = min(max(current_hours / target_hours, 0.0), 1.0)
     filled_blocks = round(ratio * total_blocks)
     empty_blocks = total_blocks - filled_blocks
 
-    full_bar = ("█" * filled_blocks) + ("░" * empty_blocks)
+    full_bar = ("▰" * filled_blocks) + ("▱" * empty_blocks)
     left_part = full_bar[:4]
     right_part = full_bar[4:]
 
-    cur_str = f"{current_hours:.1f}" if current_hours < 10 else f"{int(round(current_hours))}"
-    tar_str = f"{target_hours:.1f}" if target_hours < 10 else f"{int(round(target_hours))}"
+    cur_int = min(int(round(current_hours)), 99)
+    cur_str = f"{cur_int:02d}"
 
-    if current_hours >= target_hours and target_hours > 0:
-        return f"🔥🔥 [ {cur_str}/{tar_str}u ] 🔥🔥"
+    # 3. Overdrive weergave bij het behalen of overtreffen van het doel
+    if current_hours >= target_hours:
+        return f"🔥🔥[ {cur_str}/{tar_str}u ]🔥🔥"
 
-    return f"{left_part} [ {cur_str}/{tar_str}u ] {right_part}"
+    return f"{left_part}[ {cur_str}/{tar_str}u ]{right_part}"
