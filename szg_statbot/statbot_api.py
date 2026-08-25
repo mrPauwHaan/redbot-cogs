@@ -1,7 +1,8 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from typing import Optional
 import aiohttp
 import logging
+import pytz
 
 log = logging.getLogger("red.szg_statbot.api")
 
@@ -9,12 +10,14 @@ log = logging.getLogger("red.szg_statbot.api")
 class StatbotClient:
     BASE_URL = "https://api.statbot.net/v1"
 
-    def __init__(self, api_key: str, guild_id: int):
-        self.api_key = api_key
+    def __init__(self, api_key: str, guild_id: int, timezone_name: str = "Europe/Amsterdam"):
+        self.api_key = api_key.strip()
         self.guild_id = guild_id
-        auth_header = api_key if api_key.startswith("Bearer ") else f"Bearer {api_key}"
+        self.tz = pytz.timezone(timezone_name)
+
+        auth_token = self.api_key if self.api_key.startswith("Bearer ") else f"Bearer {self.api_key}"
         self.headers = {
-            "Authorization": auth_header,
+            "Authorization": auth_token,
             "Accept": "application/json"
         }
 
@@ -25,24 +28,21 @@ class StatbotClient:
                 async with session.get(url, params=params, timeout=15) as resp:
                     if resp.status == 200:
                         return await resp.json()
-                    log.error(f"Statbot API fout ({resp.status}): {await resp.text()}")
+                    log.error(f"Statbot API fout (HTTP {resp.status}): {await resp.text()}")
                     return None
         except Exception as e:
             log.exception(f"Fout bij verbinden met Statbot API: {e}")
             return None
 
     async def get_30_day_daily_average_hours(self) -> float:
-        """
-        Haalt het totale aantal voice-minuten over de afgelopen 30 dagen op
-        en berekent het gemiddelde aantal uren per dag.
-        """
-        now = datetime.now(timezone.utc)
-        start_dt = (now - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
-        end_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        """Haalt het totale aantal voice-minuten over de afgelopen 30 dagen op en berekent het daggemiddelde."""
+        now_local = datetime.now(self.tz)
+        start_dt = (now_local - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+        end_dt = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
 
         params = {
-            "start": int(start_dt.timestamp() * 1000),
-            "end": int(end_dt.timestamp() * 1000),
+            "start": str(int(start_dt.timestamp() * 1000)),
+            "end": str(int(end_dt.timestamp() * 1000)),
             "bot": "false"
         }
 
@@ -51,16 +51,16 @@ class StatbotClient:
             return 0.0
 
         total_minutes = data.get("count", 0)
-        daily_average_hours = (total_minutes / 60) / 30
+        daily_average_hours = (total_minutes / 60.0) / 30.0
         return round(daily_average_hours, 1)
 
     async def get_today_voice_hours(self) -> float:
-        """Haalt het totale aantal voice-minuten op sinds 00:00 UTC vandaag."""
-        now = datetime.now(timezone.utc)
-        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        """Haalt het cumulatieve aantal voice-uren op sinds 00:00 lokale tijd vandaag."""
+        now_local = datetime.now(self.tz)
+        start_of_day = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
 
         params = {
-            "start": int(start_of_day.timestamp() * 1000),
+            "start": str(int(start_of_day.timestamp() * 1000)),
             "bot": "false"
         }
 
@@ -69,7 +69,7 @@ class StatbotClient:
             return 0.0
 
         today_minutes = data.get("count", 0)
-        return round(today_minutes / 60, 1)
+        return round(today_minutes / 60.0, 1)
 
 
 def format_category_name(current_hours: float, target_hours: float) -> str:

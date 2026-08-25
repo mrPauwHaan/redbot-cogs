@@ -1,7 +1,8 @@
-from datetime import datetime, timezone
+from datetime import datetime
 import discord
 from discord.ext import tasks
 import logging
+import pytz
 from redbot.core import Config, checks, commands
 from redbot.core.bot import Red
 
@@ -16,6 +17,7 @@ class SZGStatbot(commands.Cog):
     def __init__(self, bot: Red) -> None:
         self.bot = bot
         self.config = Config.get_conf(self, identifier=9812471923, force_registration=True)
+        self.local_timezone = pytz.timezone("Europe/Amsterdam")
 
         default_guild = {
             "tracked_category_id": None,
@@ -31,13 +33,12 @@ class SZGStatbot(commands.Cog):
         self.hourly_voice_tracker.cancel()
 
     async def _get_api_key(self) -> str:
-        """Haalt de Statbot API-sleutel op uit de gedeelde Red bot tokens."""
         tokens = await self.bot.get_shared_api_tokens("statbot")
         return tokens.get("api_key", "")
 
     @tasks.loop(minutes=60.0)
     async def hourly_voice_tracker(self) -> None:
-        """Update ieder uur de voortgang en vernieuwt om 00:00 UTC de 30-daagse baseline."""
+        """Update ieder uur de voortgang en vernieuwt om 00:00 lokale tijd de 30-daagse baseline."""
         api_key = await self._get_api_key()
         if not api_key:
             return
@@ -51,22 +52,22 @@ class SZGStatbot(commands.Cog):
             if not isinstance(category, discord.CategoryChannel):
                 continue
 
-            client = StatbotClient(api_key=api_key, guild_id=guild.id)
-            now = datetime.now(timezone.utc)
+            client = StatbotClient(api_key=api_key, guild_id=guild.id, timezone_name="Europe/Amsterdam")
+            now_local = datetime.now(self.local_timezone)
 
-            # 1. Update de baseline om 00:00 UTC
+            # 1. Baseline vernieuwen om 00:00 lokale tijd
             last_day = await self.config.guild(guild).last_target_update_day()
             target_hours = await self.config.guild(guild).cached_30d_target()
 
-            if now.day != last_day:
+            if now_local.day != last_day:
                 fresh_target = await client.get_30_day_daily_average_hours()
                 if fresh_target > 0:
                     target_hours = fresh_target
                     await self.config.guild(guild).cached_30d_target.set(target_hours)
-                await self.config.guild(guild).last_target_update_day.set(now.day)
+                await self.config.guild(guild).last_target_update_day.set(now_local.day)
                 log.info(f"[{guild.name}] Nieuw 30-daags gemiddelde berekend: {target_hours}u")
 
-            # 2. Haal actuele voice-uren van vandaag op
+            # 2. Huidige daguren ophalen
             current_hours = await client.get_today_voice_hours()
 
             # 3. Categorienaam bijwerken indien gewijzigd
@@ -76,7 +77,7 @@ class SZGStatbot(commands.Cog):
                     await category.edit(name=new_name, reason="Statbot Voice Progress Tracker")
                     log.info(f"[{guild.name}] Categorie gewijzigd naar: {new_name}")
                 except discord.Forbidden:
-                    log.warning(f"[{guild.name}] Ontbrekende rechten om categorie te hernoemen.")
+                    log.warning(f"[{guild.name}] Ontbrekende rechten (Manage Channels) om categorie te hernoemen.")
                 except discord.HTTPException as e:
                     log.warning(f"[{guild.name}] HTTP fout bij wijzigen categorie: {e}")
 
@@ -90,7 +91,7 @@ class SZGStatbot(commands.Cog):
     @commands.guild_only()
     @checks.admin_or_permissions(manage_guild=True)
     async def statbotset(self, ctx: commands.Context) -> None:
-        """Beheerinstellingen voor Statbot voice progressie tracking."""
+        """Beheerinstellingen voor Statbot voice tracking."""
         pass
 
     @statbotset.command(name="category")
@@ -104,7 +105,7 @@ class SZGStatbot(commands.Cog):
         """Forceer direct een herberekening van de 30-daagse baseline en urenvoortgang."""
         api_key = await self._get_api_key()
         if not api_key:
-            return await ctx.send("❌ Geen Statbot API-sleutel gevonden. Stel deze in via `[p]set api statbot api_key,<JOUW_TOKEN>`.")
+            return await ctx.send("❌ Geen Statbot API-sleutel gevonden. Stel deze in via `[p]set api statbot api_key,<TOKEN>`.")
 
         category_id = await self.config.guild(ctx.guild).tracked_category_id()
         if not category_id:
@@ -115,14 +116,14 @@ class SZGStatbot(commands.Cog):
             return await ctx.send("❌ Gekoppelde categorie niet gevonden.")
 
         async with ctx.typing():
-            client = StatbotClient(api_key=api_key, guild_id=ctx.guild.id)
+            client = StatbotClient(api_key=api_key, guild_id=ctx.guild.id, timezone_name="Europe/Amsterdam")
             target_hours = await client.get_30_day_daily_average_hours()
             current_hours = await client.get_today_voice_hours()
 
-            now = datetime.now(timezone.utc)
+            now_local = datetime.now(self.local_timezone)
             if target_hours > 0:
                 await self.config.guild(ctx.guild).cached_30d_target.set(target_hours)
-            await self.config.guild(ctx.guild).last_target_update_day.set(now.day)
+            await self.config.guild(ctx.guild).last_target_update_day.set(now_local.day)
 
             new_name = format_category_name(current_hours, target_hours)
             await category.edit(name=new_name, reason="Handmatige Statbot Voice Sync")
@@ -136,7 +137,7 @@ class SZGStatbot(commands.Cog):
 
     @statbotset.command(name="status")
     async def show_status(self, ctx: commands.Context) -> None:
-        """Toont de actuele instellingen en status van de koppeling."""
+        """Toont de actuele status en gecachte metrics."""
         api_key = await self._get_api_key()
         category_id = await self.config.guild(ctx.guild).tracked_category_id()
         target = await self.config.guild(ctx.guild).cached_30d_target()
