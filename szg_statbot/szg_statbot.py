@@ -10,10 +10,9 @@ from .statbot_api import StatbotClient, format_category_name
 
 log = logging.getLogger("red.szg_statbot")
 
-# Definieer 24 vaste tijdstippen exact op minuut :00 in de lokale tijdzone
-LOCAL_TZ = pytz.timezone("Europe/Amsterdam")
-HOURLY_TIMES = [
-    datetime.time(hour=h, minute=0, second=0, tzinfo=LOCAL_TZ)
+# Gebruik UTC voor de 24 uur-triggers (00:00 UTC == heel uur lokaal) om pytz-bugs te voorkomen
+HOURLY_TIMES_UTC = [
+    datetime.time(hour=h, minute=0, second=0, tzinfo=datetime.timezone.utc)
     for h in range(24)
 ]
 
@@ -24,7 +23,7 @@ class SZGStatbot(commands.Cog):
     def __init__(self, bot: Red) -> None:
         self.bot = bot
         self.config = Config.get_conf(self, identifier=9812471923, force_registration=True)
-        self.local_timezone = LOCAL_TZ
+        self.local_timezone = pytz.timezone("Europe/Amsterdam")
 
         default_guild = {
             "tracked_category_id": None,
@@ -43,11 +42,12 @@ class SZGStatbot(commands.Cog):
         tokens = await self.bot.get_shared_api_tokens("statbot")
         return tokens.get("api_key", "")
 
-    @tasks.loop(time=HOURLY_TIMES)
+    @tasks.loop(time=HOURLY_TIMES_UTC)
     async def hourly_voice_tracker(self) -> None:
-        """Triggert exact om :00 elk uur in Europe/Amsterdam tijd."""
+        """Triggert exact op elk heel uur (:00)."""
         api_key = await self._get_api_key()
         if not api_key:
+            log.warning("Statbot API key ontbreekt. Voer '[p]set api statbot api_key,<TOKEN>' uit.")
             return
 
         for guild in self.bot.guilds:
@@ -62,7 +62,7 @@ class SZGStatbot(commands.Cog):
             client = StatbotClient(api_key=api_key, guild_id=guild.id, timezone_name="Europe/Amsterdam")
             now_local = datetime.datetime.now(self.local_timezone)
 
-            # 1. Baseline vernieuwen bij de overgang naar een nieuwe dag (00:00)
+            # 1. Baseline vernieuwen om middernacht (00:00 lokale tijd)
             last_day = await self.config.guild(guild).last_target_update_day()
             target_hours = await self.config.guild(guild).cached_30d_target()
 
@@ -79,18 +79,25 @@ class SZGStatbot(commands.Cog):
 
             # 3. Categorienaam bijwerken indien gewijzigd
             new_name = format_category_name(current_hours, target_hours)
+            log.info(f"[{guild.name}] Uurlijkse check ({now_local.strftime('%H:%M')}): {current_hours}u / doel {target_hours}u -> '{new_name}'")
+
             if category.name != new_name:
                 try:
                     await category.edit(name=new_name, reason="Statbot Voice Progress Tracker")
-                    log.info(f"[{guild.name}] Categorie gewijzigd naar: {new_name}")
+                    log.info(f"[{guild.name}] Categorie hernoemd van '{category.name}' naar '{new_name}'")
                 except discord.Forbidden:
-                    log.warning(f"[{guild.name}] Ontbrekende rechten (Manage Channels) om categorie te hernoemen.")
+                    log.warning(f"[{guild.name}] Geen rechten (Manage Channels) om categorie te hernoemen.")
                 except discord.HTTPException as e:
                     log.warning(f"[{guild.name}] HTTP fout bij wijzigen categorie: {e}")
 
     @hourly_voice_tracker.before_loop
     async def before_tracker(self) -> None:
         await self.bot.wait_until_ready()
+
+    @hourly_voice_tracker.error
+    async def tracker_error_handler(self, error: Exception) -> None:
+        """Voorkomt dat de loop stilvalt bij onverwachte netwerk- of API-fouten."""
+        log.exception(f"Onverwachte fout in hourly_voice_tracker loop: {error}")
 
     # --- COMMANDS ---
 
@@ -154,6 +161,6 @@ class SZGStatbot(commands.Cog):
         embed.add_field(name="API Key Ingesteld", value="✅ Ja" if api_key else "❌ Nee (`[p]set api statbot api_key,<TOKEN>`)", inline=False)
         embed.add_field(name="Gekoppelde Categorie", value=f"{category.name} (`{category.id}`)" if category else "Geen", inline=False)
         embed.add_field(name="Gecached 30d Gemiddelde", value=f"{target} uur", inline=False)
-        embed.add_field(name="Volgende Geplande Run", value="Exact op het hele uur (:00)", inline=False)
+        embed.add_field(name="Loop Status", value="Draait (elk heel uur :00)" if self.hourly_voice_tracker.is_running() else "❌ Gestopt", inline=False)
 
         await ctx.send(embed=embed)
