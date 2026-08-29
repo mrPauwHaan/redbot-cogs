@@ -75,9 +75,9 @@ class StatbotClient:
 def format_category_name(current_hours: float, target_hours: float) -> str:
     """
     Formatteert de categorienaam:
-    - 0 uur:       ▱▱▱▱[ GEM 12u ]▱▱▱▱
-    - 1-11 uur:    ▰▰▱▱[ 03u • GEM 12u ]▱▱▱▱
-    - 12u+ (100%): 🔥🔥[ 14u • GEM 12u ]🔥🔥
+    - 0 uur / < 30 min: ▱▱▱▱[ GEM 12u ]▱▱▱▱
+    - 1-11 uur:         ▰▰▱▱[ 03u • GEM 12u ]▱▱▱▱
+    - 12u+ (100%):      🔥🔥[ 14u • GEM 12u ]🔥🔥
     """
     total_blocks = 8
 
@@ -87,11 +87,14 @@ def format_category_name(current_hours: float, target_hours: float) -> str:
     tar_int = min(int(round(target_hours)), 99)
     tar_str = f"{tar_int:02d}"
 
-    # 1. Bij 0 uur: huidige urenteller niet tonen, alleen gemiddelde
-    if current_hours <= 0.0:
+    cur_int = min(int(round(current_hours)), 99)
+    cur_str = f"{cur_int:02d}"
+
+    # 1. Zolang het aantal afgeronde uren 0 is: huidige urenteller niet tonen
+    if cur_int <= 0:
         return f"▱▱▱▱[ GEM {tar_str}u ]▱▱▱▱"
 
-    # 2. Vanaf activiteit: bereken voortgangsblokken
+    # 2. Vanaf activiteit (>= 1u): bereken voortgangsblokken
     ratio = min(max(current_hours / target_hours, 0.0), 1.0)
     filled_blocks = round(ratio * total_blocks)
     empty_blocks = total_blocks - filled_blocks
@@ -99,9 +102,6 @@ def format_category_name(current_hours: float, target_hours: float) -> str:
     full_bar = ("▰" * filled_blocks) + ("▱" * empty_blocks)
     left_part = full_bar[:4]
     right_part = full_bar[4:]
-
-    cur_int = min(int(round(current_hours)), 99)
-    cur_str = f"{cur_int:02d}"
 
     # 3. Overdrive weergave bij het behalen of overtreffen van het gemiddelde
     if current_hours >= target_hours:
